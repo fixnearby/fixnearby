@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { FaUser, FaEnvelope, FaLock, FaPhone, FaMapMarkerAlt, FaHashtag } from "react-icons/fa";
+import { toast } from "react-hot-toast";
 
 export default function SignUpPage() {
   const [form, setForm] = useState({
@@ -19,24 +20,44 @@ export default function SignUpPage() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-    try {
-      const res = await fetch("/api/sign-up", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      const data = await res.json();
-      setMessage(data.message);
-    } catch (err) {
-      console.error("Error during sign up:", err);
-      setMessage("Something went wrong.");
+
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setLoading(true);
+  setMessage(null);
+
+  try {
+    const res = await fetch("/api/sign-up", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Handle field-level validation errors
+      if (data.errors && Array.isArray(data.errors)) {
+        data.errors.forEach((error: { field: string; message: string }) => {
+          toast.error(`${error.field}: ${error.message}`);
+        });
+      } else {
+        toast.error(data.message || "Signup failed");
+      }
+    } else {
+      toast.success(data.message || "Signup successful!");
     }
-    setLoading(false);
-  };
+
+    setMessage(data.message);
+  } catch (err) {
+    console.error("Error during sign up:", err);
+    toast.error("Something went wrong.");
+    setMessage("Something went wrong.");
+  }
+
+  setLoading(false);
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 via-purple-100 to-pink-100">

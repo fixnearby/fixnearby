@@ -1,25 +1,46 @@
-import mongoose, { Schema, Document, Types } from "mongoose";
+import mongoose, { Document, Schema, Model } from "mongoose";
 
-interface IMessage {
-  sender: "user" | "provider";
-  text: string;
-  timestamp: Date;
+// Define the interface for a message document
+export interface IMessage extends Document {
+  senderId: mongoose.Types.ObjectId;
+  receiverId: mongoose.Types.ObjectId;
+  serviceId: mongoose.Types.ObjectId;
+  text?: string;
+  image?: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface IChat extends Document {
-  serviceRequestId: Types.ObjectId;
-  messages: IMessage[];
-}
+// Define the schema
+const messageSchema: Schema<IMessage> = new Schema(
+  {
+    senderId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    receiverId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    serviceId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "ServiceRequest",
+      required: true,
+    },
+    text: {
+      type: String,
+    },
+    image: {
+      type: String,
+    },
+  },
+  {
+    timestamps: true, // adds createdAt and updatedAt
+  }
+);
 
-const MessageSchema = new Schema<IMessage>({
-  sender: { type: String, enum: ["user", "provider"], required: true },
-  text: { type: String, required: true },
-  timestamp: { type: Date, default: Date.now }
-});
-
-const ChatSchema = new Schema<IChat>({
-  serviceRequestId: { type: Schema.Types.ObjectId, required: true, ref: "ServiceRequest" },
-  messages: [MessageSchema]
-});
-
-export const ChatModel = mongoose.models.Chat || mongoose.model<IChat>("Chat", ChatSchema);
+// Create the model
+export const MessageModel: Model<IMessage> =
+  mongoose.models.Message || mongoose.model<IMessage>("Message", messageSchema);

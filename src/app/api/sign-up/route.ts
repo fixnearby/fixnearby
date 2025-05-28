@@ -3,11 +3,35 @@ import dbConnect from "../../../../lib/dbConnect";
 import bcrypt from "bcryptjs";
 import { sendVerificationEmail } from "@/helpers/sendVerificationEmail";
 
+import { signUpSchema } from "../../../schemas/signUpSchema"; // <-- Zod schema
+import { z } from "zod";
+
 export async function POST(request: Request) {
   await dbConnect();
 
   try {
-    const { name, username, phone, email, password, address, pincode } = await request.json();
+    const body = await request.json();
+
+    // ✅ Validate body using Zod
+    const result = signUpSchema.safeParse(body);
+
+    if (!result.success) {
+      const formattedErrors = result.error.errors.map(err => ({
+        field: err.path[0],
+        message: err.message,
+      }));
+
+      return Response.json(
+        {
+          success: false,
+          message: "Validation failed",
+          errors: formattedErrors,
+        },
+        { status: 400 }
+      );
+    }
+
+    const { name, username, phone, email, password, address, pincode } = body;
 
     // Check if user already exists (by email or phone)
     const existingUser = await UserModel.findOne({

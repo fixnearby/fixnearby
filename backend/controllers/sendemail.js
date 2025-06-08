@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const resend = new Resend("re_Aea8hywa_L9HWi88CttY6hjZzrV5nZ6qg"); // ye api key env file mai rakhne se chal nahi rahi idek why
+const resend = new Resend("re_PAAUdv4c_3K3jX4T3btZJqtA2Vstp8P4o"); // ye api key env file mai rakhne se chal nahi rahi idek why
 
 export const send_email = async (to, otp) => {
   const html = `

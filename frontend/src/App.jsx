@@ -1,3 +1,4 @@
+//frontend/src/App.jsx
 import { useEffect } from "react";
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Loader } from "lucide-react";
@@ -61,7 +62,7 @@ const {
     useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("ye hai jwt token",document.cookie); // should contain jw
+        console.log("ye hai jwt token",document.cookie); // should contain jwt
         const res = await axiosInstance.get("/check-auth");
         const data = res.data;
         console.log("Auth data:", data);
@@ -73,6 +74,7 @@ const {
           setAdmin(data);
         }
       } catch (err) {
+        console.error(err);
         clearUser();
         clearRepairer();
         clearAdmin();
@@ -82,7 +84,7 @@ const {
     };
 
     checkAuth();
-  }, []);
+  }, [clearUser, clearRepairer, clearAdmin, setUser, setRepairer, setAdmin, setloading]);
 
   if (loading )
     return (

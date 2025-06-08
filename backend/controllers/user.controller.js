@@ -1,3 +1,4 @@
+//backend/controllers/user.controller.js
 import User from "../models/user.model.js";
 import BlacklistToken from "../models/blacklistToken.model.js";
 import Otp from "../models/otp.model.js";

@@ -71,15 +71,13 @@ export const signup = async (req, res) => {
     password,
     aadharcardNumber,
     phone,
-    postalCode,
     services,
     experience,
-    hourlyRate
   } = req.body;
 
   try {
     // Basic validation
-    if (!fullname || !email || !password || !aadharcardNumber || !phone || !postalCode || !services) {
+    if (!fullname || !email || !password || !aadharcardNumber || !phone  || !services) {
       return res.status(400).json({ message: "All required fields must be filled" });
     }
 
@@ -100,16 +98,15 @@ export const signup = async (req, res) => {
       password: hashedPassword,
       aadharcardNumber,
       phone,
-      postalCode,
       services,
       experience,
-      hourlyRate
+
     });
 
     await newRepairer.save();
 
     // Generate JWT and respond
-    generateToken(newRepairer._id, res);
+    generateToken(newRepairer._id,newRepairer.role, res);
 
     res.status(201).json({
       _id: newRepairer._id,
@@ -117,7 +114,6 @@ export const signup = async (req, res) => {
       email: newRepairer.email,
       services: newRepairer.services,
       experience: newRepairer.experience,
-      hourlyRate: newRepairer.hourlyRate,
     });
 
   } catch (error) {
@@ -137,7 +133,7 @@ export const login = async (req, res) => {
     const isMatch = await bcrypt.compare(password, repairer.password);
     if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    generateToken(repairer._id, res);
+    generateToken(repairer._id,repairer.role, res);
 
     res.status(200).json({
       _id: repairer._id,
@@ -171,11 +167,3 @@ export const logout = async (req, res) => {
   }
 };
 
-export const checkAuth = async (req, res) => {
-  try {
-    res.status(200).json(req.admin);
-  } catch (error) {
-    console.error("Error in checkRepairerAuth controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};

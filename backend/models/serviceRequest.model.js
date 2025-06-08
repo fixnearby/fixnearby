@@ -1,16 +1,28 @@
-const mongoose = require('mongoose');
-const { Schema, model, Types } = mongoose;
+//fixnearby3\backend\models\serviceRequest.model.js
+import mongoose from "mongoose";
 
-const ServiceRequestSchema = new Schema({
+const serviceRequestSchema = new mongoose.Schema({
   customer: {
-    type: Types.ObjectId,
-    ref: 'Customer',
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
     required: true
   },
   repairer: {
-    type: Types.ObjectId,
+    type: mongoose.Schema.Types.ObjectId,
     ref: 'Repairer',
-    required: false // optional at request creation
+    required: false
+  },
+  title: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 100
+  },
+  description: {
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 500
   },
   serviceType: {
     type: String,
@@ -20,24 +32,56 @@ const ServiceRequestSchema = new Schema({
     ],
     required: true
   },
+  location: {
+    address: {
+      type: String,
+      required: true
+    },
+    postalCode: {
+      type: String,
+      required: true
+    }
+  },
   preferredTimeSlot: {
     type: String,
-    enum: ['morning', 'afternoon', 'evening'],
-    default: 'morning'
+    enum: ['morning', 'afternoon', 'evening', 'flexible'],
+    default: 'flexible'
+  },
+  urgency: {
+    type: String,
+    enum: ['low', 'medium', 'high', 'emergency'],
+    default: 'medium'
   },
   status: {
     type: String,
-    enum: ['open', 'assigned', 'in_progress', 'completed', 'cancelled'],
-    default: 'open'
+    enum: ['requested',  'in_progress', 'completed', 'cancelled'], //with respect to user hai ye sab 
+    default: 'requested'
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
+  assignedAt: {
+    type: Date
+  },
+  completedAt: {
+    type: Date
+  },
+  rating: {
+    stars: {
+      type: Number,
+      min: 1,
+      max: 5
+    },
+    comment: {
+      type: String,
+      maxlength: 300
+    }
   }
 }, {
   timestamps: true
 });
 
-const ServiceRequest = model('ServiceRequest', ServiceRequestSchema);
+
+
+serviceRequestSchema.index({ serviceType: 1, status: 1 });
+
+const ServiceRequest = mongoose.model("ServiceRequest", serviceRequestSchema);
 
 export default ServiceRequest;

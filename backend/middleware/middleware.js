@@ -27,7 +27,7 @@ export const userProtectRoute = async (req, res, next) => {
     const user = await User.findById(decoded.userId).select("-password"); //kyuki humne password ko select nahi kiya hai toh password nahi milega
 
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(401).json({ message: "User not found" });
     }
 
     req.user = user; //isko conntoller mai use kare toh req.user se hi access karna jaise req.user._id -> toh jo ab woh page pe hai user uski id mil jaegi aise hi ab tere ko kuch bhi mil jaega except password
@@ -62,7 +62,7 @@ export const repairerProtectRoute = async (req, res, next) => {
     const repairer = await Repairer.findById(decoded.userId).select("-password");
 
     if (!repairer) {
-      return res.status(404).json({ message: "repairer not found" });
+      return res.status(401).json({ message: "repairer not found" });
     }
 
     req.repairer = repairer;
@@ -97,7 +97,7 @@ export const adminProtectRoute = async (req, res, next) => {
     const admin = await Admin.findById(decoded.userId).select("-password");
 
     if (!admin) {
-      return res.status(404).json({ message: "User not found" });
+      return res.status(401).json({ message: "User not found" });
     }
 
     req.admin = admin; //isko conntoller mai use kare toh req.admin se hi access karna jaise req.admin._id -> toh jo ab woh page pe hai admin uski id mil jaegi aise hi ab tere ko kuch bhi mil jaega except password

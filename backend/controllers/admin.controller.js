@@ -25,7 +25,7 @@ export const signup = async (req,res)=>{
 
         if (newAdmin) {
         // generate jwt token here
-        generateToken(newAdmin._id, res); //jwt token mai bus apan id jo mongo banata hai wahi save karenge
+        generateToken(newAdmin._id, newAdmin.role ,  res); //jwt token mai bus apan id jo mongo banata hai wahi save karenge
         await newAdmin.save(); 
 
         res.status(201).json({
@@ -57,7 +57,7 @@ export const login = async (req, res) => {
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    generateToken(admin._id, res);
+    generateToken(admin._id,admin.role, res);
 
     res.status(200).json({
       _id: admin._id,
@@ -93,11 +93,4 @@ export const logout = async (req, res) => {
   }
 };
 
-export const checkAuth = async (req, res) => {
-  try {
-    res.status(200).json(req.admin);
-  } catch (error) {
-    console.error("Error in checkAdminAuth controller:", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-};
+

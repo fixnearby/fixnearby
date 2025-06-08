@@ -33,20 +33,10 @@ const userSchema = new mongoose.Schema(
       trim: true,
       match: [/^\+?[\d\s-()]+$/, 'Please enter a valid phone number']
     },
-    postalCode: { 
-      type: String, 
-      trim: true, 
-      default: '' 
-    },
     role: {
       type: String,
-      default: 'customer'
+      default: 'user'
     },
-    isVerified: { // AADHAR CARD SE NAME AND PHONE NUMBER VERIFY HAI KI NAHI -> BUT BHENCHOD ISKI KOI API HI NAHI HAI MAINE DEKHA THA SEARCH KARKE
-      type: Boolean, 
-      default: false 
-    },
-    
 },{ timestamps: true }
 )
 

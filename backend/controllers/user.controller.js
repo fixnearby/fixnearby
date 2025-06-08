@@ -37,7 +37,7 @@ export const getOtp = async (req, res) => {
     const is_email_sent = await send_email(email,otp_generated);
     console.log("Email sent status:", is_email_sent);
     if(!is_email_sent) {
-      return res.status(500).json({ message: "Failed to send OTP email" });
+      return res.status(500).json({ message: "Failed to send OTP" });
     }
 
     return res.status(200).json({ message: "OTP sent to email" });
@@ -70,9 +70,9 @@ export const verifyOtp = async (req, res) => {
 };
 
 export const signup = async (req,res)=>{
-    const { fullname , email , password , aadharCardNumber , phone , postalCode } = req.body;
+    const { fullname , email , password , aadharCardNumber , phone  } = req.body;
     try {
-      if (!fullname || !email || !password  || !aadharCardNumber || !phone || !postalCode) {
+      if (!fullname || !email || !password  || !aadharCardNumber || !phone ) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
@@ -89,12 +89,11 @@ export const signup = async (req,res)=>{
       password: hashedPassword,
       aadharCardNumber,
       phone,
-      postalCode,
     });
 
     if (newUser) {
       // generate jwt token here
-      generateToken(newUser._id, res); //jwt token mai bus apan id jo mongo banata hai wahi save karaenge
+      generateToken(newUser._id, newUser.role , res); //jwt token mai bus apan id jo mongo banata hai wahi save karaenge
       await newUser.save(); 
 
       res.status(201).json({
@@ -125,7 +124,7 @@ export const login = async(req,res)=>{
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    generateToken(user._id, res);
+    generateToken(user._id, user.role, res);
 
     res.status(200).json({
       _id: user._id,
@@ -160,14 +159,7 @@ export const logout = async(req,res)=>{
   }
 };
 
-export const checkAuth = async (req, res) => { // ye function jab bhi apna frontned reload hoga tab useeffect mai chalega 
-  try {
-    res.status(200).json(req.user);
-  } catch (error) {
-    console.log("Error in checkAuth controller", error.message);
-    res.status(500).json({ message: "Internal Server Error" });
-  }
-}
+
 
 export const getRepairer = async(req,res)=>{
 

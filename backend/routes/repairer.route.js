@@ -1,14 +1,14 @@
 import express from "express";
-import { login, logout, signup , getOtp , verifyOtp , checkAuth} from "../controllers/repairer.controller.js";
+import { login, logout, signup , getOtp , verifyOtp } from "../controllers/repairer.controller.js";
 import { repairerProtectRoute } from "../middleware/middleware.js";
 const router = express.Router();
 
 
 // -> /api/repairer/get_otp
-router.post("/get_otp",getOtp);
+router.post("/getotp",getOtp);
 
 // -> /api/repairer/verify_otp
-router.post("/verify_otp",verifyOtp);
+router.post("/verify-otp",verifyOtp);
 
 // -> /api/repairer/signup
 router.post("/signup", signup);
@@ -20,7 +20,7 @@ router.post("/login", login);
 router.post("/logout", logout);
 
 // -> /api/repairer/check
-router.get("/check", repairerProtectRoute, checkAuth);
+
 
 
 export default router;

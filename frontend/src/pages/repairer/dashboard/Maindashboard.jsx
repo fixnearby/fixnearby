@@ -1,22 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Wrench, 
   Zap, 
   Droplets, 
   Hammer, 
   Paintbrush, 
-  Shield, 
   Bell,
   User,
   Settings,
-  LogOut,
   MapPin,
   Clock,
   DollarSign,
   Star,
   CheckCircle,
-  Calendar,
-  Phone,
   MessageCircle,
   Navigation,
   Filter,
@@ -27,90 +23,35 @@ import {
   Award,
   Target
 } from 'lucide-react';
+import { useAuthStore } from '../../../store/authStore.js';
+import { 
+  getNearbyJobs, 
+  getRepairerDashboardStats, 
+  getRepairerRecentActivity,
+  acceptJob // Import the acceptJob API function
+} from '../../../services/apiService.js'; // Import your API service
 
-const RepairerDashboard = () => {
+const RepairerMainDashboard = () => {
+  const { repairer } = useAuthStore();
   const [isOnline, setIsOnline] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
 
-  // Mock data for nearby work opportunities
-  const nearbyJobs = [
-    {
-      id: 1,
-      title: "Kitchen Sink Leak Repair",
-      category: "Plumbing",
-      location: "Downtown, 2.3 km away",
-      price: "$75-$120",
-      urgency: "High",
-      postedTime: "15 mins ago",
-      description: "Kitchen sink has a persistent leak under the cabinet. Need immediate attention.",
-      customerRating: 4.8,
-      estimatedDuration: "1-2 hours",
-      icon: <Droplets className="w-5 h-5" />,
-      color: "from-blue-400 to-cyan-500",
-      tags: ["Emergency", "Verified Customer"]
-    },
-    {
-      id: 2,
-      title: "Electrical Outlet Installation",
-      category: "Electrical",
-      location: "Suburbs, 1.8 km away",
-      price: "$90-$150",
-      urgency: "Medium",
-      postedTime: "1 hour ago",
-      description: "Need to install 3 new electrical outlets in the living room for home office setup.",
-      customerRating: 4.5,
-      estimatedDuration: "2-3 hours",
-      icon: <Zap className="w-5 h-5" />,
-      color: "from-yellow-400 to-orange-500",
-      tags: ["Flexible Timing", "Materials Provided"]
-    },
-    {
-      id: 3,
-      title: "Bedroom Door Repair",
-      category: "Carpentry",
-      location: "City Center, 3.1 km away",
-      price: "$60-$100",
-      urgency: "Low",
-      postedTime: "3 hours ago",
-      description: "Bedroom door is not closing properly, needs adjustment and minor repair work.",
-      customerRating: 4.9,
-      estimatedDuration: "1 hour",
-      icon: <Hammer className="w-5 h-5" />,
-      color: "from-amber-400 to-yellow-600",
-      tags: ["Weekend Available", "Quick Job"]
-    },
-    {
-      id: 4,
-      title: "Living Room Wall Painting",
-      category: "Painting",
-      location: "Residential Area, 2.7 km away",
-      price: "$200-$350",
-      urgency: "Medium",
-      postedTime: "5 hours ago",
-      description: "Need professional painting for living room walls. Premium paint will be provided.",
-      customerRating: 4.6,
-      estimatedDuration: "1 day",
-      icon: <Paintbrush className="w-5 h-5" />,
-      color: "from-purple-400 to-pink-500",
-      tags: ["Large Project", "Premium Materials"]
-    }
-  ];
+  // State for fetched data
+  const [jobs, setJobs] = useState([]);
+  const [stats, setStats] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
 
-  // Mock data for dashboard stats
-  const stats = [
-    { title: "Jobs Completed", value: "127", change: "+12%", icon: <CheckCircle className="w-6 h-6" /> },
-    { title: "Earnings This Month", value: "$2,450", change: "+8%", icon: <DollarSign className="w-6 h-6" /> },
-    { title: "Average Rating", value: "4.9", change: "+0.1", icon: <Star className="w-6 h-6" /> },
-    { title: "Active Jobs", value: "3", change: "+1", icon: <Target className="w-6 h-6" /> }
-  ];
+  // Loading and error states
+  const [loadingJobs, setLoadingJobs] = useState(true);
+  const [errorJobs, setErrorJobs] = useState(null);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [errorStats, setErrorStats] = useState(null);
+  const [loadingActivity, setLoadingActivity] = useState(true);
+  const [errorActivity, setErrorActivity] = useState(null);
 
-  const recentActivity = [
-    { type: "completed", message: "Completed plumbing repair for Sarah J.", time: "2 hours ago", amount: "$85" },
-    { type: "accepted", message: "Accepted electrical work in Downtown", time: "5 hours ago", amount: "$120" },
-    { type: "rating", message: "Received 5-star rating from Mike C.", time: "1 day ago", amount: null },
-    { type: "completed", message: "Finished carpentry work for Emma D.", time: "2 days ago", amount: "$95" }
-  ];
+  const displayName = repairer?.fullname || 'Repairer';
+  const repairerId = repairer?._id; // Get repairer ID for API calls
 
   const getUrgencyColor = (urgency) => {
     switch (urgency) {
@@ -121,9 +62,104 @@ const RepairerDashboard = () => {
     }
   };
 
-  const filteredJobs = nearbyJobs.filter(job => {
+  // --- API Fetching Functions ---
+
+  const fetchNearbyJobs = useCallback(async () => {
+    if (!isOnline) {
+        setJobs([]); // Clear jobs if offline
+        setLoadingJobs(false);
+        return;
+    }
+    setLoadingJobs(true);
+    setErrorJobs(null);
+    try {
+      const data = await getNearbyJobs();
+      setJobs(data); // Assuming data is an array of jobs
+    } catch (err) {
+      setErrorJobs("Failed to load nearby jobs.");
+      console.error(err);
+    } finally {
+      setLoadingJobs(false);
+    }
+  }, [isOnline]); // Refetch when online status changes
+
+  const fetchDashboardStats = useCallback(async () => {
+    setLoadingStats(true);
+    setErrorStats(null);
+    try {
+      const data = await getRepairerDashboardStats();
+      // Assuming data structure from API matches stats array, e.g., { jobsCompleted: 127, earnings: 2450, avgRating: 4.9, activeJobs: 3 }
+      setStats([
+        { title: "Jobs Completed", value: data.jobsCompleted || "0", change: data.jobsCompletedChange || "N/A", icon: <CheckCircle className="w-6 h-6" /> },
+        { title: "Earnings This Month", value: `$${data.earningsThisMonth?.toLocaleString() || "0"}`, change: data.earningsChange || "N/A", icon: <DollarSign className="w-6 h-6" /> },
+        { title: "Average Rating", value: data.averageRating?.toFixed(1) || "0.0", change: data.ratingChange || "N/A", icon: <Star className="w-6 h-6" /> },
+        { title: "Active Jobs", value: data.activeJobs || "0", change: data.activeJobsChange || "N/A", icon: <Target className="w-6 h-6" /> }
+      ]);
+    } catch (err) {
+      setErrorStats("Failed to load dashboard stats.");
+      console.error(err);
+    } finally {
+      setLoadingStats(false);
+    }
+  }, []);
+
+  const fetchRecentActivity = useCallback(async () => {
+    setLoadingActivity(true);
+    setErrorActivity(null);
+    try {
+      const data = await getRepairerRecentActivity();
+      setRecentActivity(data); // Assuming data is an array matching recentActivity structure
+    } catch (err) {
+      setErrorActivity("Failed to load recent activity.");
+      console.error(err);
+    } finally {
+      setLoadingActivity(false);
+    }
+  }, []);
+
+  // --- Effects to trigger fetching ---
+
+  useEffect(() => {
+    if (isOnline) {
+      fetchNearbyJobs();
+    } else {
+      setJobs([]); // Clear jobs when going offline
+    }
+  }, [isOnline, fetchNearbyJobs]);
+
+  useEffect(() => {
+    // Fetch stats and activity regardless of online status
+    fetchDashboardStats();
+    fetchRecentActivity();
+  }, [fetchDashboardStats, fetchRecentActivity]);
+
+  // --- Job Acceptance Handler ---
+  const handleAcceptJob = async (jobId) => {
+    if (!repairerId) {
+      alert("Repairer ID not available. Please log in again.");
+      return;
+    }
+    try {
+      // Optimistically remove the job from the list
+      setJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
+      
+      // Call the API to accept the job
+      await acceptJob(jobId, repairerId);
+      alert('Job accepted successfully!');
+      // Optionally, refresh dashboard stats or active jobs
+      fetchDashboardStats(); 
+    } catch (error) {
+      alert('Failed to accept job. Please try again.');
+      console.error('Accept job error:', error);
+      // Revert the UI if the API call fails
+      fetchNearbyJobs(); 
+    }
+  };
+
+  // --- Filtering Jobs based on state ---
+  const filteredJobs = jobs.filter(job => {
     const matchesSearch = job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         job.category.toLowerCase().includes(searchQuery.toLowerCase());
+                          job.category.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = selectedFilter === 'all' || job.category.toLowerCase() === selectedFilter;
     return matchesSearch && matchesFilter;
   });
@@ -180,7 +216,9 @@ const RepairerDashboard = () => {
                   <User className="w-5 h-5 text-white" />
                 </div>
                 <div className="hidden md:block">
-                  <div className="text-sm font-medium text-gray-900">John Smith</div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {displayName}
+                  </div>
                   <div className="text-xs text-gray-500">Professional Repairer</div>
                 </div>
               </div>
@@ -199,7 +237,7 @@ const RepairerDashboard = () => {
                 <div>
                   <h1 className="text-3xl font-bold mb-2">You're Online & Ready!</h1>
                   <p className="text-blue-100 text-lg">
-                    {filteredJobs.length} nearby jobs available in your area
+                    {loadingJobs ? 'Loading jobs...' : `${filteredJobs.length} nearby jobs available in your area`}
                   </p>
                 </div>
                 <div className="hidden md:block">
@@ -244,82 +282,96 @@ const RepairerDashboard = () => {
             </div>
 
             {/* Job Listings */}
-            <div className="grid gap-6">
-              {filteredJobs.map((job) => (
-                <div key={job.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-                  <div className="p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex items-center space-x-3">
-                        <div className={`bg-gradient-to-r ${job.color} text-white w-12 h-12 rounded-xl flex items-center justify-center`}>
-                          {job.icon}
-                        </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">{job.title}</h3>
-                          <p className="text-gray-600">{job.category}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-3 py-1 rounded-full text-sm font-medium ${getUrgencyColor(job.urgency)}`}>
-                          {job.urgency} Priority
-                        </span>
-                        <button className="p-2 hover:bg-gray-100 rounded-lg">
-                          <MoreVertical className="w-5 h-5 text-gray-400" />
-                        </button>
-                      </div>
-                    </div>
-
-                    <p className="text-gray-700 mb-4">{job.description}</p>
-
-                    <div className="grid md:grid-cols-4 gap-4 mb-6">
-                      <div className="flex items-center text-gray-600">
-                        <MapPin className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{job.location}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <DollarSign className="w-4 h-4 mr-2" />
-                        <span className="text-sm font-semibold text-green-600">{job.price}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <Clock className="w-4 h-4 mr-2" />
-                        <span className="text-sm">{job.estimatedDuration}</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <Star className="w-4 h-4 mr-2 fill-current text-yellow-400" />
-                        <span className="text-sm">{job.customerRating} rating</span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {job.tags.map((tag, index) => (
-                        <span key={index} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      <div className="text-sm text-gray-500">
-                        Posted {job.postedTime}
-                      </div>
-                      <div className="flex space-x-3">
-                        <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                          View Details
-                        </button>
-                        <button className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
-                          Accept Job
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            {filteredJobs.length === 0 && (
+            {loadingJobs ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading nearby jobs...</p>
+              </div>
+            ) : errorJobs ? (
+              <div className="text-center py-12">
+                <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-red-800 mb-2">Error: {errorJobs}</h3>
+                <p className="text-gray-600">Please try again later.</p>
+              </div>
+            ) : filteredJobs.length === 0 ? (
               <div className="text-center py-12">
                 <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">No jobs found</h3>
                 <p className="text-gray-600">Try adjusting your search criteria or check back later for new opportunities.</p>
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {filteredJobs.map((job) => (
+                  <div key={job.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
+                    <div className="p-6">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className={`bg-gradient-to-r ${job.color || 'from-gray-400 to-gray-500'} text-white w-12 h-12 rounded-xl flex items-center justify-center`}>
+                            {job.icon || <Wrench className="w-5 h-5" />}
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-bold text-gray-900">{job.title}</h3>
+                            <p className="text-gray-600">{job.category}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getUrgencyColor(job.urgency)}`}>
+                            {job.urgency} Priority
+                          </span>
+                          <button className="p-2 hover:bg-gray-100 rounded-lg">
+                            <MoreVertical className="w-5 h-5 text-gray-400" />
+                          </button>
+                        </div>
+                      </div>
+
+                      <p className="text-gray-700 mb-4">{job.description}</p>
+
+                      <div className="grid md:grid-cols-4 gap-4 mb-6">
+                        <div className="flex items-center text-gray-600">
+                          <MapPin className="w-4 h-4 mr-2" />
+                          <span className="text-sm">{job.location}</span>
+                        </div>
+                        <div className="flex items-center text-gray-600">
+                          <DollarSign className="w-4 h-4 mr-2" />
+                          <span className="text-sm font-semibold text-green-600">{job.price}</span>
+                        </div>
+                        <div className="flex items-center text-gray-600">
+                          <Clock className="w-4 h-4 mr-2" />
+                          <span className="text-sm">{job.estimatedDuration}</span>
+                        </div>
+                        <div className="flex items-center text-gray-600">
+                          <Star className="w-4 h-4 mr-2 fill-current text-yellow-400" />
+                          <span className="text-sm">{job.customerRating} rating</span>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mb-6">
+                        {job.tags && job.tags.map((tag, index) => ( // Check if tags exist
+                          <span key={index} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-gray-500">
+                          Posted {job.postedTime}
+                        </div>
+                        <div className="flex space-x-3">
+                          <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                            View Details
+                          </button>
+                          <button 
+                            onClick={() => handleAcceptJob(job.id)} // Attach click handler
+                            className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
+                          >
+                            Accept Job
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -330,7 +382,7 @@ const RepairerDashboard = () => {
             <div className="bg-white rounded-3xl shadow-lg p-8">
               <div className="flex items-center justify-between">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, John!</h1>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back, {displayName}!</h1>
                   <p className="text-gray-600 text-lg">
                     You're currently offline. Switch online to see available jobs in your area.
                   </p>
@@ -345,44 +397,76 @@ const RepairerDashboard = () => {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-              {stats.map((stat, index) => (
-                <div key={index} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white w-12 h-12 rounded-xl flex items-center justify-center">
-                      {stat.icon}
-                    </div>
-                    <span className="text-green-600 text-sm font-medium">{stat.change}</span>
+            {loadingStats ? (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {[1,2,3,4].map(i => (
+                  <div key={i} className="bg-white rounded-2xl shadow-lg p-6 animate-pulse">
+                    <div className="h-6 bg-gray-200 rounded w-3/4 mb-4"></div>
+                    <div className="h-4 bg-gray-200 rounded w-1/2"></div>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
-                  <div className="text-gray-600 text-sm">{stat.title}</div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : errorStats ? (
+              <div className="text-center py-6">
+                <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-2" />
+                <p className="text-red-800">Error loading stats.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {stats.map((stat, index) => (
+                  <div key={index} className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white w-12 h-12 rounded-xl flex items-center justify-center">
+                        {stat.icon}
+                      </div>
+                      <span className="text-green-600 text-sm font-medium">{stat.change}</span>
+                    </div>
+                    <div className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</div>
+                    <div className="text-gray-600 text-sm">{stat.title}</div>
+                  </div>
+                ))}
+              </div>
+            )}
 
             {/* Recent Activity */}
             <div className="bg-white rounded-2xl shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">Recent Activity</h2>
-              <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
-                    <div className="flex items-center space-x-3">
-                      <div className={`w-2 h-2 rounded-full ${
-                        activity.type === 'completed' ? 'bg-green-400' : 
-                        activity.type === 'accepted' ? 'bg-blue-400' : 
-                        'bg-yellow-400'
-                      }`} />
-                      <div>
-                        <p className="text-gray-900 font-medium">{activity.message}</p>
-                        <p className="text-gray-500 text-sm">{activity.time}</p>
-                      </div>
+              {loadingActivity ? (
+                <div className="space-y-4">
+                  {[1,2,3].map(i => (
+                    <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl animate-pulse">
+                      <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                      <div className="h-4 bg-gray-200 rounded w-1/4"></div>
                     </div>
-                    {activity.amount && (
-                      <div className="text-green-600 font-semibold">{activity.amount}</div>
-                    )}
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : errorActivity ? (
+                <div className="text-center py-6">
+                  <AlertCircle className="w-10 h-10 text-red-500 mx-auto mb-2" />
+                  <p className="text-red-800">Error loading activity.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {recentActivity.map((activity, index) => (
+                    <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                          activity.type === 'completed' ? 'bg-green-400' : 
+                          activity.type === 'accepted' ? 'bg-blue-400' : 
+                          'bg-yellow-400'
+                        }`} />
+                        <div>
+                          <p className="text-gray-900 font-medium">{activity.message}</p>
+                          <p className="text-gray-500 text-sm">{activity.time}</p>
+                        </div>
+                      </div>
+                      {activity.amount && (
+                        <div className="text-green-600 font-semibold">{activity.amount}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Quick Actions */}
@@ -410,4 +494,4 @@ const RepairerDashboard = () => {
   );
 };
 
-export default RepairerDashboard;
+export default RepairerMainDashboard;

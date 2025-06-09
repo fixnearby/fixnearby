@@ -1,3 +1,4 @@
+//backend/models/repairer.model.js
 import mongoose from "mongoose";
 
 const repairerSchema = new mongoose.Schema(
@@ -37,10 +38,11 @@ const repairerSchema = new mongoose.Schema(
       {
         name: {
           type: String,
-          enum: [
+         /* enum: [
             'electronics', 'appliances', 'plumbing', 'electrical',
             'carpentry', 'painting', 'automotive', 'hvac', 'other'
           ],
+          */
           required: true
         },
         price: {
@@ -51,9 +53,10 @@ const repairerSchema = new mongoose.Schema(
       }
     ],
     experience: {
-      type: Number,
-      min: 0,
-      max: 50
+      type:Number,
+      required: true
+      /*min: 0,
+      max: 50*/
     },
     rating: {
       average: {

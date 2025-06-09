@@ -31,7 +31,7 @@ import Showservices from './pages/user/dashboard/Showservices';
 //repairerDashboard
 import RepairerInprogress from './pages/repairer/dashboard/Inprogress';
 import RepairerCompleted from './pages/repairer/dashboard/Completed';
-import RepairerMaindashboard from './pages/repairer/dashboard/Maindashboard';
+import RepairerMainDashboard from './pages/repairer/dashboard/Maindashboard';
 import RepairerProfile from './pages/repairer/dashboard/Profile';
 
 
@@ -136,7 +136,7 @@ const {
 
 
           {/* repairer Dashboard */}
-          <Route path="/repairer/dashboard" element={!repairer ? <Navigate to="/repairer/login" /> : <RepairerMaindashboard /> } />
+          <Route path="/repairer/dashboard" element={!repairer ? <Navigate to="/repairer/login" /> : <RepairerMainDashboard /> } />
           <Route path="/repairer/inprogress" element={!repairer ? <Navigate to="/repairer/login" /> : <RepairerInprogress /> } />
           <Route path="/repairer/completed" element={!repairer ? <Navigate to="/repairer/login" /> : <RepairerCompleted /> } />
           <Route path="/repairer/profile" element={!repairer ? <Navigate to="/repairer/login" /> : <RepairerProfile /> } />

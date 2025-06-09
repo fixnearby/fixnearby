@@ -1,6 +1,6 @@
 // File: backend/routes/user.route.js
 import express from "express";
-import { login, logout, signup , getOtp , verifyOtp  , getRepairer} from "../controllers/user.controller.js";
+import { login, logout, signup , getOtp , verifyOtp  , getRepairer,createServiceRequest,getServiceRequests} from "../controllers/user.controller.js";
 import { userProtectRoute } from "../middleware/middleware.js";
 const router = express.Router();
 
@@ -24,4 +24,7 @@ router.post("/logout", logout);
 
 // -> /api/user/dashboard
 router.get("/dashboard", userProtectRoute , getRepairer) // ye route se sare ACTIVE repairer ki list ayegi IN THAT AREA (AB WOH AREA KA LOGIC POSTAL CODE SE HOGA)
+
+router.post('/service-request', userProtectRoute, createServiceRequest);
+router.get('/service-requests', userProtectRoute, getServiceRequests);
 export default router;

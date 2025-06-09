@@ -1,10 +1,12 @@
-//backend/controllers/user.controller.js
+// backend/controllers/user.controller.js
 import User from "../models/user.model.js";
 import BlacklistToken from "../models/blacklistToken.model.js";
 import Otp from "../models/otp.model.js";
 import { send_email } from "./sendemail.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../libs/utils.js";
+import Repairer from "../models/repairer.model.js";
+import ServiceRequest from "../models/serviceRequest.model.js";
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
@@ -63,7 +65,7 @@ export const verifyOtp = async (req, res) => {
     await Otp.deleteOne({ email });
 
     return res.status(200).json({ message: "OTP verified successfully" , email : email });
-    // SUN AB YE JO EMAIL AA RHA HAI USKO AB FRONTEND PE HARDCODE KAR DENGE TAKI USER CHANGE NA KAR PAE
+    // SUN AB YE JO EMAIL AA RHA HAI USko AB FRONTEND PE HARDCODE KAR DENGE TAKI USER CHANGE NA KAR PAE
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "OTP verification failed" });
@@ -71,10 +73,12 @@ export const verifyOtp = async (req, res) => {
 };
 
 export const signup = async (req,res)=>{
-    const { fullname , email , password , aadharCardNumber , phone  } = req.body;
-    try {
-      if (!fullname || !email || !password  || !aadharCardNumber || !phone ) {
-      return res.status(400).json({ message: "All fields are required" });
+  // ADDED: address and postalCode to destructuring
+  const { fullname , email , password , aadharCardNumber , phone , address , postalCode } = req.body;
+  try {
+    // ADDED: validation for address and postalCode
+    if (!fullname || !email || !password  || !aadharCardNumber || !phone || !address || !postalCode ) {
+      return res.status(400).json({ message: "All fields (including location) are required" });
     }
 
     const user = await User.findOne({ email });
@@ -90,25 +94,30 @@ export const signup = async (req,res)=>{
       password: hashedPassword,
       aadharCardNumber,
       phone,
+      // ADDED: location object
+      location: {
+        address,
+        postalCode
+      }
     });
 
     if (newUser) {
       // generate jwt token here
-      generateToken(newUser._id, newUser.role , res); //jwt token mai bus apan id jo mongo banata hai wahi save karaenge
+      generateToken(newUser._id, "user", res); 
       await newUser.save(); 
 
       res.status(201).json({
         _id: newUser._id,
         fullname: newUser.fullname,
-        email: newUser.email, // aur kuch res mai bhejna ho jo frontend pe dikhna ho woh add kar dena
+        email: newUser.email, 
       });
     } else {
       res.status(400).json({ message: "Invalid user data" });
     }
-    } catch (error) {
-      console.log("Error in User signup controller", error.message);
-      res.status(500).json({ message: "Internal Server Error" });
-    }
+  } catch (error) {
+      console.error("Error in User signup controller:", error.message); 
+      res.status(500).json({ message: "Internal Server Error during signup." });
+  }
 }
 
 export const login = async(req,res)=>{
@@ -125,7 +134,7 @@ export const login = async(req,res)=>{
       return res.status(400).json({ message: "Invalid credentials" });
     }
 
-    generateToken(user._id, user.role, res);
+    generateToken(user._id, "user", res);
 
     res.status(200).json({
       _id: user._id,
@@ -133,13 +142,13 @@ export const login = async(req,res)=>{
       email: user.email,
     });
   } catch (error) {
-    console.log("Error in user login controller", error.message);
+    console.error("Error in user login controller:", error.message); 
     res.status(500).json({ message: "Internal Server Error" });
   }
 }
 
 export const logout = async(req,res)=>{
-    try {
+  try {
     const token = req.cookies.jwt;
     if (!token) {
       return res.status(400).json({ message: "No token found in cookies" });
@@ -162,6 +171,107 @@ export const logout = async(req,res)=>{
 
 
 
-export const getRepairer = async(req,res)=>{
+export const getRepairer = async (req, res) => {
+  try {
+    // Check if req.user and req.user.location are available from userProtectRoute
+    // If location or postalCode is missing, it likely means the user registered before
+    // the location fields were added to the User model/signup process, or profile was not updated.
+    if (!req.user || !req.user.location || !req.user.location.postalCode) {
+      console.warn("User location or postalCode missing for user:", req.user?._id, " - This might be an old user without updated profile data.");
+      return res.status(400).json({ 
+        message: 'Your profile location (address and postal code) is not set. Please update your profile to find nearby repairers.' 
+      });
+    }
+    
+    const userPostalCode = req.user.location.postalCode;
+    const repairers = await Repairer.find({ 
+      'location.postalCode': userPostalCode,
+      isAvailable: true 
+    }).select('-password');
+    
+    res.status(200).json(repairers);
+  } catch (error) {
+    console.error("Error fetching repairers:", error.message); 
+    res.status(500).json({ message: 'Error fetching repairers' });
+  }
+};
 
-}
+export const createServiceRequest = async (req, res) => {
+  try {
+    // Destructure location from req.body as well
+    const { repairerId, serviceType, description, location } = req.body; 
+    
+    // Determine the location to use for the service request
+    // Prioritize location from req.body if provided, otherwise use user's stored location
+    const serviceLocation = location || req.user?.location;
+
+    // Validate required fields from req.body
+    if (!serviceType || !description) {
+      return res.status(400).json({ message: "Service type and description are required for a service request." });
+    }
+
+    // Validate if req.user and its ID are available from userProtectRoute
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
+
+    // Validate if serviceLocation is valid
+    if (!serviceLocation || !serviceLocation.address || !serviceLocation.postalCode) {
+      return res.status(400).json({ message: "Location (address and postal code) is required to create a service request." });
+    }
+
+    // Convert serviceType to a valid enum
+    const validServiceType = serviceType.toLowerCase(); 
+    const allowedServiceTypes = ['electronics', 'appliances', 'plumbing', 'electrical', 'carpentry', 'painting', 'automotive', 'hvac', 'other'];
+    if (!allowedServiceTypes.includes(validServiceType)) {
+      return res.status(400).json({ message: `Invalid service type: ${serviceType}. Allowed types are: ${allowedServiceTypes.join(', ')}` });
+    }
+
+    const newRequest = new ServiceRequest({
+      customer: req.user._id,
+      repairer: repairerId || null, 
+      title: `${serviceType} service`, 
+      description,
+      serviceType: validServiceType, 
+      location: { // Use the determined serviceLocation
+        address: serviceLocation.address,
+        postalCode: serviceLocation.postalCode
+      },
+      status: 'requested' 
+    });
+    
+    await newRequest.save();
+    res.status(201).json(newRequest); 
+  } catch (error) {
+    console.error("Error creating service request:", error.message); 
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({ message: `Validation Error: ${messages.join(', ')}` });
+    }
+    res.status(500).json({ message: 'Error creating service request. Please try again later.' });
+  }
+};
+
+export const getServiceRequests = async (req, res) => {
+  try {
+    // Ensure req.user is available from userProtectRoute
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
+
+    const { status } = req.query;
+    const query = { customer: req.user._id };
+    
+    if (status) {
+      query.status = status;
+    }
+    
+    const requests = await ServiceRequest.find(query)
+      .populate('repairer', 'fullname email phone'); 
+    
+    res.status(200).json(requests);
+  } catch (error) {
+    console.error("Error fetching service requests:", error.message); 
+    res.status(500).json({ message: 'Error fetching service requests' });
+  }
+};

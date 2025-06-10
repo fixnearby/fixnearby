@@ -71,9 +71,9 @@ export const signup = async (req,res)=>{
   // NOTE: If you truly do not want location here, remove address and postalCode from signup
   // For now, keeping it as it was in your previous signup logic for repairers.
   // If user signup should NOT collect location, remove these fields from frontend signup form and here.
-  const { fullname , email , password , aadharCardNumber , phone , address , postalCode } = req.body;
+  const { fullname , email , password  , phone  } = req.body;
   try {
-    if (!fullname || !email || !password || !aadharCardNumber || !phone) { // Removed location from mandatory signup fields here
+    if (!fullname || !email || !password  || !phone) { // Removed location from mandatory signup fields here
       return res.status(400).json({ message: "All required fields are needed for signup." });
     }
 
@@ -88,13 +88,7 @@ export const signup = async (req,res)=>{
       fullname,
       email,
       password: hashedPassword,
-      aadharCardNumber,
       phone,
-      // If location is *never* stored in User model, remove this part entirely
-      // location: { // Keeping this commented out as per your explicit request not to store in User model
-      //   address,
-      //   postalCode
-      // }
     });
 
     if (newUser) {
@@ -148,7 +142,7 @@ export const logout = async(req,res)=>{
     if (!token) {
       return res.status(400).json({ message: "No token found in cookies" });
     }
-
+    console.log("Logging out user with token:", token);
     await BlacklistToken.create({ token });
 
     res.clearCookie("jwt", {
@@ -186,5 +180,3 @@ export const getRepairer = async (req, res) => {
     res.status(500).json({ message: 'Error fetching repairers' });
   }
 };
-
-

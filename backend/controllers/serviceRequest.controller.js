@@ -19,26 +19,28 @@ const formatLocationData = (location) => {
 // 1. Create a new service request (User initiated)
 export const createServiceRequest = async (req, res) => {
     try {
-        const { title, serviceType, description, locationData, preferredTimeSlot, urgency, repairerId } = req.body;
+        const { serviceType, description, locationData, preferredTimeSlot, urgency, repairerId , issue , category , priceRange } = req.body;
         const customerId = req.user._id; // From userProtectRoute middleware
 
         // Basic validation for required fields
-        if (!title || !serviceType || !description || !locationData ||
+        if ( !serviceType || !description || !locationData ||
             !locationData.fullAddress || !locationData.pincode || !locationData.captureMethod) {
             return res.status(400).json({ message: 'Please provide all required fields: title, serviceType, description, full address, postal code, and location capture method.' });
         }
 
         const newServiceRequest = new ServiceRequest({
             customer: customerId,
-            title,
-            serviceType: serviceType.toLowerCase(), // Ensure consistency
+            serviceType: serviceType, // Ensure consistency
+            issue,
+            category,
+            priceRange,
             description,
             location: {
-                fullAddress: locationData.fullAddress,
+                address: locationData.fullAddress,
                 pincode: locationData.pincode,
-                city: locationData.city,       // Optional, if provided
-                state: locationData.state,     // Optional, if provided
-                coordinates: locationData.coordinates, // Optional, if provided (e.g., [longitude, latitude])
+                // city: locationData.city,       // Optional, if provided
+                // state: locationData.state,     // Optional, if provided
+                // coordinates: locationData.coordinates, // Optional, if provided (e.g., [longitude, latitude])
                 captureMethod: locationData.captureMethod // THIS IS THE FIELD WE ADDED!
             },
             preferredTimeSlot, // Optional

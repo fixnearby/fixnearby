@@ -38,26 +38,16 @@ const repairerSchema = new mongoose.Schema(
       {
         name: {
           type: String,
-         /* enum: [
-            'electronics', 'appliances', 'plumbing', 'electrical',
-            'carpentry', 'painting', 'automotive', 'hvac', 'other'
-          ],
-          */
           required: true
         },
-        price: {
+        visitingCharge: {
           type: Number,
           min: 0,
+          max:500,
           required: true
         }
       }
     ],
-    experience: {
-      type:Number,
-      required: true
-      /*min: 0,
-      max: 50*/
-    },
     rating: {
       average: {
         type: Number,
@@ -70,31 +60,32 @@ const repairerSchema = new mongoose.Schema(
         default: 0
       }
     },
-    isAvailable: {
-      type: Boolean,
-      default: true
+    redFlag: {
+      type: Number,
+      default: 3,
+      min: 0,
+  
+    },
+    yellowFlag: {
+      type: Number,
+      default: 10,
+      min: 0,
+  
+    },
+    pincode:{
+      type: String,
+      required: true,
+      trim: true,
+      match: [/^\d{6}$/, 'Please enter a valid postal code']
     },
     role: {
       type: String,
       default: 'repairer'
     },
-    location: {
-      type: {
-        type: String,
-        enum: ['Point'],
-        default: 'Point'
-      },
-      coordinates: {
-        type: [Number], // [longitude, latitude]
-        default: [0, 0]
-      }
-    }
+    
   },
   { timestamps: true }
 );
-
-// 2dsphere index for geospatial queries
-repairerSchema.index({ location: '2dsphere' });
 
 const Repairer = mongoose.model("Repairer", repairerSchema);
 

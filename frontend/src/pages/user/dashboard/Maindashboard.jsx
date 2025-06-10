@@ -4,12 +4,36 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../store/authStore.js';
 import { axiosInstance } from '../../../lib/axios'; 
 import toast from 'react-hot-toast'; 
+import servicefromjson from '../../../services.json'
 
 import {
-    Wrench, Zap, Droplets, Hammer, Paintbrush, Shield, Wind, Tv, Car,
-    LogOut, Clock, CheckCircle, User, MapPin, Loader, AlertCircle, X,
-    ArrowRight, ArrowLeft, SquarePen, LocateFixed
-} from 'lucide-react';
+  AirVent,
+  User,
+  Clock,
+  X,
+  Info ,
+  SquarePen ,
+  ArrowLeft ,
+  MapPin,
+  LocateFixed ,
+  ArrowRight ,
+  Loader ,
+  CheckCircle,
+  LogOut,
+  Zap,
+  Droplets,
+  Hammer,
+  Paintbrush,
+  Bug,
+  Shield,
+  Truck,
+  Flower,
+  Ruler,
+  Wrench,
+  Sparkles,
+  PaintRoller
+} from "lucide-react";
+
 
 // --- ServiceRequestFormModal Component ---
 const ServiceRequestFormModal = ({
@@ -39,6 +63,69 @@ const ServiceRequestFormModal = ({
         preferredTimeSlot: '',
         urgency: 'medium' 
     });
+    
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedIssue , setSelectedIssue] = useState('');
+    const [loadingEstimation, setLoadingEstimation] = useState(false);
+    const [showEstimationPopup, setShowEstimationPopup] = useState(false);
+    const [priceRange , setPriceRange] = useState('');
+
+    const categories = servicefromjson.home_services.find(
+        item => item.main_category.toLowerCase() === serviceDetails.title.toLowerCase()
+    )?.categories || [];
+
+    const issues = servicefromjson.home_services
+  .find(item => item.main_category.toLowerCase() === serviceDetails.title.toLowerCase())
+  ?.categories.find(cat => cat.category.toLowerCase() === selectedCategory.toLowerCase())
+  ?.services || [];
+
+
+    const handleCategoryChange = (e) => {
+        setSelectedCategory(e.target.value);
+    };
+
+    const handleIssueChange = (e) => {
+        setSelectedIssue(e.target.value);
+    };
+    
+useEffect(() => {
+  if (selectedCategory && selectedIssue && serviceDetails.title) {
+    const matchedCategory = servicefromjson.home_services.find(
+      item => item.main_category.toLowerCase() === serviceDetails.title.toLowerCase()
+    );
+
+    const matchedSubCategory = matchedCategory?.categories?.find(
+      cat => cat.category === selectedCategory
+    );
+
+    const matchedIssue = matchedSubCategory?.services?.find(
+      svc => svc.issue === selectedIssue
+    );
+
+    if (matchedIssue?.price_range) {
+      setPriceRange(matchedIssue.price_range);
+    } else {
+      setPriceRange(""); // fallback
+    }
+  }
+}, [selectedCategory, selectedIssue, serviceDetails.title]);
+
+const handleAIEstimation = () => {
+  if (!selectedCategory || !selectedIssue) {
+    toast.error("Please select both category and issue");
+    return;
+  }
+
+  setLoadingEstimation(true);
+
+  // Simulate API delay
+  setTimeout(() => {
+    setLoadingEstimation(false);
+    setShowEstimationPopup(true);
+  }, 2000);
+};
+
+
 
 
     useEffect(() => {
@@ -163,8 +250,7 @@ const ServiceRequestFormModal = ({
 
         try {
             const requestPayload = {
-                title: serviceDetails.title,
-                serviceType: serviceDetails.serviceType,
+                serviceType: serviceDetails.title,
                 description: serviceDetails.description,
                 preferredTimeSlot: serviceDetails.preferredTimeSlot || undefined, 
                 urgency: serviceDetails.urgency,
@@ -175,7 +261,11 @@ const ServiceRequestFormModal = ({
                     state: locationData.state || undefined,
                     coordinates: locationData.coordinates.length === 2 ? locationData.coordinates : undefined, 
                     captureMethod: locationData.captureMethod
-                }
+                },
+                issue: selectedIssue,
+                pincode: locationData.pincode,
+                category : selectedCategory,
+                priceRange: priceRange
             };
 
             const response = await axiosInstance.post('/service-requests', requestPayload);
@@ -197,11 +287,11 @@ const ServiceRequestFormModal = ({
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-6 relative">
+       <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50 p-0 overflow-hidden">
+             <div className="bg-white  border-black border-2 rounded-lg shadow-xl w-full max-w-lg p-6 relative max-h-[90vh] overflow-y-auto">
                 <button
                     onClick={onClose}
-                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 cursor-pointer"
                     aria-label="Close modal"
                 >
                     <X size={24} />
@@ -377,7 +467,7 @@ const ServiceRequestFormModal = ({
                                 type="button"
                                 onClick={handleLocationNext}
                                 disabled={loading || !locationData.captureMethod}
-                                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                             >
                                 Next <ArrowRight className="ml-2" />
                             </button>
@@ -392,19 +482,102 @@ const ServiceRequestFormModal = ({
                         </h3>
                         <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
-                                Job Title *
+                                Service Type
                             </label>
                             <input
-                                type="text"
-                                id="title"
-                                name="title"
-                                value={serviceDetails.title}
-                                onChange={handleServiceDetailsChange}
-                                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                                placeholder="e.g., Leaky Faucet Repair"
-                                required
+                            type="text"
+                            id="title"
+                            name="title"
+                            value={serviceDetails.title}
+                            readOnly
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 bg-gray-100 leading-tight focus:outline-none focus:shadow-none cursor-not-allowed"
                             />
                         </div>
+                         {/* Dropdowns side-by-side */}
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+  <div>
+    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="category">
+      Select Category in {serviceDetails.title}
+    </label>
+    <select
+      id="category"
+      name="category"
+      value={selectedCategory}
+      onChange={handleCategoryChange}
+      className="shadow border rounded w-full py-2 px-3 text-gray-700 bg-white focus:outline-none focus:shadow-outline"
+      required
+    >
+      <option value="">-- Select a Category --</option>
+      {categories.map((cat, index) => (
+        <option key={index} value={cat.category}>
+          {cat.category}
+        </option>
+      ))}
+    </select>
+  </div>
+
+  <div>
+    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="issue">
+      Select The Issue You Are Facing
+    </label>
+    <select
+      id="issue"
+      name="issue"
+      value={selectedIssue}
+      onChange={handleIssueChange}
+      className="shadow border rounded w-full py-2 px-3 text-gray-700 bg-white focus:outline-none focus:shadow-outline"
+      required
+    >
+      <option value="">-- Select an Issue --</option>
+      {issues.map((issue, index) => (
+        <option key={index} value={issue.issue}>
+          {issue.issue}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
+
+{/* Button */}
+<div className="mb-6 flex justify-center">
+  <button
+    onClick={handleAIEstimation}
+    className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition cursor-pointer"
+  >
+    Get AI-Based Estimation
+  </button>
+</div>
+
+
+{/* Fullscreen Spinner */}
+{loadingEstimation && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/30">
+    <div className="border-t-4 border-blue-500 border-solid rounded-full w-12 h-12 animate-spin"></div>
+  </div>
+)}
+
+{/* Estimation Modal */}
+{showEstimationPopup && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4">
+    <div className="bg-white rounded-xl shadow-lg p-6 max-w-sm w-full text-center space-y-4 relative">
+      <h2 className="text-xl font-semibold text-green-600">AI-Based Quotation</h2>
+      <p className="text-2xl font-bold text-gray-900">₹{priceRange}</p>
+      <p className="text-gray-600 text-sm">
+        Based on your selection: <strong>{selectedCategory}</strong> – <em>{selectedIssue}</em>
+      </p>
+      <p className="text-xs text-gray-500">
+        The technician will verify this and confirm during the visit.
+      </p>
+      <button
+        onClick={() => setShowEstimationPopup(false)}
+        className="mt-3 px-4 py-1 bg-blue-600 text-white rounded cursor-pointer hover:bg-blue-700 transition"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
+
                         <div className="mb-4">
                             <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="description">
                                 Job Description *
@@ -417,7 +590,6 @@ const ServiceRequestFormModal = ({
                                 rows="4"
                                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                                 placeholder="Describe the problem in detail (e.g., 'My kitchen faucet is constantly dripping, needs a new washer or full replacement.')"
-                                required
                             ></textarea>
                         </div>
                         <div className="mb-4">
@@ -470,7 +642,7 @@ const ServiceRequestFormModal = ({
                             <button
                                 type="submit"
                                 disabled={isSubmitting}
-                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none cursor-pointer focus:shadow-outline flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isSubmitting ? <Loader className="animate-spin mr-2" size={16} /> : <CheckCircle className="mr-2" />}
                                 Submit Request
@@ -494,17 +666,100 @@ const UserMainDashboard = () => {
     const [showServiceFormModal, setShowServiceFormModal] = useState(false);
     const [selectedServiceData, setSelectedServiceData] = useState(null);
 
+
     const services = [
-        { icon: <Zap className="w-8 h-8" />, title: "Electrician", description: "Electrical repairs, wiring, and installations", color: "from-yellow-400 to-orange-500", category: "electrical" },
-        { icon: <Droplets className="w-8 h-8" />, title: "Plumber", description: "Plumbing repairs, pipe fixing, and water solutions", color: "from-blue-400 to-cyan-500", category: "plumbing" },
-        { icon: <Wind className="w-8 h-8" />, title: "HVAC Repair", description: "Air conditioning, heating, and ventilation repair and maintenance", color: "from-green-400 to-emerald-500", category: "hvac" },
-        { icon: <Hammer className="w-8 h-8" />, title: "Carpenter", description: "Wood work, furniture repair, and custom carpentry", color: "from-amber-400 to-yellow-600", category: "carpentry" },
-        { icon: <Paintbrush className="w-8 h-8" />, title: "Painter", description: "Interior and exterior painting services", color: "from-purple-400 to-pink-500", category: "painting" },
-        { icon: <Shield className="w-8 h-8" />, title: "Home Security", description: "Security system installation and maintenance", color: "from-red-400 to-rose-500", category: "other" }, // Using 'other' as 'security' might not be a direct backend enum
-        { icon: <Tv className="w-8 h-8" />, title: "Appliance Repair", description: "Home appliance repair and maintenance", color: "from-indigo-400 to-blue-500", category: "appliances" },
-        { icon: <Car className="w-8 h-8" />, title: "Automotive Service", description: "Car and bike repair services", color: "from-slate-400 to-gray-500", category: "automotive" },
-        { icon: <Zap className="w-8 h-8" />, title: "Electronics Repair", description: "Repair of electronic devices like TVs, laptops, etc.", color: "from-gray-400 to-pink-500", category: "electronics" }
-    ];
+  {
+    icon: <AirVent className="w-8 h-8" />,
+    title: "Appliances",
+    description: "Home appliance repair and maintenance",
+    color: "from-indigo-400 to-blue-500",
+    category: "Appliances"
+  },
+  {
+    icon: <Zap className="w-8 h-8" />,
+    title: "Electrical",
+    description: "Electrical repairs, wiring, and installations",
+    color: "from-yellow-400 to-orange-500",
+    category: "Electrical"
+  },
+  {
+    icon: <Droplets className="w-8 h-8" />,
+    title: "Plumbing",
+    description: "Pipe repairs, fittings, and water solutions",
+    color: "from-blue-400 to-cyan-500",
+    category: "Plumbing"
+  },
+  {
+    icon: <Hammer className="w-8 h-8" />,
+    title: "Carpentry",
+    description: "Woodwork, furniture repair, and fittings",
+    color: "from-amber-400 to-yellow-600",
+    category: "Carpentry"
+  },
+  {
+    icon: <Paintbrush className="w-8 h-8" />,
+    title: "Cleaning",
+    description: "Deep cleaning and sanitation services",
+    color: "from-lime-400 to-emerald-500",
+    category: "Cleaning"
+  },
+  {
+    icon: <PaintRoller className="w-8 h-8" />,
+    title: "Painting & Renovation",
+    description: "Interior and exterior painting & minor renovations",
+    color: "from-purple-400 to-pink-500",
+    category: "Painting & Renovation"
+  },
+  {
+    icon: <Bug className="w-8 h-8" />,
+    title: "Pest Control",
+    description: "Termite, rodent, and pest extermination",
+    color: "from-red-400 to-rose-500",
+    category: "Pest Control"
+  },
+  {
+    icon: <Shield className="w-8 h-8" />,
+    title: "Security & Automation",
+    description: "Smart locks, cameras, and home automation",
+    color: "from-gray-500 to-slate-700",
+    category: "Security & Automation"
+  },
+  {
+    icon: <Truck className="w-8 h-8" />,
+    title: "Moving & Storage",
+    description: "Packing, moving, and short-term storage",
+    color: "from-orange-400 to-amber-600",
+    category: "Moving & Storage"
+  },
+  {
+    icon: <Flower className="w-8 h-8" />,
+    title: "Gardening & Landscaping",
+    description: "Garden design, maintenance & landscaping",
+    color: "from-green-400 to-emerald-600",
+    category: "Gardening & Landscaping"
+  },
+  {
+    icon: <Ruler className="w-8 h-8" />,
+    title: "Interior Design",
+    description: "Home styling and interior consultancy",
+    color: "from-cyan-400 to-blue-600",
+    category: "Interior Design"
+  },
+  {
+    icon: <Wrench className="w-8 h-8" />,
+    title: "Repairs and Installation",
+    description: "General repairs and device installations",
+    color: "from-stone-400 to-gray-600",
+    category: "Repairs and Installation"
+  },
+  {
+    icon: <Sparkles className="w-8 h-8" />,
+    title: "Specialized Services",
+    description: "Accessibility services & gutter and septic tank cleaning", 
+    color: "from-fuchsia-400 to-violet-600",
+    category: "Specialized Services"
+  }
+];
 
     const handleServiceClick = (service) => {
         if (!isAuthenticated) {
@@ -512,8 +767,28 @@ const UserMainDashboard = () => {
             navigate('/user/login');
             return;
         }
+        
+        
         setSelectedServiceData(service);
         setShowServiceFormModal(true);
+        console.log(service.category);
+        //  const mainCategoryTitle = serviceDetails.title;
+        // const selectedCategoryName = serviceDetails.category;
+
+        // // Find the main category object (e.g., "Appliances")
+        // const selectedMainCategory = servicefromjson.home_services.find(
+        //     item => item.main_category.toLowerCase() === mainCategoryTitle.toLowerCase()
+        // );
+
+        // // Now find the matching sub-category inside it
+        // const selectedCategory = selectedMainCategory?.categories.find(
+        //     cat => cat.category.toLowerCase() === selectedCategoryName.toLowerCase()
+        // );
+
+        // // Get the issues
+        // const issues = selectedCategory?.services.map(service => service.issue);
+
+        // console.log("Issues for selected sub-category:", issues);
     };
 
     const handleModalClose = () => {
@@ -522,11 +797,13 @@ const UserMainDashboard = () => {
     };
 
     const handleLogout = () => {
-        clearUser();
-        useAuthStore.getState().clearRepairer();
-        useAuthStore.getState().clearAdmin();
-
-        navigate('/user/login');
+        const res = axiosInstance.post('/user/logout');
+        if (res.status === 200) {
+            toast.success('Logged out successfully!');
+        } else {   
+            toast.error('Failed to logout. Please try again.');
+        }
+        window.location.reload();
     };
 
     return (
@@ -554,7 +831,7 @@ const UserMainDashboard = () => {
 
                             <button
                                 onClick={() => navigate('/user/inprogress')}
-                                className="flex items-center space-x-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full hover:bg-blue-200 transition-colors"
+                                className="flex items-center space-x-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full hover:bg-blue-200 transition-colors cursor-pointer"
                             >
                                 <Clock className="w-4 h-4" />
                                 <span className="hidden sm:inline">In Progress</span>
@@ -562,7 +839,7 @@ const UserMainDashboard = () => {
 
                             <button
                                 onClick={() => navigate('/user/pending-service')}
-                                className="flex items-center space-x-2 bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full hover:bg-yellow-200 transition-colors"
+                                className="flex items-center space-x-2 bg-yellow-100 text-yellow-700 px-4 py-2 rounded-full hover:bg-yellow-200 transition-colors cursor-pointer"
                             >
                                 <CheckCircle className="w-4 h-4" />
                                 <span className="hidden sm:inline">Pending</span>
@@ -570,7 +847,7 @@ const UserMainDashboard = () => {
 
                             <button
                                 onClick={handleLogout}
-                                className="flex items-center space-x-2 bg-red-100 text-red-700 px-4 py-2 rounded-full hover:bg-red-200 transition-colors"
+                                className="flex items-center space-x-2 bg-red-100 text-red-700 px-4 py-2 rounded-full hover:bg-red-200 transition-colors cursor-pointer"
                             >
                                 <LogOut className="w-4 h-4" />
                                 <span className="hidden sm:inline">Logout</span>
@@ -604,11 +881,20 @@ const UserMainDashboard = () => {
                                 </div>
                                 <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">{service.title}</h3>
                                 <p className="text-gray-600 text-sm text-center mb-4">{service.description}</p>
-                                <div className="text-center">
-                                    <button className="text-blue-600 font-semibold group-hover:text-purple-600 transition-colors text-sm">
-                                        Book Service →
-                                    </button>
+                                <div className="text-center mt-4 relative">
+                            <button className="text-blue-600 font-semibold text-sm">
+                                Book FREE Visit
+                            </button>
+
+                            <div className="inline-block relative group ml-2 cursor-pointer">
+                                <Info className="w-4 h-4 text-blue-600 inline-block" />
+                                
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-blue-50 text-gray-800 text-xs rounded-md border border-blue-200 px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow">
+                                <strong className="text-blue-700">Note:</strong> Visit is <span className="text-green-600 font-medium">FREE</span> if you accept the quotation. <span className="text-red-600 font-medium">₹150</span> applies if declined.
                                 </div>
+                            </div>
+                            </div>
+
                             </div>
                         </div>
                     ))}

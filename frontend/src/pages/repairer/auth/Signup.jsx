@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import servicefromjson from '../../../services.json'; // Assuming you have a JSON file with services
 import {
   Wrench,
   Phone,
@@ -20,6 +20,7 @@ import {
   Loader,
   CreditCard // Import CreditCard icon for Aadhar field
 } from 'lucide-react';
+import { axiosInstance } from '../../../lib/axios';
 
 const Signup = () => {
   const location = useLocation();
@@ -32,8 +33,7 @@ const Signup = () => {
     password: '',
     confirmPassword: '',
     services: '',         // CHANGED: profession -> services (matches backend)
-    city: '',             // Keeping 'city' in state if frontend UI still uses it, but it won't be sent to backend in payload below.
-    experience: '',
+    pincode: '',             // Keeping 'city' in state if frontend UI still uses it, but it won't be sent to backend in payload below.
     aadharcardNumber: '', // ADDED: New field for Aadhar card number (matches backend)
     agreeToTerms: false
   });
@@ -56,27 +56,10 @@ const Signup = () => {
   }, [location.state]);
 
   // Renamed 'professions' to 'servicesOffered' for clarity and alignment with 'services' field
-  const servicesOffered = [ // CHANGED: professions -> servicesOffered (for clarity, used with 'services' field)
-    'Electrician',
-    'Plumber',
-    'AC Technician',
-    'Carpenter',
-    'Painter',
-    'Appliance Repair',
-    'Phone Repair',
-    'Computer Repair',
-    'Home Cleaning',
-    'Gardening',
-    'Other'
-  ];
 
-  const experienceLevels = [
-    '0-1 years',
-    '1-3 years',
-    '3-5 years',
-    '5-10 years',
-    '10+ years'
-  ];
+  const servicesOffered = servicefromjson.home_services.map(item =>
+  item.main_category.toLowerCase()
+  );
 
   const benefits = [
     {
@@ -173,13 +156,13 @@ const Signup = () => {
     }
     
     // Keeping city validation on frontend if it's still a UI field, but remember it won't be sent to backend
-    if (!formData.city.trim()) {
-      newErrors.city = 'City is required';
+    if (!formData.pincode.trim()) {
+      newErrors.pincode = 'Pincode is required';
     }
-    
-    if (!formData.experience) {
-      newErrors.experience = 'Please select your experience level';
-    }
+
+    if(formData.pincode.length !== 6) {
+      newErrors.pincode = 'Pincode must be exactly 6 digits';}
+
     
     if (!formData.agreeToTerms) {
       newErrors.agreeToTerms = 'You must agree to the terms and conditions';
@@ -200,14 +183,14 @@ const Signup = () => {
 
     try {
       // Make sure the URL matches your backend API endpoint
-      const response = await axios.post('http://localhost:3000/api/repairer/signup', {
+      const response = await axiosInstance.post('/repairer/signup', {
         fullname: formData.fullname,             // CHANGED: fullName -> fullname (matches backend)
         email: formData.email,
         phone: formData.phone,
         password: formData.password,
         services: formData.services,             // CHANGED: profession -> services (matches backend)
-        experience: formData.experience,
-        aadharcardNumber: formData.aadharcardNumber, // ADDED: aadharcardNumber (matches backend)
+        aadharcardNumber: formData.aadharcardNumber,
+        pincode : formData.pincode // ADDED: aadharcardNumber (matches backend)
         // Removed 'city' from payload as backend doesn't expect it in the provided controller.
         // If your backend *does* store 'city' in the Repairer model, but it wasn't part of the
         // provided controller's validation destructuring, you can add it back here:
@@ -224,6 +207,7 @@ const Signup = () => {
         setTimeout(() => {
           navigate('/repairer/dashboard'); // **Change this to your actual dashboard route if different**
         }, 2000); 
+        window.location.reload();
       }
     } catch (error) {
       console.error('Signup error:', error);
@@ -515,7 +499,7 @@ const Signup = () => {
 
                 <div>
                   <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-2">
-                    City
+                    Pincode
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -523,45 +507,20 @@ const Signup = () => {
                     </div>
                     <input
                       type="text"
-                      id="city"
-                      name="city"
-                      value={formData.city}
+                      id="pincode"
+                      name="pincode"
+                      value={formData.pincode}
                       onChange={handleInputChange}
-                      placeholder="New York"
+                      placeholder="302019"
                       className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                        errors.city ? 'border-red-300' : 'border-gray-200'
+                        errors.pincode ? 'border-red-300' : 'border-gray-200'
                       }`}
                     />
                   </div>
-                  {errors.city && (
-                    <p className="mt-2 text-sm text-red-600">{errors.city}</p>
+                  {errors.pincode && (
+                    <p className="mt-2 text-sm text-red-600">{errors.pincode}</p>
                   )}
                 </div>
-              </div>
-
-              <div>
-                <label htmlFor="experience" className="block text-sm font-semibold text-gray-700 mb-2">
-                  Years of Experience
-                </label>
-                <select
-                  id="experience"
-                  name="experience"
-                  value={formData.experience}
-                  onChange={handleInputChange}
-                  className={`block w-full px-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                    errors.experience ? 'border-red-300' : 'border-gray-200'
-                  }`}
-                >
-                  <option value="">Select your experience level</option>
-                  {experienceLevels.map((level) => (
-                    <option key={level} value={level}>
-                      {level}
-                    </option>
-                  ))}
-                </select>
-                {errors.experience && (
-                  <p className="mt-2 text-sm text-red-600">{errors.experience}</p>
-                )}
               </div>
 
               <div className="flex items-start space-x-3">

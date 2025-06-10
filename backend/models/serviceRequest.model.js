@@ -11,32 +11,38 @@ const serviceRequestSchema = new mongoose.Schema({
         ref: 'Repairer',
         required: false
     },
-    title: {
+    serviceType: {
         type: String,
-        required: false,
-        trim: true,
-        maxlength: 100
+        required: true
     },
-    description: {
+    category:{
+        type: String,
+        required: true
+    },
+    issue: {
         type: String,
         required: true,
         trim: true,
-        maxlength: 500
     },
-    serviceType: {
+    priceRange:{
         type: String,
-        enum: [
-            'electronics', 'appliances', 'plumbing', 'electrical', 
-            'carpentry', 'painting', 'automotive', 'hvac', 'other'
-        ],
+        required: true,
+        trim: true,
+    },
+    description: {
+        type: String,
         required: true
     },
+    quotation: {
+        type: Number,
+    },
     location: {
-        fullAddress: {
+        captureMethod: {
             type: String,
-            required: true,
-            trim: true
+            enum: ['gps', 'manual'],
+            required: true
         },
+        address: { type: String },
         pincode: {
             type: String,
             required: true,
@@ -47,33 +53,6 @@ const serviceRequestSchema = new mongoose.Schema({
                 message: 'Pincode must be a 6-digit number'
             }
         },
-        city: {
-            type: String,
-            trim: true
-        },
-        state: {
-            type: String,
-            trim: true
-        },
-        coordinates: {
-            latitude: {
-                type: Number,
-                min: -90,
-                max: 90
-            },
-            longitude: {
-                type: Number,
-                min: -180,
-                max: 180
-            }
-        },
-        captureMethod: {
-            type: String,
-            enum: ['gps', 'manual'],
-            required: true
-        },
-        address: { type: String },
-        postalCode: { type: String }
     },
     preferredTimeSlot: {
         type: String,

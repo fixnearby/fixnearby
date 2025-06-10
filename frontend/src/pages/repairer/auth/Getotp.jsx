@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios'; // Import axios
 import { useNavigate } from 'react-router-dom'; // Assuming you use react-router-dom for navigation
 import {
   Wrench,
@@ -16,6 +15,7 @@ import {
   Star,
   Award
 } from 'lucide-react';
+import { axiosInstance } from '../../../lib/axios';
 
 const Getotp = () => {
   const [formData, setFormData] = useState({
@@ -75,7 +75,7 @@ const Getotp = () => {
         payload.email = formData.email;
       }
 
-      const response = await axios.post('http://localhost:3000/api/user/getotp', payload);
+      const response = await axiosInstance.post('/repairer/getotp', payload);
 
       console.log('OTP API Response:', response.data);
       // Assuming your backend sends the email back on successful OTP verification

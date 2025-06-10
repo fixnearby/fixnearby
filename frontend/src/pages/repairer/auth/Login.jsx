@@ -88,6 +88,7 @@ const Login = () => {
         setRepairer(response.data); // Store the repairer data in your global state
         console.log("Repairer state updated successfully in store. Navigating to dashboard.");
         navigate('/repairer/dashboard', { replace: true }); // Navigate only on successful backend login
+        window.location.reload(); // Reload the page to ensure all data is fresh
       } else {
         // This 'else' block should ideally not be hit with a 200 OK response from backend
         setErrors({ general: 'Login successful, but no repairer data was received. Please contact support.' });

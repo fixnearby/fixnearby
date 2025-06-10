@@ -22,18 +22,27 @@ const userSchema = new mongoose.Schema(
       required: true,
       select: false
     },
-    aadharCardNumber:{
-        type: String,
-        required: true,
-        unique: true,
-        trim: true,
-    },
     phone: {
       type: String,
       required: true,
       trim: true,
       match: [/^\+?[\d\s-()]+$/, 'Please enter a valid phone number']
     },
+      location: [
+        {
+        address: { type: String },
+        pincode: {
+            type: String,
+            required: true,
+            validate: {
+                validator: function(v) {
+                    return /^\d{6}$/.test(v);
+                },
+                message: 'Pincode must be a 6-digit number'
+            }
+        },
+      }
+      ],
     role: {
       type: String,
       default: 'user'

@@ -21,7 +21,6 @@ const Signup = () => {
 
   const [fullname, setFullname] = useState('');
   const [password, setPassword] = useState('');
-  const [aadharCardNumber, setAadharCardNumber] = useState('');
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -42,12 +41,6 @@ const Signup = () => {
       return;
     }
 
-    if (!aadharCardNumber || !/^\d{12}$/.test(aadharCardNumber)) {
-      toast.error("Aadhar Card Number must be exactly 12 digits");
-      setIsLoading(false);
-      return;
-    }
-
     if (!phone || !/^\d{10}$/.test(phone)) {
       toast.error("Phone number must be exactly 10 digits");
       setIsLoading(false);
@@ -64,7 +57,6 @@ const Signup = () => {
         toast.success('Signup successfull!');
         setFullname(''); // Clear fullname input after successful submission
         setPassword(''); // Clear password input after successful submission
-        setAadharCardNumber(''); // Clear aadharCardNumber input after successful submission
         setPhone(''); // Clear phone input after successful submission
         navigate("/user/dashboard");
         window.location.reload();
@@ -147,27 +139,6 @@ const Signup = () => {
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
-              </div>
-            </div>
-
-            {/* AAdhar card Input */}
-            <div className="space-y-2">
-              <label  className="block text-sm font-semibold text-gray-700">
-                Aadhar Card Number
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <ArrowRight className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="aadharCardNumber"
-                  name="aadharCardNumber"
-                  type="text"
-                  value={aadharCardNumber}
-                  onChange={(e) => setAadharCardNumber(e.target.value)}
-                  className={`block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 `}
-                  placeholder="Enter your Aadhar Card Number (12 digits)"
-                />
               </div>
             </div>
 

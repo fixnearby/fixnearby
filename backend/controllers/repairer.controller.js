@@ -77,12 +77,12 @@ export const signup = async (req, res) => {
     password,
     aadharcardNumber,
     phone,
-    services, 
-    experience, 
+    services,
+    pincode, 
   } = req.body;
 
   try {
-    if (!fullname || !email || !password || !aadharcardNumber || !phone || !services || !experience) {
+    if (!fullname || !email || !password || !aadharcardNumber || !phone || !services || !pincode ) {
       return res.status(400).json({ message: "All required fields must be filled" });
     }
 
@@ -91,16 +91,8 @@ export const signup = async (req, res) => {
       return res.status(400).json({ message: "Repairer with this email already exists" });
     }
 
-    let parsedExperience;
-    const experienceMatch = experience.match(/^(\d+)/); 
-    if (experienceMatch && experienceMatch[1]) {
-      parsedExperience = parseInt(experienceMatch[1], 10);
-    } else {
-      parsedExperience = 0; 
-      console.warn("Could not parse experience string to number, defaulting to 0:", experience);
-    }
 
-    const serviceArray = [{ name: services, price: 0 }]; 
+    const serviceArray = [{ name: services, visitingCharge: 0 }]; 
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
@@ -112,7 +104,7 @@ export const signup = async (req, res) => {
       aadharcardNumber,
       phone,
       services: serviceArray, 
-      experience: parsedExperience,
+      pincode,
     });
 
     await newRepairer.save(); 
@@ -123,7 +115,6 @@ export const signup = async (req, res) => {
       fullname: newRepairer.fullname,
       email: newRepairer.email,
       services: newRepairer.services,
-      experience: newRepairer.experience,
       message: "Repairer account created successfully!", 
     });
 

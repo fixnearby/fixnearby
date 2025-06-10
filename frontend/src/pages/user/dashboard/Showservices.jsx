@@ -1,24 +1,23 @@
-// frontend/src/pages/user/Showservices.jsx
-import React, { useEffect, useState, useCallback } from 'react';
-import { useAuthStore } from '../../../store/authStore';
-import { axiosInstance } from '../../../lib/axios'; // Ensure axiosInstance is correctly configured with baseURL and withCredentials
-import { 
-  Wrench, 
-  Star, 
-  MapPin, 
-  Clock, 
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { axiosInstance } from '../../../lib/axios.js';
+import {
+  Wrench,
+  Star,
+  MapPin,
+  Clock,
   CheckCircle,
-  Zap,        
-  Droplets,   
-  Hammer,     
-  Paintbrush, 
-  Shield,     
-  Loader,     
-  Send,       
-  AlertCircle 
+  Zap,
+  Droplets,
+  Hammer,
+  Paintbrush,
+  Shield,
+  Loader,
+  Send,
+  AlertCircle,
+  X
 } from 'lucide-react';
 
-// Enhanced mapping for service icons
 const serviceIcons = {
   electronics: <Zap className="w-5 h-5" />,
   appliances: <Wrench className="w-5 h-5" />,
@@ -26,183 +25,181 @@ const serviceIcons = {
   electrical: <Zap className="w-5 h-5" />,
   carpentry: <Hammer className="w-5 h-5" />,
   painting: <Paintbrush className="w-5 h-5" />,
-  automotive: <Shield className="w-5 h-5" />, 
-  hvac: <Shield className="w-5 h-5" />,       
+  automotive: <Shield className="w-5 h-5" />,
+  hvac: <Wrench className="w-5 h-5" />,
   other: <Wrench className="w-5 h-5" />
 };
 
 const Showservices = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const { serviceCategory, userLocation } = location.state || {};
+
   const [repairers, setRepairers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuthStore(); // Get user object from auth store
+  const [error, setError] = useState(null);
 
-  // States for the service request form
   const [showServiceRequestForm, setShowServiceRequestForm] = useState(false);
-  const [selectedRepairerForRequest, setSelectedRepairerForRequest] = useState(null); // Stores repairer ID
-  const [serviceTypeInput, setServiceTypeInput] = useState('');
+  const [selectedRepairerForRequest, setSelectedRepairerForRequest] = useState(null);
   const [descriptionInput, setDescriptionInput] = useState('');
-  const [currentFetchedLocation, setCurrentFetchedLocation] = useState(null); // { address, postalCode, lat, lon, city }
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [locationError, setLocationError] = useState(null);
-  const [locationSuccess, setLocationSuccess] = useState(null);
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
-  const [submitError, setSubmitError] = useState(null);
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState(null);
+  const [submitError, setSubmitError] = useState(null);
 
-  // Allowed service types (must match your backend's ServiceRequest enum)
-  const allowedServiceTypes = [
-    'electronics', 'appliances', 'plumbing', 'electrical', 
+  const [autoSubmitting, setAutoSubmitting] = useState(false);
+  const [autoSubmitSuccess, setAutoSubmitSuccess] = useState(false);
+  const [autoSubmitError, setAutoSubmitError] = useState(null);
+  const [hasAttemptedAutoSubmit, setHasAttemptedAutoSubmit] = useState(false);
+
+  const autoSubmitRequestSentRef = useRef(false);
+
+  const allowedServiceTypes = useMemo(() => [
+    'electronics', 'appliances', 'plumbing', 'electrical',
     'carpentry', 'painting', 'automotive', 'hvac', 'other'
-  ];
+  ], []);
 
-  // Callback to fetch repairers (moved from useEffect for better control)
-  const fetchRepairers = useCallback(async () => {
-    setLoading(true);
+  const autoSubmitServiceRequest = useCallback(async () => {
+    console.log('autoSubmitServiceRequest called. hasAttemptedAutoSubmit (state):', hasAttemptedAutoSubmit, 'autoSubmitting (state):', autoSubmitting, 'autoSubmitRequestSentRef.current:', autoSubmitRequestSentRef.current);
+
+    if (autoSubmitRequestSentRef.current) {
+        console.log('autoSubmitServiceRequest: Request already sent via ref, returning.');
+        return;
+    }
+
+    if (hasAttemptedAutoSubmit || autoSubmitting) {
+        console.log('autoSubmitServiceRequest: Already attempted (state) or currently submitting (state), returning.');
+        return;
+    }
+
+    autoSubmitRequestSentRef.current = true;
+
+    setAutoSubmitting(true);
+    setAutoSubmitError(null);
+    setAutoSubmitSuccess(false);
+
     try {
-      // The backend expects user.location.postalCode, which should be available
-      // via userProtectRoute and req.user on the backend.
-      const response = await axiosInstance.get('/user/dashboard'); // GET /api/user/dashboard
-      setRepairers(response.data);
-    } catch (error) {
-      console.error('Error fetching repairers:', error.response?.data || error.message);
-      // Handle the error more gracefully, e.g., show a message to the user
-      // For a 400 error about missing user location, you might guide them to update their profile
-      if (error.response?.status === 400 && error.response?.data?.message.includes('User location')) {
-        setSubmitError("Your profile location is missing. Please update your profile or fetch current location for service requests.");
+      console.log('autoSubmitServiceRequest: Sending request...');
+      const requestPayload = {
+        title: `${serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)} Service Request`,
+        serviceType: serviceCategory,
+        description: `Service request for ${serviceCategory} at ${userLocation.fullAddress}. No immediate repairer found.`,
+        locationData: userLocation,
+        preferredTimeSlot: 'flexible',
+        urgency: 'medium',
+        repairerId: null
+      };
+
+      const response = await axiosInstance.post('/service-requests', requestPayload);
+
+      if (response.status === 201 || response.data.success) {
+        setAutoSubmitSuccess(true);
+        console.log('Auto-submitted service request successfully:', response.data);
       } else {
-        setSubmitError("Failed to load available repairers.");
+        setAutoSubmitError(response.data?.message || 'Failed to auto-submit service request.');
+        console.error('Auto-submission failed:', response.data);
+        autoSubmitRequestSentRef.current = false;
+      }
+    } catch (err) {
+      console.error('Error during auto-submission:', err.response?.data || err.message);
+      setAutoSubmitError(err.response?.data?.message || 'An unexpected error occurred during auto-submission.');
+      autoSubmitRequestSentRef.current = false;
+    } finally {
+      setAutoSubmitting(false);
+      setHasAttemptedAutoSubmit(true);
+      console.log('autoSubmitServiceRequest: Finished, hasAttemptedAutoSubmit set to true.');
+    }
+  }, [serviceCategory, userLocation, hasAttemptedAutoSubmit, autoSubmitting]);
+
+  const fetchRepairers = useCallback(async () => {
+    console.log('fetchRepairers called. hasAttemptedAutoSubmit:', hasAttemptedAutoSubmit, 'autoSubmitRequestSentRef.current:', autoSubmitRequestSentRef.current);
+
+    if (!userLocation || !userLocation.pincode || !serviceCategory || !allowedServiceTypes.includes(serviceCategory.toLowerCase())) {
+        setError("Invalid service category or location data is missing. Please go back and select a service and location.");
+        setLoading(false);
+        return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setRepairers([]);
+
+    try {
+      const response = await axiosInstance.get(`/user/dashboard?postalCode=${userLocation.pincode}&serviceType=${serviceCategory}`);
+      setRepairers(response.data);
+
+      if (response.data.length === 0 && !autoSubmitRequestSentRef.current) {
+        console.log('fetchRepairers: No repairers found, attempting to auto-submit service request.');
+        autoSubmitServiceRequest();
+      } else if (response.data.length === 0 && autoSubmitRequestSentRef.current) {
+        console.log('fetchRepairers: No repairers found, but auto-submit already sent via ref.');
+      }
+
+    } catch (err) {
+      console.error('Error fetching repairers:', err.response?.data || err.message);
+      setError(err.response?.data?.message || 'Failed to load available repairers.');
+      if (!autoSubmitRequestSentRef.current) {
+        console.log('Error fetching repairers, attempting to auto-submit service request as fallback.');
+        autoSubmitServiceRequest();
       }
     } finally {
       setLoading(false);
     }
-  }, []);
+}, [userLocation, serviceCategory, autoSubmitRequestSentRef, autoSubmitServiceRequest, hasAttemptedAutoSubmit, allowedServiceTypes]);
 
   useEffect(() => {
-    fetchRepairers();
-  }, [fetchRepairers]);
-
-  // Function to fetch user's current location from browser
-  const fetchUserLiveLocation = async () => {
-    setLocationLoading(true);
-    setLocationError(null);
-    setLocationSuccess(null);
-    setCurrentFetchedLocation(null); 
-
-    if (!navigator.geolocation) {
-      setLocationError("Geolocation is not supported by your browser.");
-      setLocationLoading(false);
-      return;
+    console.log('Initial useEffect for Showservices.jsx triggered.');
+    if (userLocation && serviceCategory) {
+      fetchRepairers();
+    } else {
+      console.log('Initial useEffect: Missing userLocation or serviceCategory, redirecting.');
+      navigate('/user/dashboard', { replace: true });
     }
+    return () => {};
+  }, [fetchRepairers, userLocation, serviceCategory, navigate]);
 
-    try {
-      const position = await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 5000,
-          maximumAge: 0
-        });
-      });
-
-      const { latitude, longitude } = position.coords;
-
-      // Reverse geocoding using OpenStreetMap Nominatim API
-      const nominatimUrl = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`;
-      const response = await fetch(nominatimUrl);
-      const data = await response.json();
-
-      if (data && data.address) {
-        const address = data.display_name || 'Fetched Address';
-        const postalCode = data.address.postcode || 'N/A';
-        const city = data.address.city || data.address.town || data.address.village || 'N/A';
-
-        setCurrentFetchedLocation({
-          address: address,
-          postalCode: postalCode,
-          lat: latitude,
-          lon: longitude,
-          city: city 
-        });
-        setLocationSuccess("Location fetched successfully!");
-      } else {
-        setLocationError("Could not retrieve address details for this location.");
-      }
-    } catch (err) {
-      console.error("Geolocation or reverse geocoding error:", err);
-      if (err.code === err.PERMISSION_DENIED) {
-        setLocationError("Location access denied. Please enable location services in your browser settings.");
-      } else if (err.code === err.POSITION_UNAVAILABLE) {
-        setLocationError("Location information is unavailable. Please try again later.");
-      } else if (err.code === err.TIMEOUT) {
-        setLocationError("Timed out while trying to fetch location.");
-      } else {
-        setLocationError("Failed to fetch location. Please ensure location services are enabled.");
-      }
-    } finally {
-      setLocationLoading(false);
-    }
-  };
-
-  // Function to open the service request form
   const openServiceRequestForm = (repairerId) => {
     setSelectedRepairerForRequest(repairerId);
-    setServiceTypeInput('');
     setDescriptionInput('');
-    setCurrentFetchedLocation(null);
-    setLocationError(null);
-    setLocationSuccess(null);
-    setSubmitError(null);
     setSubmitSuccessMessage(null);
     setShowServiceRequestForm(true);
+    setSubmitError(null);
   };
 
-  // Function to submit the service request
   const handleSubmitServiceRequest = async (e) => {
     e.preventDefault();
     setSubmitError(null);
     setSubmitSuccessMessage(null);
     setIsSubmittingRequest(true);
 
-    if (!user || !user._id) {
-      setSubmitError("User not authenticated. Please log in.");
+    if (!descriptionInput) {
+      setSubmitError("Please provide a description for your service request.");
       setIsSubmittingRequest(false);
       return;
     }
-
-    if (!serviceTypeInput || !descriptionInput) {
-      setSubmitError("Please select a service type and provide a description.");
-      setIsSubmittingRequest(false);
-      return;
-    }
-
-    // Determine the location to send: fetched live location, or user's profile location
-    const requestLocation = currentFetchedLocation || user.location; 
-
-    if (!requestLocation || !requestLocation.address || !requestLocation.postalCode) {
-      setSubmitError("Please fetch your current location or ensure your profile has a saved address and postal code.");
-      setIsSubmittingRequest(false);
-      return;
+    if (!selectedRepairerForRequest) {
+        setSubmitError("No repairer selected. Please select a repairer.");
+        setIsSubmittingRequest(false);
+        return;
     }
 
     try {
-      const response = await axiosInstance.post('/user/service-request', {
+      console.log('handleSubmitServiceRequest: Sending request...');
+      const response = await axiosInstance.post('/service-requests', {
         repairerId: selectedRepairerForRequest,
-        serviceType: serviceTypeInput,
+        title: `${serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)} Service Request`,
+        serviceType: serviceCategory,
         description: descriptionInput,
-        location: { 
-          address: requestLocation.address,
-          postalCode: requestLocation.postalCode
-        }
+        locationData: userLocation,
+        preferredTimeSlot: 'flexible',
+        urgency: 'medium'
       });
 
-      if (response.status === 201) {
-        setSubmitSuccessMessage(`Service request for "${response.data.title}" submitted successfully!`);
-        // Reset form and hide it after successful submission
-        setServiceTypeInput('');
+      if (response.status === 201 || response.data.success) {
+        setSubmitSuccessMessage(`Service request submitted successfully for ${repairers.find(r => r._id === selectedRepairerForRequest)?.fullname}!`);
         setDescriptionInput('');
-        setCurrentFetchedLocation(null);
         setSelectedRepairerForRequest(null);
         setShowServiceRequestForm(false);
-        // Optionally, refetch repairers or update UI to reflect the new request
       } else {
         setSubmitError(response.data?.message || "Failed to submit service request.");
       }
@@ -214,72 +211,272 @@ const Showservices = () => {
     }
   };
 
-  if (loading) {
+  if (loading || autoSubmitting) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="flex flex-col justify-center items-center h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+        <Loader className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+        <p className="text-lg font-medium text-gray-700">
+          {loading ? `Finding repairers for ${serviceCategory || 'your service'}...` : 'Saving your service request...'}
+        </p>
+        <p className="text-sm text-gray-500 mt-2">
+          {loading ? 'Please wait a moment.' : 'We are saving your request and will notify you when a repairer is available.'}
+        </p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 py-8 text-center bg-white rounded-xl shadow-lg mt-8">
+        <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+        <h2 className="text-2xl font-bold text-red-700 mb-2">Error</h2>
+        <p className="text-gray-700 mb-4">{error}</p>
+        <button
+          onClick={() => navigate('/user/dashboard', { replace: true })}
+          className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          Go Back to Dashboard
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold text-gray-900 mb-8">Available Repairers</h1>
-      
-      {/* Global submit error/success message */}
-      {submitError && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-xl flex items-center space-x-2">
-          <AlertCircle size={20} />
-          <span>{submitError}</span>
-        </div>
+    <div className="max-w-7xl mx-auto px-4 py-8 min-h-[80vh]">
+      <h1 className="text-3xl font-bold text-gray-900 mb-4">
+        Available Repairers for {serviceCategory ? serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1) : 'Your Service'}
+      </h1>
+      {userLocation && (
+        <p className="text-lg text-gray-700 mb-8">
+          Showing repairers for: <span className="font-semibold">{userLocation.fullAddress}</span> (Pincode: <span className="font-semibold">{userLocation.pincode}</span>)
+        </p>
       )}
-      {submitSuccessMessage && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-xl flex items-center space-x-2">
-          <CheckCircle size={20} />
-          <span>{submitSuccessMessage}</span>
+
+      {repairers.length > 0 ? (
+        <>
+          {submitError && (
+            <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-xl flex items-center space-x-2">
+              <AlertCircle size={20} />
+              <span>{submitError}</span>
+            </div>
+          )}
+          {submitSuccessMessage && (
+            <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-xl flex items-center space-x-2">
+              <CheckCircle size={20} />
+              <span>{submitSuccessMessage}</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {repairers.map(repairer => (
+              <div
+                key={repairer._id}
+                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
+              >
+                <div className="p-6">
+                  <div className="flex items-center mb-4">
+                    <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 flex items-center justify-center text-gray-400">
+                      {serviceIcons[serviceCategory.toLowerCase()] || <Wrench size={32} />}
+                    </div>
+                    <div className="ml-4">
+                      <h2 className="text-xl font-bold text-gray-900">{repairer.fullname}</h2>
+                      <div className="flex items-center mt-1">
+                        {[...Array(5)].map((_, i) => (
+                          <Star
+                            key={i}
+                            className={`w-4 h-4 ${i < Math.floor(repairer.rating?.average || 0) ?
+                              'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                          />
+                        ))}
+                        <span className="text-sm text-gray-600 ml-2">
+                          ({repairer.rating?.count || 0} reviews)
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center text-gray-600 mb-4">
+                    <MapPin className="w-4 h-4 mr-2" />
+                    <span>{repairer.location?.address || 'Location not specified'} (Pincode: {repairer.location?.postalCode})</span>
+                  </div>
+
+                  <div className="mb-4">
+                    <h3 className="font-semibold text-gray-900 mb-2">Services Offered</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {repairer.services && repairer.services.map((service, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center bg-blue-50 px-3 py-1 rounded-full"
+                        >
+                          {serviceIcons[service.name.toLowerCase()] || <Wrench className="w-5 h-5" />}
+                          <span className="ml-2 text-sm font-medium">
+                            {service.name} (₹{service.price})
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center mt-4">
+                    <div className="flex items-center text-sm text-gray-600">
+                      <Clock className="w-4 h-4 mr-1" />
+                      <span>{repairer.experience || 0} years experience</span>
+                    </div>
+
+                    <button
+                      onClick={() => openServiceRequestForm(repairer._id)}
+                      className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full font-medium hover:opacity-90 transition-opacity"
+                    >
+                      Request Service
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {showServiceRequestForm && selectedRepairerForRequest && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+              <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-fade-in-up">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Confirm Service Request</h2>
+                <p className="text-gray-600 mb-4">
+                  For: <span className="font-semibold">{repairers.find(r => r._id === selectedRepairerForRequest)?.fullname}</span>
+                </p>
+                <p className="text-gray-600 mb-4">
+                  Service: <span className="font-semibold">{serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)}</span>
+                </p>
+                <p className="text-gray-600 mb-4">
+                  Location: <span className="font-semibold">{userLocation?.fullAddress}, {userLocation?.pincode}</span>
+                </p>
+
+                <form onSubmit={handleSubmitServiceRequest} className="space-y-4">
+                  <div>
+                    <label htmlFor="descriptionInput" className="block text-sm font-medium text-gray-700 mb-1">
+                      Describe Your Issue
+                    </label>
+                    <textarea
+                      id="descriptionInput"
+                      rows="4"
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                      placeholder="e.g., My kitchen sink is leaking, need a plumber to fix it urgently."
+                      value={descriptionInput}
+                      onChange={(e) => setDescriptionInput(e.target.value)}
+                      disabled={isSubmittingRequest}
+                      required
+                    ></textarea>
+                  </div>
+
+                  {submitError && (
+                    <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-xl flex items-center space-x-2">
+                      <AlertCircle size={20} />
+                      <span>{submitError}</span>
+                    </div>
+                  )}
+                  {submitSuccessMessage && (
+                    <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-xl flex items-center space-x-2">
+                      <CheckCircle size={20} />
+                      <span>{submitSuccessMessage}</span>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end space-x-3 mt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowServiceRequestForm(false)}
+                      className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+                      disabled={isSubmittingRequest}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSubmittingRequest}
+                      className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:opacity-90 transition-opacity flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmittingRequest ? (
+                        <>
+                          <Loader size={16} className="animate-spin" />
+                          <span>Submitting...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send size={16} />
+                          <span>Send Request</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+        </>
+      ) : (
+        <div className="text-center md:col-span-3 py-12 bg-white rounded-xl shadow-lg">
+          <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+          <h3 className="text-xl font-medium text-gray-900 mb-2">No immediate repairers found</h3>
+          <p className="text-gray-600 mb-4">
+            We couldn't find any repairers available for your selected service ({serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)}) in pincode {userLocation.pincode} right now.
+          </p>
+
+          {autoSubmitting && (
+            <div className="flex items-center justify-center space-x-2 text-blue-600">
+              <Loader className="w-5 h-5 animate-spin" />
+              <span>Saving your request...</span>
+            </div>
+          )}
+          {autoSubmitSuccess && (
+            <div className="mt-4 p-3 bg-green-100 text-green-700 rounded-xl inline-flex items-center space-x-2">
+              <CheckCircle size={20} />
+              <span>Your request has been saved! We'll notify you when a repairer is available.</span>
+            </div>
+          )}
+          {autoSubmitError && (
+            <div className="mt-4 p-3 bg-red-100 text-red-700 rounded-xl inline-flex items-center space-x-2">
+              <AlertCircle size={20} />
+              <span>Error saving request: {autoSubmitError}. Please try again later.</span>
+            </div>
+          )}
+
+          {!autoSubmitting && !autoSubmitSuccess && !autoSubmitError && hasAttemptedAutoSubmit && (
+            <div className="mt-4 p-3 bg-gray-100 text-gray-700 rounded-xl inline-flex items-center space-x-2">
+                <span>We've attempted to save your request. If no confirmation, please retry.</span>
+            </div>
+          )}
+
+          <button
+            onClick={() => navigate('/user/dashboard', { replace: true })}
+            className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go Back to Dashboard
+          </button>
         </div>
       )}
 
-      {/* Service Request Form - Shown conditionally */}
       {showServiceRequestForm && selectedRepairerForRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-md animate-fade-in-up">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Request Service</h2>
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Confirm Service Request</h2>
             <p className="text-gray-600 mb-4">
               For: <span className="font-semibold">{repairers.find(r => r._id === selectedRepairerForRequest)?.fullname}</span>
+            </p>
+            <p className="text-gray-600 mb-4">
+              Service: <span className="font-semibold">{serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)}</span>
+            </p>
+            <p className="text-gray-600 mb-4">
+              Location: <span className="font-semibold">{userLocation?.fullAddress}, {userLocation?.pincode}</span>
             </p>
 
             <form onSubmit={handleSubmitServiceRequest} className="space-y-4">
               <div>
-                <label htmlFor="serviceTypeInput" className="block text-sm font-medium text-gray-700 mb-1">
-                  Service Type
-                </label>
-                <select
-                  id="serviceTypeInput"
-                  className="w-full p-2 border border-gray-300 rounded-md"
-                  value={serviceTypeInput}
-                  onChange={(e) => setServiceTypeInput(e.target.value)}
-                  disabled={isSubmittingRequest}
-                  required
-                >
-                  <option value="">Select service type</option>
-                  {allowedServiceTypes.map((type) => (
-                    <option key={type} value={type}>
-                      {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
                 <label htmlFor="descriptionInput" className="block text-sm font-medium text-gray-700 mb-1">
-                  Description
+                  Describe Your Issue
                 </label>
                 <textarea
                   id="descriptionInput"
-                  rows="3"
+                  rows="4"
                   className="w-full p-2 border border-gray-300 rounded-md"
-                  placeholder="Describe your issue in detail..."
+                  placeholder="e.g., My kitchen sink is leaking, need a plumber to fix it urgently."
                   value={descriptionInput}
                   onChange={(e) => setDescriptionInput(e.target.value)}
                   disabled={isSubmittingRequest}
@@ -287,48 +484,18 @@ const Showservices = () => {
                 ></textarea>
               </div>
 
-              {/* Location Fetching Section */}
-              <div className="border-t border-gray-200 pt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Location for Service
-                </label>
-                <button
-                  type="button"
-                  onClick={fetchUserLiveLocation}
-                  disabled={locationLoading || isSubmittingRequest}
-                  className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {locationLoading ? (
-                    <Loader size={16} className="animate-spin" />
-                  ) : (
-                    <MapPin size={16} />
-                  )}
-                  <span>Fetch Current Location</span>
-                </button>
-                {locationLoading && <p className="text-sm text-gray-500 mt-2 text-center">Fetching...</p>}
-                {locationError && (
-                  <p className="text-sm text-red-500 mt-2 text-center flex items-center justify-center">
-                    <AlertCircle size={14} className="mr-1"/>{locationError}
-                  </p>
-                )}
-                {locationSuccess && (
-                  <p className="text-sm text-green-600 mt-2 text-center flex items-center justify-center">
-                    <CheckCircle size={14} className="mr-1"/>{locationSuccess}
-                  </p>
-                )}
-                {currentFetchedLocation ? (
-                  <div className="bg-gray-100 p-3 rounded-md mt-3 text-sm text-gray-800">
-                    <p><strong>Using:</strong> {currentFetchedLocation.address}</p>
-                    <p><strong>Postal Code:</strong> {currentFetchedLocation.postalCode}</p>
-                  </div>
-                ) : user?.location?.address ? (
-                  <div className="bg-gray-100 p-3 rounded-md mt-3 text-sm text-gray-800">
-                    <p><strong>Using profile location:</strong> {user.location.address} (Postal Code: {user.location.postalCode})</p>
-                  </div>
-                ) : (
-                    <p className="text-sm text-gray-500 mt-3 text-center">No location fetched. Will use profile location if available.</p>
-                )}
-              </div>
+              {submitError && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-xl flex items-center space-x-2">
+                  <AlertCircle size={20} />
+                  <span>{submitError}</span>
+                </div>
+              )}
+              {submitSuccessMessage && (
+                <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-xl flex items-center space-x-2">
+                  <CheckCircle size={20} />
+                  <span>{submitSuccessMessage}</span>
+                </div>
+              )}
 
               <div className="flex justify-end space-x-3 mt-4">
                 <button
@@ -341,7 +508,7 @@ const Showservices = () => {
                 </button>
                 <button
                   type="submit"
-                  disabled={isSubmittingRequest || locationLoading}
+                  disabled={isSubmittingRequest}
                   className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-md hover:opacity-90 transition-opacity flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {isSubmittingRequest ? (
@@ -352,94 +519,13 @@ const Showservices = () => {
                   ) : (
                     <>
                       <Send size={16} />
-                      <span>Submit Request</span>
+                      <span>Send Request</span>
                     </>
                   )}
                 </button>
               </div>
             </form>
           </div>
-        </div>
-      )}
-
-      {/* Repairers List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {repairers.map(repairer => (
-          <div 
-            key={repairer._id} 
-            className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow"
-          >
-            <div className="p-6">
-              <div className="flex items-center mb-4">
-                {/* Placeholder for repairer image/avatar */}
-                <div className="bg-gray-200 border-2 border-dashed rounded-xl w-16 h-16 flex items-center justify-center text-gray-400">
-                  <Wrench size={32} /> {/* Generic icon for profile placeholder */}
-                </div>
-                <div className="ml-4">
-                  <h2 className="text-xl font-bold text-gray-900">{repairer.fullname}</h2>
-                  <div className="flex items-center mt-1">
-                    {/* Display average rating */}
-                    {[...Array(5)].map((_, i) => (
-                      <Star 
-                        key={i} 
-                        className={`w-4 h-4 ${i < Math.floor(repairer.rating?.average || 0) ? 
-                          'text-yellow-400 fill-current' : 'text-gray-300'}`} 
-                      />
-                    ))}
-                    <span className="text-sm text-gray-600 ml-2">
-                      ({repairer.rating?.count || 0} reviews)
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="flex items-center text-gray-600 mb-4">
-                <MapPin className="w-4 h-4 mr-2" />
-                <span>{repairer.location?.address || 'Location not specified'}</span>
-              </div>
-              
-              <div className="mb-4">
-                <h3 className="font-semibold text-gray-900 mb-2">Services Offered</h3>
-                <div className="flex flex-wrap gap-2">
-                  {repairer.services && repairer.services.map((service, index) => (
-                    <div 
-                      key={index} 
-                      className="flex items-center bg-blue-50 px-3 py-1 rounded-full"
-                    >
-                      {serviceIcons[service.name.toLowerCase()] || serviceIcons.other} {/* Use toLowerCase for consistent matching */}
-                      <span className="ml-2 text-sm font-medium">
-                        {service.name} (₹{service.price})
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="flex justify-between items-center">
-                <div className="flex items-center text-sm text-gray-600">
-                  <Clock className="w-4 h-4 mr-1" />
-                  <span>{repairer.experience || 0} years experience</span>
-                </div>
-                
-                <button
-                  onClick={() => openServiceRequestForm(repairer._id)}
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-full font-medium hover:opacity-90 transition-opacity"
-                >
-                  Request Service
-                </button>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      
-      {repairers.length === 0 && !loading && !submitError && ( // Show only if no errors
-        <div className="text-center py-12">
-          <CheckCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-xl font-medium text-gray-900 mb-2">No repairers available</h3>
-          <p className="text-gray-600">
-            There are currently no repairers available in your area. Please check back later.
-          </p>
         </div>
       )}
     </div>

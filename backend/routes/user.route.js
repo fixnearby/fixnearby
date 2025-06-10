@@ -1,14 +1,23 @@
-// File: backend/routes/user.route.js
+// backend/routes/user.route.js
 import express from "express";
-import { login, logout, signup , getOtp , verifyOtp  , getRepairer,createServiceRequest,getServiceRequests} from "../controllers/user.controller.js";
+import { 
+    login, 
+    logout, 
+    signup, 
+    getOtp, 
+    verifyOtp, 
+    getRepairer
+    
+} from "../controllers/user.controller.js"; 
 import { userProtectRoute } from "../middleware/middleware.js";
+
 const router = express.Router();
 
 // -> /api/user/get_otp
-router.post("/getotp",getOtp);
+router.post("/getotp", getOtp);
 
 // -> /api/user/verify_otp
-router.post("/verify-otp",verifyOtp);
+router.post("/verify-otp", verifyOtp);
 
 // -> /api/user/signup
 router.post("/signup", signup);
@@ -19,12 +28,8 @@ router.post("/login", login);
 // -> /api/user/logout
 router.post("/logout", logout);
 
-// -> /api/user/check
+// -> /api/user/dashboard?postalCode=123456
+router.get("/dashboard", userProtectRoute, getRepairer);
 
 
-// -> /api/user/dashboard
-router.get("/dashboard", userProtectRoute , getRepairer) // ye route se sare ACTIVE repairer ki list ayegi IN THAT AREA (AB WOH AREA KA LOGIC POSTAL CODE SE HOGA)
-
-router.post('/service-request', userProtectRoute, createServiceRequest);
-router.get('/service-requests', userProtectRoute, getServiceRequests);
 export default router;

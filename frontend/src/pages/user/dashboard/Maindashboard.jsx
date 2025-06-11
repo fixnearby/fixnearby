@@ -87,7 +87,7 @@ const ServiceRequestFormModal = ({
     const handleIssueChange = (e) => {
         setSelectedIssue(e.target.value);
     };
-    
+
 useEffect(() => {
   if (selectedCategory && selectedIssue && serviceDetails.title) {
     const matchedCategory = servicefromjson.home_services.find(
@@ -243,7 +243,6 @@ const handleAIEstimation = () => {
         setIsSubmitting(true);
         setLocationError(''); 
         if (!serviceDetails.title.trim() || !serviceDetails.description.trim()) {
-            toast.error('Please provide a job title and description.');
             setIsSubmitting(false);
             return;
         }
@@ -566,7 +565,7 @@ const handleAIEstimation = () => {
         Based on your selection: <strong>{selectedCategory}</strong> – <em>{selectedIssue}</em>
       </p>
       <p className="text-xs text-gray-500">
-        The technician will verify this and confirm during the visit.
+        The technician will verify this and confirm the Quotation during the visit.<span className="text-red-600 font-medium"> ₹150</span> <span className='text-black'>fee applies if Quotation is cancelled after visit.</span>
       </p>
       <button
         onClick={() => setShowEstimationPopup(false)}
@@ -852,36 +851,37 @@ const UserMainDashboard = () => {
 
                 {/* Services Grid */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                    {services.map((service, index) => (
-                        <div
-                            key={index}
-                            onClick={() => handleServiceClick(service)}
-                            className="group bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 cursor-pointer"
-                        >
-                            <div className="p-6">
-                                <div className={`bg-gradient-to-r ${service.color} text-white w-16 h-16 rounded-2xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform mx-auto`}>
-                                    {service.icon}
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">{service.title}</h3>
-                                <p className="text-gray-600 text-sm text-center mb-4">{service.description}</p>
-                                <div className="text-center mt-4 relative">
-                            <button className="text-blue-600 font-semibold text-sm">
-                                Book FREE Visit
-                            </button>
+  {services.map((service, index) => (
+    <div
+      key={index}
+      onClick={() => handleServiceClick(service)}
+      className="service-card bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 cursor-pointer"
+    >
+      <div className="p-6">
+        <div className={`bg-gradient-to-r ${service.color} text-white w-16 h-16 rounded-2xl flex items-center justify-center mb-4 hover:scale-110 transition-transform mx-auto`}>
+          {service.icon}
+        </div>
+        <h3 className="text-lg font-bold text-gray-900 mb-2 text-center">{service.title}</h3>
+        <p className="text-gray-600 text-sm text-center mb-4">{service.description}</p>
 
-                            <div className="inline-block relative group ml-2 cursor-pointer">
-                                <Info className="w-4 h-4 text-blue-600 inline-block" />
-                                
-                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-blue-50 text-gray-800 text-xs rounded-md border border-blue-200 px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow">
-                                <strong className="text-blue-700">Note:</strong> Visit is <span className="text-green-600 font-medium">FREE</span> if you accept the quotation. <span className="text-red-600 font-medium">₹150</span> applies if declined.
-                                </div>
-                            </div>
-                            </div>
+        <div className="text-center mt-4 relative flex justify-center items-center gap-2">
+          <button className="text-blue-600 font-semibold text-sm">
+             Book Visit – Free
+          </button>
 
-                            </div>
-                        </div>
-                    ))}
-                </div>
+          {/* 👇 Tooltip only on icon hover */}
+          <div className="relative group cursor-pointer">
+            <Info className="w-4 h-4 text-blue-600" />
+            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 bg-blue-50 text-gray-800 text-xs rounded-md border border-blue-200 px-3 py-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50 shadow">
+              <strong className="text-blue-700">Note:</strong> Technician visit is <span className="text-green-600 font-medium">FREE</span> if you accept the quotation and proceed with service . <span className="text-red-600 font-medium">₹150</span> fee applies if cancelled after visit.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  ))}
+</div>
+
 
                 {/* Quick Stats */}
                 <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6">

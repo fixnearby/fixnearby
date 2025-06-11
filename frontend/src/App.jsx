@@ -1,71 +1,65 @@
 //frontend/src/App.jsx
 import { useEffect } from "react";
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate,Link } from 'react-router-dom';
 import { Loader } from "lucide-react";
-import { axiosInstance } from './lib/axios';
+import { axiosInstance } from './lib/axios'; // Preserving your axiosInstance import
 import { useAuthStore } from './store/authStore';
+
 // Pages
 import Landing from './pages/Landing';
 
-useEffect
 // Userauth
-import UserGetotp  from './pages/user/auth/Getotp';
+import UserGetotp from './pages/user/auth/Getotp';
 import UserVerifyotp from './pages/user/auth/Verifyotp';
 import UserLogin from './pages/user/auth/Login';
 import UserSignup from './pages/user/auth/Signup';
 
-// repairer auth
-import RepairerGetotp  from './pages/repairer/auth/Getotp';
+// Repairer auth
+import RepairerGetotp from './pages/repairer/auth/Getotp';
 import RepairerVerifyotp from './pages/repairer/auth/Verifyotp';
 import RepairerLogin from './pages/repairer/auth/Login';
 import RepairerSignup from './pages/repairer/auth/Signup';
 
-
-//UserDashboard
+// UserDashboard
 import UserInprogress from './pages/user/dashboard/Inprogress';
 import UserPendingservice from './pages/user/dashboard/Pendingservice';
 import UserMaindashboard from './pages/user/dashboard/Maindashboard';
 import Showservices from './pages/user/dashboard/Showservices';
 
-
-//repairerDashboard
-import RepairerInprogress from './pages/repairer/dashboard/Inprogress';
-import RepairerCompleted from './pages/repairer/dashboard/Completed';
+// RepairerDashboard
 import RepairerMainDashboard from './pages/repairer/dashboard/Maindashboard';
-import RepairerProfile from './pages/repairer/dashboard/Profile';
-
-
-
-
-
-
-
+import RepairerSettingsPage from './pages/repairer/dashboard/RepairerSettingsPage';
+import RepairerProfilePage from './pages/repairer/dashboard/RepairerProfilePage';
+import RepairerAnalyticsPage from './pages/repairer/dashboard/RepairerAnalyticsPage';
+import RepairerMessagesPage from './pages/repairer/dashboard/RepairerMessagesPage';
+import RepairerNotificationsPage from './pages/repairer/dashboard/RepairerNotificationsPage';
 
 function App() {
-  
-const {
+  const {
     setUser,
     setRepairer,
     setAdmin,
     clearUser,
     clearRepairer,
     clearAdmin,
-    setloading,
-    loading,
+    isLoading, 
+    setIsLoading, 
     user,
     repairer,
     admin
   } = useAuthStore();
-  
-  
 
-    useEffect(() => {
+  useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("ye hai jwt token",document.cookie); // should contain jwt
+        console.log("ye hai jwt token", document.cookie); // should contain jwt
         const res = await axiosInstance.get("/check-auth");
         const data = res.data;
         console.log("Auth data:", data);
+
+        clearUser();
+        clearRepairer();
+        clearAdmin();
         if (data.role === "user") {
           setUser(data);
         } else if (data.role === "repairer") {
@@ -74,31 +68,50 @@ const {
           setAdmin(data);
         }
       } catch (err) {
-        console.error(err);
+        console.error("Authentication check failed:", err);
+     
         clearUser();
         clearRepairer();
         clearAdmin();
       } finally {
-        setloading(false); // done loading
+        setIsLoading(false);
       }
     };
 
+    setIsLoading(true); 
     checkAuth();
-  }, [clearUser, clearRepairer, clearAdmin, setUser, setRepairer, setAdmin, setloading]);
+  }, [clearUser, clearRepairer, clearAdmin, setUser, setRepairer, setAdmin, setIsLoading]); 
 
-  if (loading )
+  if (isLoading) 
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="size-10 animate-spin" />
       </div>
     );
 
+  // Helper for private routes, using the auth store state
+  const PrivateRoute = ({ children, allowedRoles }) => {
+    const isAuthenticated = user || repairer || admin;
+    const currentRole = user ? 'user' : repairer ? 'repairer' : admin ? 'admin' : null;
+
+    if (!isAuthenticated) {
+      return <Navigate to="/user/login" replace />; // Redirect to user login by default
+    }
+
+    if (allowedRoles && !allowedRoles.includes(currentRole)) {
+      // Authenticated but role not allowed for this route
+      return <Navigate to="/unauthorized" replace />; // Redirect to an unauthorized page
+    }
+
+    return children;
+  };
+
+
   return (
     <div>
-        <Routes>
-          
-          {/* landing page */}
-          <Route
+      <Routes>
+        {/* Landing page - accessible to all, redirects if already logged in */}
+        <Route
           path="/"
           element={
             user ? (
@@ -113,36 +126,53 @@ const {
           }
         />
 
-          {/* User Auth pages */}
-          <Route path="/user/getotp" element={!user ?<UserGetotp />:<Navigate to="/user/dashboard" />} />
-          <Route path="/user/verify-otp" element={!user ?<UserVerifyotp />:<Navigate to="/user/dashboard" />} />
-          <Route path="/user/login" element={!user ?<UserLogin />:<Navigate to="/user/dashboard" />} />
-          <Route path="/user/signup" element={!user ?<UserSignup />:<Navigate to="/user/dashboard" />} />
-          
+        {/* User Auth pages (accessible only if not logged in as user) */}
+        <Route path="/user/getotp" element={user ? <Navigate to="/user/dashboard" /> : <UserGetotp />} />
+        <Route path="/user/verify-otp" element={user ? <Navigate to="/user/dashboard" /> : <UserVerifyotp />} />
+        <Route path="/user/login" element={user ? <Navigate to="/user/dashboard" /> : <UserLogin />} />
+        <Route path="/user/signup" element={user ? <Navigate to="/user/dashboard" /> : <UserSignup />} />
 
-          {/* Repairer Auth pages */}
-          <Route path="/repairer/getotp" element={repairer ?<Navigate to="/repairer/dashboard" /> : <RepairerGetotp />} />
-          <Route path="/repairer/verify-otp" element={repairer ?<Navigate to="/repairer/dashboard" />:<RepairerVerifyotp />} />
-          <Route path="/repairer/login" element={repairer ?<Navigate to="/repairer/dashboard" /> :<RepairerLogin />} />
-          <Route path="/repairer/signup" element={repairer ?<Navigate to="/repairer/dashboard" /> :<RepairerSignup />} />
+        {/* Repairer Auth pages (accessible only if not logged in as repairer) */}
+        <Route path="/repairer/getotp" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerGetotp />} />
+        <Route path="/repairer/verify-otp" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerVerifyotp />} />
+        <Route path="/repairer/login" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerLogin />} />
+        <Route path="/repairer/signup" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerSignup />} />
 
-          
-          {/* User Dashboard */}
-          <Route path="/user/dashboard" element={!user ? <Navigate to="/user/login" /> : <UserMaindashboard /> } />
-          <Route path="/user/inprogress" element={!user ? <Navigate to="/user/login" /> : <UserInprogress /> } />
-          <Route path="/user/pending-service" element={!user ? <Navigate to="/user/login" /> : <UserPendingservice /> } />
-          <Route path="/user/show-services" element={!user ? <Navigate to="/user/login" /> : <Showservices /> } />
+        {/* User Dashboard - Protected by PrivateRoute */}
+        <Route path="/user/dashboard" element={<PrivateRoute allowedRoles={['user']}><UserMaindashboard /></PrivateRoute>} />
+        <Route path="/user/inprogress" element={<PrivateRoute allowedRoles={['user']}><UserInprogress /></PrivateRoute>} />
+        <Route path="/user/pending-service" element={<PrivateRoute allowedRoles={['user']}><UserPendingservice /></PrivateRoute>} />
+        <Route path="/user/show-services" element={<PrivateRoute allowedRoles={['user']}><Showservices /></PrivateRoute>} />
 
+        {/* Repairer Dashboard - Protected by PrivateRoute */}
+        <Route path="/repairer/dashboard" element={<PrivateRoute allowedRoles={['repairer']}><RepairerMainDashboard /></PrivateRoute>} />
+        
+        <Route path="/repairer/settings" element={<PrivateRoute allowedRoles={['repairer']}><RepairerSettingsPage /></PrivateRoute>} />
+        <Route path="/repairer/profile" element={<PrivateRoute allowedRoles={['repairer']}><RepairerProfilePage /></PrivateRoute>} />
+        <Route path="/repairer/analytics" element={<PrivateRoute allowedRoles={['repairer']}><RepairerAnalyticsPage /></PrivateRoute>} />
+        <Route path="/repairer/messages" element={<PrivateRoute allowedRoles={['repairer']}><RepairerMessagesPage /></PrivateRoute>} />
+        <Route path="/repairer/notifications" element={<PrivateRoute allowedRoles={['repairer']}><RepairerNotificationsPage /></PrivateRoute>} />
 
+        {/* Admin Dashboard - Protected by PrivateRoute */}
+        <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={['admin']}><div>Admin Dashboard Placeholder</div></PrivateRoute>} /> {/* Placeholder if you don't have AdminDashboardPage yet */}
 
-          {/* repairer Dashboard */}
-          <Route path="/repairer/dashboard" element={!repairer ? <Navigate to="/repairer/login" /> : <RepairerMainDashboard /> } />
-          <Route path="/repairer/inprogress" element={!repairer ? <Navigate to="/repairer/login" /> : <RepairerInprogress /> } />
-          <Route path="/repairer/completed" element={!repairer ? <Navigate to="/repairer/login" /> : <RepairerCompleted /> } />
-          <Route path="/repairer/profile" element={!repairer ? <Navigate to="/repairer/login" /> : <RepairerProfile /> } />
+        {/* Unauthorized Access Page */}
+        <Route path="/unauthorized" element={
+          <div className="min-h-screen flex items-center justify-center bg-red-50 text-red-800">
+            <p className="text-xl font-semibold">403 - Unauthorized Access</p>
+            <p className="text-gray-600 mt-2">You do not have permission to view this page.</p>
+            <Link to="/" className="mt-4 text-blue-600 hover:underline">Go to Home</Link>
+          </div>
+        } />
 
-        </Routes>
-      
+        {/* Catch-all for undefined routes */}
+        <Route path="*" element={
+            <div className="min-h-screen flex items-center justify-center bg-gray-100 text-gray-800">
+              <p className="text-xl font-semibold">404 - Page Not Found</p>
+              <Link to="/" className="mt-4 text-blue-600 hover:underline">Go to Home</Link>
+            </div>
+          } />
+      </Routes>
     </div>
   );
 }

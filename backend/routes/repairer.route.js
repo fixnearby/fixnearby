@@ -1,36 +1,59 @@
-// backend/routes/repairer.route.js
 import express from "express";
-import { 
-  login, 
-  logout, 
-  signup, 
-  getOtp, 
-  verifyOtp, 
-  getDashboardStats, // Imported from controller
-  getRecentActivity, // Imported from controller
-  getNearbyJobs, // Imported from controller
-  acceptJob // Imported from controller
-} from "../controllers/repairer.controller.js"; // All controller functions now imported from this path
-
-import { repairerProtectRoute } from "../middleware/middleware.js"; // Ensure this middleware exists
+import {
+  getOtp,
+  verifyOtp,
+  signup,
+  login,
+  logout,
+  getDashboardStats,
+  getRecentActivity,
+  getNearbyJobs,
+  acceptJob,
+  getRepairerProfile, // New
+  updateRepairerProfile, // New
+  updateRepairerSettings, // New
+  getRepairerAnalytics, // New
+  getRepairerConversations, // New
+  getConversationMessages, // New
+  sendMessage, // New
+  getRepairerNotifications, // New
+  markNotificationAsRead, // New
+} from "../controllers/repairer.controller.js";
+import { repairerProtectRoute } from "../middleware/middleware.js";
 
 const router = express.Router();
 
-// --- Authentication Routes ---
+// Auth Routes
 router.post("/getotp", getOtp);
 router.post("/verify-otp", verifyOtp);
 router.post("/signup", signup);
 router.post("/login", login);
-router.post("/logout", repairerProtectRoute, logout); // Added protect middleware for logout
+router.post("/logout", logout);
 
-// --- Dashboard Data Routes (Protected) ---
-// Use repairerProtectRoute middleware to ensure only authenticated repairers can access
-router.get("/dashboard-stats", repairerProtectRoute, getDashboardStats); 
-router.get("/recent-activity", repairerProtectRoute, getRecentActivity); 
+// Dashboard Routes (Protected)
+router.get("/dashboard-stats", repairerProtectRoute, getDashboardStats);
+router.get("/recent-activity", repairerProtectRoute, getRecentActivity);
+router.get("/jobs/nearby", repairerProtectRoute, getNearbyJobs);
+router.post("/jobs/:jobId/accept", repairerProtectRoute, acceptJob);
 
-// --- Job-related Routes (Protected) ---
-router.get("/jobs/nearby", repairerProtectRoute, getNearbyJobs); // Route for nearby jobs
-router.post("/jobs/:jobId/accept", repairerProtectRoute, acceptJob); // Route for accepting a job
+// Profile Routes (Protected)
+router.get("/profile", repairerProtectRoute, getRepairerProfile);
+router.put("/profile", repairerProtectRoute, updateRepairerProfile); 
+
+// Settings Routes (Protected)
+router.put("/settings", repairerProtectRoute, updateRepairerSettings);
+
+// Analytics Routes (Protected)
+router.get("/analytics", repairerProtectRoute, getRepairerAnalytics);
+
+// Messaging/Conversation Routes (Protected)
+router.get("/conversations", repairerProtectRoute, getRepairerConversations); 
+router.get("/conversations/:serviceId/messages", repairerProtectRoute, getConversationMessages);
+router.post("/messages/send", repairerProtectRoute, sendMessage); 
+
+// Notifications Routes (Protected)
+router.get("/notifications", repairerProtectRoute, getRepairerNotifications);
+router.put("/notifications/:notificationId/read", repairerProtectRoute, markNotificationAsRead);
 
 
 export default router;

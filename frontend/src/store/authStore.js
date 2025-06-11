@@ -1,20 +1,40 @@
-//frontend/src/store/authStore.js
 import { create } from 'zustand';
 
 export const useAuthStore = create((set) => ({
-  user: null,
   repairer: null,
+  user: null,
   admin: null,
+  token: null,
+  role: null,
+  isLoading: true,
 
-  loading: true,
+  setRepairer: (repairerData) => set({
+    repairer: repairerData,
+    token: repairerData?.token || null,
+    role: 'repairer'
+  }),
 
-  setUser: (data) => set({ user: data }),
-  setRepairer: (data) => set({ repairer: data }),
-  setAdmin: (data) => set({ admin: data }),
+  clearRepairer: () => set({ repairer: null, token: null, role: null }),
 
-  clearUser: () => set({ user: null }),
-  clearRepairer: () => set({ repairer: null }),
-  clearAdmin: () => set({ admin: null }),
+  setUser: (userData) => set({
+    user: userData,
+    token: userData?.token || null,
+    role: 'user'
+  }),
 
-  setloading: (val) => set({ loading: val }),
+  clearUser: () => set({ user: null, token: null, role: null }),
+
+  setAdmin: (adminData) => set({
+    admin: adminData,
+    token: adminData?.token || null,
+    role: 'admin'
+  }),
+
+  clearAdmin: () => set({ admin: null, token: null, role: null }),
+
+  setIsLoading: (status) => set({ isLoading: status }),
+
+  logout: () => {
+    set({ repairer: null, user: null, admin: null, token: null, role: null, isLoading: false });
+  },
 }));

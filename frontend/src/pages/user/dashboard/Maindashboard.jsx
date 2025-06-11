@@ -662,7 +662,7 @@ const UserMainDashboard = () => {
 
     
     const isAuthenticated = !!user || !!repairer || !!admin;
-
+    console.log(clearUser);
     const [showServiceFormModal, setShowServiceFormModal] = useState(false);
     const [selectedServiceData, setSelectedServiceData] = useState(null);
 
@@ -772,23 +772,6 @@ const UserMainDashboard = () => {
         setSelectedServiceData(service);
         setShowServiceFormModal(true);
         console.log(service.category);
-        //  const mainCategoryTitle = serviceDetails.title;
-        // const selectedCategoryName = serviceDetails.category;
-
-        // // Find the main category object (e.g., "Appliances")
-        // const selectedMainCategory = servicefromjson.home_services.find(
-        //     item => item.main_category.toLowerCase() === mainCategoryTitle.toLowerCase()
-        // );
-
-        // // Now find the matching sub-category inside it
-        // const selectedCategory = selectedMainCategory?.categories.find(
-        //     cat => cat.category.toLowerCase() === selectedCategoryName.toLowerCase()
-        // );
-
-        // // Get the issues
-        // const issues = selectedCategory?.services.map(service => service.issue);
-
-        // console.log("Issues for selected sub-category:", issues);
     };
 
     const handleModalClose = () => {

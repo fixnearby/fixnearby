@@ -18,7 +18,6 @@ const serviceRequestSchema = new mongoose.Schema(
     serviceType: {
       type: String,
       required: true,
-      enum: ["electrical", "plumbing", "carpentry", "appliance_repair", "hvac", "cleaning", "painting", "other"],
     },
     category: {
       type: String, 
@@ -33,16 +32,13 @@ const serviceRequestSchema = new mongoose.Schema(
       required: true,
       maxlength: 1000,
     },
-    priceRange: {
-      type: String, 
-      default: "Negotiable",
-    },
     estimatedPrice: {
       type: Number,
       default: 0,
     },
     quotation: {
-      type: Number, 
+      type: String, 
+      required: true,
     },
     location: {
       captureMethod: {

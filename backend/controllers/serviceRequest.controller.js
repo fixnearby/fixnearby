@@ -19,7 +19,7 @@ const formatLocationData = (location) => {
 // 1. Create a new service request (User initiated)
 export const createServiceRequest = async (req, res) => {
     try {
-        const { serviceType, description, locationData, preferredTimeSlot, urgency, repairerId , issue , category , priceRange } = req.body;
+        const { serviceType, description, locationData, preferredTimeSlot, urgency, repairerId , issue , category , quotation } = req.body;
         const customerId = req.user._id; // From userProtectRoute middleware
 
         // Basic validation for required fields
@@ -33,7 +33,7 @@ export const createServiceRequest = async (req, res) => {
             serviceType: serviceType, // Ensure consistency
             issue,
             category,
-            priceRange,
+            quotation,
             description,
             location: {
                 address: locationData.fullAddress,

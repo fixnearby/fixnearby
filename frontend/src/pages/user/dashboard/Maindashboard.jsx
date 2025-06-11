@@ -264,7 +264,7 @@ const handleAIEstimation = () => {
                 issue: selectedIssue,
                 pincode: locationData.pincode,
                 category : selectedCategory,
-                priceRange: priceRange
+                quotation: priceRange
             };
 
             const response = await axiosInstance.post('/service-requests', requestPayload);

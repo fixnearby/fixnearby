@@ -16,6 +16,8 @@ import {
   acceptJob,
   getRepairerNotifications
 } from '../../../services/apiService.js';
+import { axiosInstance } from '../../../lib/axios.js';
+import toast from 'react-hot-toast';
 
 // Helper function for urgency color (kept here as it's specific to job display)
 const getUrgencyColor = (urgency) => {
@@ -158,13 +160,16 @@ const RepairerMainDashboard = () => {
     }
   };
 
+
   // --- Navigation Handlers ---
   const handleLogout = async () => {
-    console.log("Logout button clicked. Logging out...");
-    await clearRepairer();
-    clearUser();
-    clearAdmin();
-    navigate('/repairer/login');
+    const res = axiosInstance.post('/repairer/logout');
+        if (res.status === 200) {
+            toast.success('Logged out successfully!');
+        } else {   
+            toast.error('Failed to logout. Please try again.');
+        }
+        window.location.reload()
   };
 
   const handleSettingsClick = () => {

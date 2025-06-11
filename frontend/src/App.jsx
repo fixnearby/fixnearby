@@ -137,21 +137,22 @@ function App() {
         <Route path="/repairer/verify-otp" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerVerifyotp />} />
         <Route path="/repairer/login" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerLogin />} />
         <Route path="/repairer/signup" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerSignup />} />
+        {/* user ? <Showservices /> : <Navigate to="/user/login" /> */}
 
         {/* User Dashboard - Protected by PrivateRoute */}
-        <Route path="/user/dashboard" element={<PrivateRoute allowedRoles={['user']}><UserMaindashboard /></PrivateRoute>} />
-        <Route path="/user/inprogress" element={<PrivateRoute allowedRoles={['user']}><UserInprogress /></PrivateRoute>} />
-        <Route path="/user/pending-service" element={<PrivateRoute allowedRoles={['user']}><UserPendingservice /></PrivateRoute>} />
-        <Route path="/user/show-services" element={<PrivateRoute allowedRoles={['user']}><Showservices /></PrivateRoute>} />
+        <Route path="/user/dashboard" element={user ? <UserMaindashboard /> : <Navigate to="/user/login" />} />
+        <Route path="/user/inprogress" element={user ? <UserInprogress /> : <Navigate to="/user/login" />} />
+        <Route path="/user/pending-service" element={user ? <UserPendingservice /> : <Navigate to="/user/login" />} />
+        <Route path="/user/show-services" element={user ? <Showservices /> : <Navigate to="/user/login" />} />
 
         {/* Repairer Dashboard - Protected by PrivateRoute */}
-        <Route path="/repairer/dashboard" element={<PrivateRoute allowedRoles={['repairer']}><RepairerMainDashboard /></PrivateRoute>} />
+        <Route path="/repairer/dashboard" element={repairer ? <RepairerMainDashboard /> : <Navigate to="/repairer/login" />} />
         
-        <Route path="/repairer/settings" element={<PrivateRoute allowedRoles={['repairer']}><RepairerSettingsPage /></PrivateRoute>} />
-        <Route path="/repairer/profile" element={<PrivateRoute allowedRoles={['repairer']}><RepairerProfilePage /></PrivateRoute>} />
-        <Route path="/repairer/analytics" element={<PrivateRoute allowedRoles={['repairer']}><RepairerAnalyticsPage /></PrivateRoute>} />
-        <Route path="/repairer/messages" element={<PrivateRoute allowedRoles={['repairer']}><RepairerMessagesPage /></PrivateRoute>} />
-        <Route path="/repairer/notifications" element={<PrivateRoute allowedRoles={['repairer']}><RepairerNotificationsPage /></PrivateRoute>} />
+        <Route path="/repairer/settings" element={repairer ? <RepairerSettingsPage /> : <Navigate to="/repairer/login" />} />
+        <Route path="/repairer/profile" element={repairer ? <RepairerProfilePage /> : <Navigate to="/repairer/login" />} />
+        <Route path="/repairer/analytics" element={repairer ? <RepairerAnalyticsPage /> : <Navigate to="/repairer/login" />} />
+        <Route path="/repairer/messages" element={repairer ? <RepairerMessagesPage /> : <Navigate to="/repairer/login" />} />
+        <Route path="/repairer/notifications" element={repairer ? <RepairerNotificationsPage /> : <Navigate to="/repairer/login" />} />
 
         {/* Admin Dashboard - Protected by PrivateRoute */}
         <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={['admin']}><div>Admin Dashboard Placeholder</div></PrivateRoute>} /> {/* Placeholder if you don't have AdminDashboardPage yet */}

@@ -3,6 +3,7 @@ import React from 'react';
 import { Navigation, Search, Filter, AlertCircle, Wrench, MapPin, DollarSign, Clock, Star, MoreVertical } from 'lucide-react';
 import LoadingSpinner from '../LoadingSpinner.jsx'; // Assuming this is in src/components/
 import ErrorMessage from '../ErrorMessage.jsx'; // Assuming this is in src/components/
+import servicefromjson from '../../services.json';
 
 const OnlineDashboardContent = ({ 
   jobs, 
@@ -21,6 +22,10 @@ const OnlineDashboardContent = ({
     const matchesFilter = selectedFilter === 'all' || (job.category?.toLowerCase() || '') === selectedFilter;
     return matchesSearch && matchesFilter;
   });
+
+  const servicesOffered = servicefromjson.home_services.map(item =>
+    item.main_category.toLowerCase()
+    );
 
   return (
     <div className="space-y-8">
@@ -61,16 +66,12 @@ const OnlineDashboardContent = ({
               onChange={(e) => setSelectedFilter(e.target.value)}
               className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="all">All Categories</option>
-              <option value="plumbing">Plumbing</option>
-              <option value="electrical">Electrical</option>
-              <option value="carpentry">Carpentry</option>
-              <option value="painting">Painting</option>
-              <option value="electronics">Electronics</option>
-              <option value="appliances">Appliance</option>
-              <option value="automotive">Automotive</option>
-              <option value="hvac">HVAC</option>
-              <option value="other">Other</option>
+             <option value="">All Categories</option> {/* CHANGED: profession -> service */}
+                      {servicesOffered.map((service) => ( // CHANGED: professions.map -> servicesOffered.map
+                        <option key={service} value={service}>
+                          {service}
+                        </option>
+                      ))}
             </select>
             <button className="px-4 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
               <Filter className="w-5 h-5 text-gray-600" />
@@ -114,17 +115,17 @@ const OnlineDashboardContent = ({
                     </button>
                   </div>
                 </div>
-
-                <p className="text-gray-700 mb-4">{job.description || 'No description provided.'}</p>
+                <p className=" font-bold mb-4">{job.issue || 'No issue provided.'}</p>
+                <p className="font-bold mb-4">{job.description || 'No description provided.'}</p>
 
                 <div className="grid md:grid-cols-4 gap-4 mb-6">
                   <div className="flex items-center text-gray-600">
                     <MapPin className="w-4 h-4 mr-2" />
                     <span className="text-sm">{job.location || 'N/A'}</span>
                   </div>
+                  
                   <div className="flex items-center text-gray-600">
-                    <DollarSign className="w-4 h-4 mr-2" />
-                    <span className="text-sm font-semibold text-green-600">{job.price || 'N/A'}</span>
+                    <span className="text-lg font-semibold text-green-600">₹{job.quotation || 'N/A'}</span>
                   </div>
                   <div className="flex items-center text-gray-600">
                     <Clock className="w-4 h-4 mr-2" />

@@ -58,7 +58,7 @@ const Signup = () => {
   // Renamed 'professions' to 'servicesOffered' for clarity and alignment with 'services' field
 
   const servicesOffered = servicefromjson.home_services.map(item =>
-  item.main_category.toLowerCase()
+  item.main_category
   );
 
   const benefits = [

@@ -340,21 +340,28 @@ export const getNearbyJobs = async (req, res) => {
     const repairerPincode = repairer.pincode;
     const serviceRadius = repairer.preferences.serviceRadius || 25;
 
+    console.log(repairerServices)
+
+    const pincodePrefix = repairerPincode.toString().slice(0, 4);
+
     const nearbyServiceRequests = await ServiceRequest.find({
       status: 'requested',
       repairer: { $eq: null },
       serviceType: { $in: repairerServices },
-      "location.pincode": repairerPincode
+      "location.pincode": { $regex: `^${pincodePrefix}` } // Match pincode starting with same 4 digits
     })
     .populate('customer', 'fullname')
     .sort({ createdAt: 1 })
     .limit(10)
     .lean();
 
+
     const formattedJobs = nearbyServiceRequests.map(sr => ({
       id: sr._id.toString(),
       title: sr.title,
       category: sr.serviceType,
+      quotation: sr.quotation,
+      issue:sr.issue,
       location: sr.location?.address || "Unknown Location",
       pincode: sr.location?.pincode,
       price: sr.estimatedPrice ? `$${sr.estimatedPrice}` : sr.priceRange || "Negotiable",

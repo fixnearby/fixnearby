@@ -40,6 +40,10 @@ const serviceRequestSchema = new mongoose.Schema(
       type: String, 
       required: true,
     },
+    contactInfo:{
+      type: String, 
+      required: true,
+    },
     location: {
       captureMethod: {
         type: String,

@@ -1,7 +1,7 @@
 import { Resend } from 'resend';
 
 //const resend = new Resend("re_PAAUdv4c_3K3jX4T3btZJqtA2Vstp8P4o"); // ye api key env file mai rakhne se chal nahi rahi idek why //customer
-const resend = new Resend("re_g8NU8sVV_GuQDPB5crVTf7xycxQgqwXnj"); // repairer
+const resend = new Resend("re_Aea8hywa_L9HWi88CttY6hjZzrV5nZ6qg"); // repairer
 
 export const send_email = async (to, otp) => {
   const html = `

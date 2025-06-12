@@ -75,7 +75,7 @@ const Getotp = () => {
         payload.email = formData.email;
       }
 
-      const response = await axiosInstance.post('/repairer/getotp', payload);
+      const response = await axiosInstance.post('/repairer/get-otp', payload);
 
       console.log('OTP API Response:', response.data);
       // Assuming your backend sends the email back on successful OTP verification

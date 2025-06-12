@@ -169,6 +169,8 @@ export const login = async (req, res) => { /* ... */
     email,
     password
   } = req.body;
+  console.log(email)
+  console.log(password)
   try {
     const repairer = await Repairer.findOne({
       email
@@ -176,7 +178,9 @@ export const login = async (req, res) => { /* ... */
     if (!repairer) return res.status(400).json({
       message: "Invalid credentials"
     });
+    console.log(repairer.password)
     const isMatch = await bcrypt.compare(password, repairer.password);
+    console.log(isMatch)
     if (!isMatch) return res.status(400).json({
       message: "Invalid credentials"
     });
@@ -439,6 +443,8 @@ export const getNearbyJobs = async (req, res) => {
       category: sr.serviceType,
       quotation: sr.quotation,
       issue: sr.issue,
+      date: sr.preferredTimeSlot.date,
+      time: sr.preferredTimeSlot.time,
       location: sr.location?.address || "Unknown Location",
       pincode: sr.location?.pincode,
       price: sr.estimatedPrice ? `$${sr.estimatedPrice}` : sr.quotation || "Negotiable", // Changed from priceRange to quotation

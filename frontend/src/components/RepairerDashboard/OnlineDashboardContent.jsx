@@ -1,18 +1,17 @@
 // frontend/src/components/RepairerDashboard/OnlineDashboardContent.jsx
 import React from 'react';
-import { Navigation, Search, Filter, AlertCircle, Wrench, MapPin, DollarSign, Clock, Star, MoreVertical } from 'lucide-react';
+import {Navigation, AlertCircle, MoreVertical, MapPin, Calendar, Clock, DollarSign, Tag } from 'lucide-react';
 import LoadingSpinner from '../LoadingSpinner.jsx'; // Assuming this is in src/components/
 import ErrorMessage from '../ErrorMessage.jsx'; // Assuming this is in src/components/
-import servicefromjson from '../../services.json';
 
 const OnlineDashboardContent = ({ 
   jobs, 
   loadingJobs, 
   errorJobs, 
   searchQuery, 
-  setSearchQuery, 
+
   selectedFilter, 
-  setSelectedFilter, 
+
   handleAcceptJob, 
   getUrgencyColor 
 }) => {
@@ -22,10 +21,6 @@ const OnlineDashboardContent = ({
     const matchesFilter = selectedFilter === 'all' || (job.category?.toLowerCase() || '') === selectedFilter;
     return matchesSearch && matchesFilter;
   });
-
-  const servicesOffered = servicefromjson.home_services.map(item =>
-    item.main_category.toLowerCase()
-    );
 
   return (
     <div className="space-y-8">
@@ -47,38 +42,6 @@ const OnlineDashboardContent = ({
         </div>
       </div>
 
-      {/* Search and Filter */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex flex-col md:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <input
-              type="text"
-              placeholder="Search for jobs..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          <div className="flex gap-2">
-            <select
-              value={selectedFilter}
-              onChange={(e) => setSelectedFilter(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-             <option value="">All Categories</option> {/* CHANGED: profession -> service */}
-                      {servicesOffered.map((service) => ( // CHANGED: professions.map -> servicesOffered.map
-                        <option key={service} value={service}>
-                          {service}
-                        </option>
-                      ))}
-            </select>
-            <button className="px-4 py-3 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
-              <Filter className="w-5 h-5 text-gray-600" />
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* Job Listings */}
       {loadingJobs ? (
@@ -93,77 +56,131 @@ const OnlineDashboardContent = ({
         </div>
       ) : (
         <div className="grid gap-6">
-          {filteredJobs.map((job) => (
-            <div key={job.id} className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden">
-              <div className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className={`bg-gradient-to-r ${job.color || 'from-gray-400 to-gray-500'} text-white w-12 h-12 rounded-xl flex items-center justify-center`}>
-                      {job.icon || <Wrench className="w-5 h-5" />}
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-900">{job.title || 'Job Title Not Available'}</h3>
-                      <p className="text-gray-600">{job.category || 'Category Not Available'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${getUrgencyColor(job.urgency)}`}>
-                      {job.urgency || 'Unknown'} Priority
-                    </span>
-                    <button className="p-2 hover:bg-gray-100 rounded-lg">
-                      <MoreVertical className="w-5 h-5 text-gray-400" />
-                    </button>
-                  </div>
-                </div>
-                <p className=" font-bold mb-4">{job.issue || 'No issue provided.'}</p>
-                <p className="font-bold mb-4">{job.description || 'No description provided.'}</p>
+          {filteredJobs.map((job) => {
+            const date = new Date(job.date);
 
-                <div className="grid md:grid-cols-4 gap-4 mb-6">
-                  <div className="flex items-center text-gray-600">
-                    <MapPin className="w-4 h-4 mr-2" />
-                    <span className="text-sm">{job.location || 'N/A'}</span>
-                  </div>
-                  
-                  <div className="flex items-center text-gray-600">
-                    <span className="text-lg font-semibold text-green-600">₹{job.quotation || 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Clock className="w-4 h-4 mr-2" />
-                    <span className="text-sm">{job.estimatedDuration || 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center text-gray-600">
-                    <Star className="w-4 h-4 mr-2 fill-current text-yellow-400" />
-                    <span className="text-sm">{job.customerRating || 'No'} rating</span>
-                  </div>
-                </div>
+            // Format the date
+            const formattedDate = date.toLocaleDateString(); // Default format based on browser locale
 
-                <div className="flex flex-wrap gap-2 mb-6">
-                  {job.tags && job.tags.map((tag, index) => (
-                    <span key={index} className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-sm">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
+            return(
+               <div key={job.id} className="max-w-xl mx-auto p-4 bg-gray-50">
+      <div className="bg-white rounded-xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden border border-gray-100 hover:border-gray-200">
+        {/* Header Section */}
+        <div className="bg-gradient-to-r from-gray-50 to-blue-50 p-6 border-b border-gray-100">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center space-x-4">
+              <div className={`bg-gradient-to-r ${job.color} text-white w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg`}>
+                {job.icon}
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-1">{job.title}</h3>
+                <p className="text-gray-600 font-medium">{job.category}</p>
+              </div>
+            </div>
+            <div className="flex items-center space-x-3">
+              <span className={`px-4 py-2 rounded-full text-sm font-semibold ${getUrgencyColor(job.urgency)} backdrop-blur-sm`}>
+                {job.urgency} Priority
+              </span>
+              <button className="p-2 hover:bg-white hover:shadow-md rounded-xl transition-all duration-200">
+                <MoreVertical className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
+          </div>
+        </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-gray-500">
-                    Posted {job.postedTime || 'N/A'}
-                  </div>
-                  <div className="flex space-x-3">
-                    <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-                      View Details
-                    </button>
-                    <button
-                      onClick={() => handleAcceptJob(job.id)}
-                      className="px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200"
-                    >
-                      Accept Job
-                    </button>
-                  </div>
+        {/* Content Section */}
+        <div className="p-6">
+          {/* Issue & Description */}
+          <div className="mb-6">
+            <div className="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-r-lg mb-4">
+              <h4 className="font-semibold text-amber-800 mb-2">Issue:</h4>
+              <p className="text-amber-700">{job.issue}</p>
+            </div>
+            <div className="bg-blue-50 border-l-4 border-blue-400 p-4 rounded-r-lg">
+              <h4 className="font-semibold text-blue-800 mb-2">Description:</h4>
+              <p className="text-blue-700">{job.description}</p>
+            </div>
+          </div>
+
+          {/* Location */}
+          <div className="flex items-center text-gray-700 mb-6 bg-gray-50 p-3 rounded-xl">
+            <MapPin className="w-5 h-5 mr-3 text-red-500" />
+            <span className="font-medium">{job.location}</span>
+          </div>
+
+          {/* Job Details Grid */}
+          <div className="grid md:grid-cols-3 gap-4 mb-6">
+            <div className="bg-green-50 p-4 rounded-xl border border-green-200">
+              <div className="flex items-center text-green-700">
+                <DollarSign className="w-5 h-5 mr-2" />
+                <div>
+                  <p className="text-sm font-medium text-green-600">Quotation</p>
+                  <p className="text-xl font-bold text-green-800">₹{job.quotation}</p>
                 </div>
               </div>
             </div>
-          ))}
+
+            <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
+              <div className="flex items-center text-purple-700">
+                <Calendar className="w-5 h-5 mr-2" />
+                <div>
+                  <p className="text-sm font-medium text-purple-600">Preferred Date</p>
+                  <p className="text-sm font-semibold text-purple-800">{formattedDate}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-200">
+              <div className="flex items-center text-indigo-700">
+                <Clock className="w-5 h-5 mr-2" />
+                <div>
+                  <p className="text-sm font-medium text-indigo-600">Preferred Time</p>
+                  <p className="text-sm font-semibold text-indigo-800">{job.time}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tags */}
+          <div className="mb-6">
+            <div className="flex items-center mb-3">
+              <Tag className="w-4 h-4 mr-2 text-gray-500" />
+              <span className="text-sm font-medium text-gray-600">Tags</span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {job.tags && job.tags.map((tag, index) => (
+                <span 
+                  key={index} 
+                  className="px-3 py-2 bg-gradient-to-r from-blue-100 to-blue-200 text-blue-800 rounded-full text-sm font-medium border border-blue-300 hover:shadow-md transition-all duration-200"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-4 border-t border-gray-100">
+            <div className="text-sm text-gray-500 bg-gray-50 px-3 py-2 rounded-lg">
+              <span className="font-medium">Posted:</span> {job.postedTime}
+            </div>
+            <div className="flex space-x-3">
+              <button className="px-6 py-3 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 font-medium">
+                View Details
+              </button>
+              <button
+                onClick={() => handleAcceptJob(job.id)}
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl hover:shadow-xl hover:shadow-blue-500/25 transform hover:-translate-y-1 transition-all duration-300 font-semibold"
+              >
+                Accept Job
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+            )
+          })}
         </div>
       )}
     </div>

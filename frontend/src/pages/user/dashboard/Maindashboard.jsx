@@ -286,11 +286,6 @@ const ServiceRequestFormModal = ({
         setIsSubmitting(false);
         return;
     }
-    if (!serviceDetails.budget) {
-      toast.error("Please provide your budget (e.g., 'Negotiable' or a range).");
-      setIsSubmitting(false);
-      return;
-    }
     if (!serviceDetails.contactInfo) {
       toast.error("Please provide your contact information (phone number or email).");
       setIsSubmitting(false);
@@ -310,7 +305,6 @@ const ServiceRequestFormModal = ({
         description: serviceDetails.description,
         preferredDate: serviceDetails.preferredTimeSlot.date,
         preferredTime: serviceDetails.preferredTimeSlot.time,
-        budget: serviceDetails.budget,
         contactInfo: serviceDetails.contactInfo,
         locationData: { 
           fullAddress: locationData.fullAddress, 
@@ -334,8 +328,9 @@ const ServiceRequestFormModal = ({
 
       const response = await requestService(requestPayload);
 
-      if (response.serviceRequest) {
-        toast.success('Service request created successfully!');
+      if (response.success) {
+
+        toast.success("Service Requested Succesfully")
         onClose();
       } else {
         toast.error(response.message || 'Failed to create service request.');
@@ -694,23 +689,6 @@ const ServiceRequestFormModal = ({
                 <option value="evening">Evening (5 PM - 9 PM)</option>
                 <option value="flexible">Anytime during the day</option>
               </select>
-            </div>
-
-            {/* NEW: Budget Input */}
-            <div className="mb-4">
-              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="budget">
-                Budget (e.g., "Negotiable", "₹500-1000") *
-              </label>
-              <input
-                type="text"
-                id="budget"
-                name="budget"
-                value={serviceDetails.budget}
-                onChange={handleServiceDetailsChange}
-                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                placeholder="e.g., Negotiable, ₹1000, ₹500-1500"
-                required
-              />
             </div>
 
             {/* NEW: Contact Info Input */}

@@ -25,7 +25,6 @@ export const createServiceRequest = async (req, res) => {
       locationData,
       preferredTimeSlot,
       urgency,
-      budget,
       contactInfo,
       repairerId,
       issue,
@@ -44,9 +43,8 @@ export const createServiceRequest = async (req, res) => {
       !locationData.pincode ||
       !locationData.captureMethod ||
       !preferredTimeSlot ||
-      !preferredTimeSlot.date ||
       !preferredTimeSlot.time ||
-      !budget ||
+      !preferredTimeSlot.date ||
       !contactInfo
     ) {
       return res.status(400).json({
@@ -57,6 +55,7 @@ export const createServiceRequest = async (req, res) => {
     const newServiceRequest = new ServiceRequest({
       customer: customerId,
       title: title,
+      contactInfo,
       serviceType: serviceType,
       issue,
       category,
@@ -75,8 +74,6 @@ export const createServiceRequest = async (req, res) => {
         time: preferredTimeSlot.time
       },
       urgency,
-      budget: budget,
-      contactInfo: contactInfo,
       repairer: repairerId || null,
       status: repairerId ? 'in_progress' : 'requested'
     });

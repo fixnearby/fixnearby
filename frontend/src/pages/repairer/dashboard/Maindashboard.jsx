@@ -1,25 +1,22 @@
 // frontend/src/pages/repairer/dashboard/Maindashboard.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../../store/authStore.js'; // <--- CORRECTED/CONFIRMED PATH
+import { useAuthStore } from '../../../store/authStore.js';
 
-// Import segregated components
 import Header from '../../../components/RepairerDashboard/Header.jsx';
 import OnlineDashboardContent from '../../../components/RepairerDashboard/OnlineDashboardContent.jsx';
 import OfflineDashboardContent from '../../../components/RepairerDashboard/OfflineDashboardContent.jsx';
 
-// Import API functions
 import {
   getNearbyJobs,
   getRepairerDashboardStats,
   getRepairerRecentActivity,
   acceptJob,
-  getRepairerNotifications
+  getRepairerNotifications,
+  logoutRepairer
 } from '../../../services/apiService.js';
-import { axiosInstance } from '../../../lib/axios.js';
 import toast from 'react-hot-toast';
 
-// Helper function for urgency color (kept here as it's specific to job display)
 const getUrgencyColor = (urgency) => {
   switch (urgency?.toLowerCase()) {
     case 'high': return 'bg-red-100 text-red-800';
@@ -31,32 +28,28 @@ const getUrgencyColor = (urgency) => {
 
 const RepairerMainDashboard = () => {
   const navigate = useNavigate();
-  // Ensure useAuthStore returns an object before destructuring
   const { repairer, clearRepairer, clearUser, clearAdmin } = useAuthStore();
 
   const [isOnline, setIsOnline] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState('all');
 
-  // State for fetched data
   const [jobs, setJobs] = useState([]);
   const [stats, setStats] = useState([]);
   const [recentActivity, setRecentActivity] = useState([]);
   const [unreadNotificationCount, setUnreadNotificationCount] = useState(0);
 
-  // Loading and error states
   const [loadingJobs, setLoadingJobs] = useState(true);
   const [errorJobs, setErrorJobs] = useState(null);
   const [loadingStats, setLoadingStats] = useState(true);
-  const [errorStats, setErrorStats] = useState(null); // Initialize as null
+  const [errorStats, setErrorStats] = useState(null);
   const [loadingActivity, setLoadingActivity] = useState(true);
-  const [errorActivity, setErrorActivity] = useState(null); // Initialize as null
+  const [errorActivity, setErrorActivity] = useState(null);
   const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   const displayName = repairer?.fullname || 'Repairer';
   const repairerId = repairer?._id;
 
-  // --- API Fetching Functions ---
   const fetchNearbyJobs = useCallback(async () => {
     if (!isOnline) {
         setJobs([]);
@@ -71,6 +64,7 @@ const RepairerMainDashboard = () => {
     } catch (err) {
       setErrorJobs("Failed to load nearby jobs.");
       console.error("Error fetching nearby jobs:", err);
+      toast.error("Failed to load nearby jobs.");
     } finally {
       setLoadingJobs(false);
     }
@@ -90,6 +84,7 @@ const RepairerMainDashboard = () => {
     } catch (err) {
       setErrorStats("Failed to load dashboard stats.");
       console.error("Error fetching dashboard stats:", err);
+      toast.error("Failed to load dashboard stats.");
     } finally {
       setLoadingStats(false);
     }
@@ -104,6 +99,7 @@ const RepairerMainDashboard = () => {
     } catch (err) {
       setErrorActivity("Failed to load recent activity.");
       console.error("Error fetching recent activity:", err);
+      toast.error("Failed to load recent activity.");
     } finally {
       setLoadingActivity(false);
     }
@@ -122,8 +118,6 @@ const RepairerMainDashboard = () => {
     }
   }, []);
 
-
-  // --- Effects to trigger fetching ---
   useEffect(() => {
     if (isOnline) {
       fetchNearbyJobs();
@@ -138,38 +132,44 @@ const RepairerMainDashboard = () => {
     fetchUnreadNotifications();
   }, [fetchDashboardStats, fetchRecentActivity, fetchUnreadNotifications]);
 
-  // --- Job Acceptance Handler ---
   const handleAcceptJob = async (jobId) => {
     console.log(`Attempting to accept job: ${jobId}`);
     if (!repairerId) {
-      alert("Repairer ID not available. Please log in again.");
+      toast.error("Repairer ID not available. Please log in again.");
       return;
     }
     try {
       setJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
-      
-      await acceptJob(jobId);
-      alert('Job accepted successfully!');
+      const response = await acceptJob(jobId);
+      toast.success('Job accepted successfully!');
       fetchDashboardStats();
       fetchRecentActivity();
       fetchUnreadNotifications();
+      if (response.conversationId) {
+        navigate(`/repairer/messages/${response.conversationId}`);
+      } else {
+        console.warn("No conversationId received after job acceptance. Cannot navigate to chat.");
+      }
     } catch (error) {
-      alert('Failed to accept job. Please try again.');
+      toast.error(error.response?.data?.message || 'Failed to accept job. Please try again.');
       console.error('Accept job error:', error);
       fetchNearbyJobs();
     }
   };
 
-
-  // --- Navigation Handlers ---
   const handleLogout = async () => {
-    const res = axiosInstance.post('/repairer/logout');
-        if (res.status === 200) {
-            toast.success('Logged out successfully!');
-        } else {   
-            toast.error('Failed to logout. Please try again.');
-        }
-        window.location.reload()
+    console.log("Logout button clicked. Logging out...");
+    try {
+      await logoutRepairer();
+      toast.success('Logged out successfully!');
+      clearRepairer();
+      clearUser();
+      clearAdmin();
+      navigate('/repairer/login');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Failed to logout. Please try again.');
+      console.error('Logout error:', error);
+    }
   };
 
   const handleSettingsClick = () => {
@@ -198,7 +198,6 @@ const RepairerMainDashboard = () => {
     navigate('/repairer/messages');
   };
 
-  // --- Main Render ---
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
       <Header
@@ -211,6 +210,7 @@ const RepairerMainDashboard = () => {
         onProfileClick={handleProfileClick}
         unreadNotificationCount={unreadNotificationCount}
         loadingNotifications={loadingNotifications}
+        onMessagesClick={handleMessagesClick}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

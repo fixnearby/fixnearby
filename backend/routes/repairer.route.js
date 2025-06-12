@@ -1,3 +1,4 @@
+// backend/routes/repairer.route.js
 import express from "express";
 import {
   getOtp,
@@ -9,51 +10,43 @@ import {
   getRecentActivity,
   getNearbyJobs,
   acceptJob,
-  getRepairerProfile, // New
-  updateRepairerProfile, // New
-  updateRepairerSettings, // New
-  getRepairerAnalytics, // New
-  getRepairerConversations, // New
-  getConversationMessages, // New
-  sendMessage, // New
-  getRepairerNotifications, // New
-  markNotificationAsRead, // New
+  getRepairerProfile,
+  updateRepairerProfile,
+  updateRepairerSettings,
+  getRepairerAnalytics,
+  getRepairerNotifications,
+  markNotificationAsRead,
+  getRepairerConversations, 
+  getConversationMessages, 
 } from "../controllers/repairer.controller.js";
-import { repairerProtectRoute } from "../middleware/middleware.js";
+import {
+  repairerProtectRoute as isRepairerAuthenticated
+} from "../middleware/middleware.js";
 
 const router = express.Router();
 
 // Auth Routes
-router.post("/getotp", getOtp);
+router.post("/get-otp", getOtp);
 router.post("/verify-otp", verifyOtp);
 router.post("/signup", signup);
 router.post("/login", login);
 router.post("/logout", logout);
 
-// Dashboard Routes (Protected)
-router.get("/dashboard-stats", repairerProtectRoute, getDashboardStats);
-router.get("/recent-activity", repairerProtectRoute, getRecentActivity);
-router.get("/jobs/nearby", repairerProtectRoute, getNearbyJobs);
-router.post("/jobs/:jobId/accept", repairerProtectRoute, acceptJob);
+// Protected Routes (Repairer Specific)
+router.get("/dashboard-stats", isRepairerAuthenticated, getDashboardStats);
+router.get("/recent-activity", isRepairerAuthenticated, getRecentActivity);
+router.get("/nearby-jobs", isRepairerAuthenticated, getNearbyJobs);
+router.post("/accept-job/:jobId", isRepairerAuthenticated, acceptJob);
+router.get("/profile", isRepairerAuthenticated, getRepairerProfile);
+router.put("/profile", isRepairerAuthenticated, updateRepairerProfile);
+router.put("/settings", isRepairerAuthenticated, updateRepairerSettings);
+router.get("/analytics", isRepairerAuthenticated, getRepairerAnalytics);
+router.get("/notifications", isRepairerAuthenticated, getRepairerNotifications);
+router.put("/notifications/read/:notificationId", isRepairerAuthenticated, markNotificationAsRead);
 
-// Profile Routes (Protected)
-router.get("/profile", repairerProtectRoute, getRepairerProfile);
-router.put("/profile", repairerProtectRoute, updateRepairerProfile); 
-
-// Settings Routes (Protected)
-router.put("/settings", repairerProtectRoute, updateRepairerSettings);
-
-// Analytics Routes (Protected)
-router.get("/analytics", repairerProtectRoute, getRepairerAnalytics);
-
-// Messaging/Conversation Routes (Protected)
-router.get("/conversations", repairerProtectRoute, getRepairerConversations); 
-router.get("/conversations/:serviceId/messages", repairerProtectRoute, getConversationMessages);
-router.post("/messages/send", repairerProtectRoute, sendMessage); 
-
-// Notifications Routes (Protected)
-router.get("/notifications", repairerProtectRoute, getRepairerNotifications);
-router.put("/notifications/:notificationId/read", repairerProtectRoute, markNotificationAsRead);
+// New Chat Routes
+router.get("/conversations", isRepairerAuthenticated, getRepairerConversations); 
+router.get("/conversations/:conversationId/messages", isRepairerAuthenticated, getConversationMessages);
 
 
 export default router;

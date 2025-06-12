@@ -1,32 +1,31 @@
-// frontend/src/pages/RepairerMessagesPage.jsx
+// frontend/src/pages/user/messages/UserMessagesPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Loader, User2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Loader, User2 } from 'lucide-react'; 
 import { useAuthStore } from '../../../store/authStore';
-import { getRepairerConversations, getRepairerConversationMessages } from '../../../services/apiService';
-import ChatWindow from '../../../components/Chat/ChatWindow';
-import toast from 'react-hot-toast';
+import { getUserConversations } from '../../../services/apiService'; 
+import ChatWindow from '../../../components/Chat/ChatWindow'; 
+import toast from 'react-hot-toast'; 
 
-const RepairerMessagesPage = () => {
-  const { repairer } = useAuthStore();
-  const { conversationId: paramConversationId } = useParams();
+const UserMessagesPage = () => {
+  const { user } = useAuthStore();
+  const { conversationId: paramConversationId } = useParams(); 
   const [conversations, setConversations] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedConversation, setSelectedConversation] = useState(null);
-  console.log(getRepairerConversationMessages);
+  const [selectedConversation, setSelectedConversation] = useState(null); 
 
   useEffect(() => {
     const fetchConversations = async () => {
-      if (!repairer || !repairer._id) {
+      if (!user || !user._id) {
         setLoadingConversations(false);
-        setError("Repairer not logged in or ID is missing.");
+        setError("User not logged in or ID is missing.");
         return;
       }
       setLoadingConversations(true);
       setError(null);
       try {
-        const fetchedConversations = await getRepairerConversations();
+        const fetchedConversations = await getUserConversations();
         setConversations(fetchedConversations);
 
         if (paramConversationId) {
@@ -50,19 +49,18 @@ const RepairerMessagesPage = () => {
     };
 
     fetchConversations();
-  }, [repairer, paramConversationId]);
-
+  }, [user, paramConversationId]);
   const handleChatSelect = (conversationSummary) => {
     setSelectedConversation(conversationSummary);
   };
 
-  if (!repairer) {
+  if (!user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="text-center p-8 bg-white rounded-xl shadow-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-6">Please log in as a repairer to view messages.</p>
-          <Link to="/repairer/login" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <p className="text-gray-600 mb-6">Please log in as a user to view your messages.</p>
+          <Link to="/user/login" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             Go to Login
           </Link>
         </div>
@@ -82,12 +80,13 @@ const RepairerMessagesPage = () => {
   }
 
   if (error && (!conversations.length && !selectedConversation)) {
+
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8 text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Messages</h2>
           <p className="text-gray-700 mb-6">{error}</p>
-          <Link to="/repairer/dashboard" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          <Link to="/user/dashboard" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             Back to Dashboard
           </Link>
         </div>
@@ -98,9 +97,10 @@ const RepairerMessagesPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 flex flex-col md:flex-row h-[70vh]">
+        {/* Sidebar for chat list */}
         <div className="w-full md:w-1/3 border-r border-gray-200 pr-4 md:pr-8 overflow-y-auto flex-none custom-scrollbar">
           <div className="flex items-center space-x-4 mb-8">
-            <Link to="/repairer/dashboard" className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+            <Link to="/user/dashboard" className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
               <ArrowLeft className="w-6 h-6 text-gray-700" />
             </Link>
             <h1 className="text-2xl font-bold text-gray-900 flex items-center">
@@ -122,14 +122,16 @@ const RepairerMessagesPage = () => {
                     ${conv.unread ? 'border-l-4 border-blue-500 font-semibold' : ''}`}
                 >
                   <div className="flex-shrink-0 w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3">
-                    <User2 className="w-5 h-5 text-blue-700" />
+                    <User2 className="w-5 h-5 text-blue-700" /> {/* Using User2 icon */}
                   </div>
                   <div className="flex-grow">
                     <div className="text-gray-900 font-medium">{conv.sender}</div>
                     <div className="text-gray-600 text-sm truncate">{conv.lastMessage}</div>
                   </div>
                   <div className="text-xs text-gray-500 ml-auto flex-shrink-0">{conv.time}</div>
+                  {/* Optional: unread indicator (requires backend implementation to track) */}
                   {conv.unread && <span className="w-2 h-2 bg-blue-500 rounded-full ml-2"></span>}
+                  {/* Indicator for closed chats */}
                   {!conv.isActive && (
                     <span className="text-xs text-red-500 ml-2">(Closed)</span>
                   )}
@@ -139,19 +141,22 @@ const RepairerMessagesPage = () => {
           </ul>
         </div>
 
+        {/* Main Chat Window Area */}
         <div className="flex-1 pl-4 md:pl-8 flex flex-col pt-8 md:pt-0">
           {selectedConversation ? (
             <>
+              {/* Chat Header showing the other participant's name and job title */}
               <div className="flex-none pb-4 border-b border-gray-200 mb-4">
                 <h2 className="text-xl font-bold text-gray-900">Chat with {selectedConversation.sender}</h2>
                 <p className="text-gray-600 text-sm">Job: {selectedConversation.title}</p>
                 {!selectedConversation.isActive && (
-                  <p className="text-red-500 text-sm mt-1 font-semibold">This chat is closed (Job {selectedConversation.serviceRequestStatus}).</p>
+                    <p className="text-red-500 text-sm mt-1 font-semibold">This chat is closed (Job {selectedConversation.serviceRequestStatus}).</p>
                 )}
               </div>
+              {/* Pass conversationId and participant role to ChatWindow */}
               <ChatWindow
                 conversationId={selectedConversation.id}
-                participantRole="repairer"
+                participantRole="user" // Indicates the current user's role in the chat
               />
             </>
           ) : (
@@ -165,4 +170,4 @@ const RepairerMessagesPage = () => {
   );
 };
 
-export default RepairerMessagesPage;
+export default UserMessagesPage;

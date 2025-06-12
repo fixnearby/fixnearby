@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft, Bell, Loader, CheckCircle, Info, XCircle, MessageCircle, Star, Package } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
-import { getRepairerNotifications, markNotificationAsRead } from '../../../services/apiService';
+import { getRepairerNotifications, markRepairerNotificationAsRead } from '../../../services/apiService'
 
 
 const RepairerNotificationsPage = () => {
@@ -12,7 +12,6 @@ const RepairerNotificationsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch notifications on component mount
   useEffect(() => {
     const fetchNotifications = async () => {
       if (!repairer || !repairer._id) {
@@ -24,7 +23,6 @@ const RepairerNotificationsPage = () => {
       setError(null);
       try {
         const fetchedNotifications = await getRepairerNotifications();
-        // Ensure fetchedNotifications is an array, even if empty
         setNotifications(Array.isArray(fetchedNotifications) ? fetchedNotifications : []);
       } catch (err) {
         console.error("Error fetching notifications:", err);
@@ -35,7 +33,7 @@ const RepairerNotificationsPage = () => {
     };
 
     fetchNotifications();
-  }, [repairer]); // Dependency array ensures fetch runs when repairer object changes
+  }, [repairer]);
 
   const handleMarkAsRead = async (notificationId) => {
     try {
@@ -44,18 +42,16 @@ const RepairerNotificationsPage = () => {
         prev.map(n => (n._id === notificationId ? { ...n, read: true } : n))
       );
       // Call backend to persist the read status
-      await markNotificationAsRead(notificationId);
+      await markRepairerNotificationAsRead(notificationId);
     } catch (err) {
       console.error("Error marking notification as read:", err);
       // If backend call fails, revert UI or show error
       setNotifications(prev =>
-        prev.map(n => (n._id === notificationId ? { ...n, read: false } : n)) // Revert if failed
+        prev.map(n => (n._id === notificationId ? { ...n, read: false } : n)) 
       );
-      // Optionally, show a temporary error message to the user
     }
   };
 
-  // Helper to map notification type to a Lucide icon
   const getNotificationIcon = (type) => {
     switch (type) {
       case 'job_accepted': return <CheckCircle className="w-5 h-5 text-green-600" />;
@@ -65,8 +61,8 @@ const RepairerNotificationsPage = () => {
       case 'rating_received': return <Star className="w-5 h-5 text-yellow-600" />;
       case 'new_job_request': return <Package className="w-5 h-5 text-purple-600" />;
       case 'payment_received': return <DollarSign className="w-5 h-5 text-green-600" />;
-      case 'job_in_progress': return <CheckCircle className="w-5 h-5 text-blue-600" />; // Example
-      case 'quote_provided': return <DollarSign className="w-5 h-5 text-orange-600" />; // Example
+      case 'job_in_progress': return <CheckCircle className="w-5 h-5 text-blue-600" />; 
+      case 'quote_provided': return <DollarSign className="w-5 h-5 text-orange-600" />;
       default: return <Bell className="w-5 h-5 text-gray-500" />;
     }
   };

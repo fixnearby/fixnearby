@@ -1,9 +1,15 @@
-//backend/models/message.model.js
+// backend/models/message.model.js
 import mongoose from "mongoose";
 
 const messageSchema = new mongoose.Schema(
   {
-    serviceId: {
+    conversation: { 
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Conversation',
+      required: true,
+      index: true 
+    },
+    serviceId: { 
       type: mongoose.Schema.Types.ObjectId,
       ref: 'ServiceRequest',
       required: true,
@@ -16,9 +22,8 @@ const messageSchema = new mongoose.Schema(
     senderModel: {
       type: String,
       required: true,
-      enum: ['Customer', 'Repairer']
+      enum: ['User', 'Repairer'] 
     },
-
     receiverId: {
       type: mongoose.Schema.Types.ObjectId,
       required: true,
@@ -27,13 +32,12 @@ const messageSchema = new mongoose.Schema(
     receiverModel: {
       type: String,
       required: true,
-      enum: ['Customer', 'Repairer']
+      enum: ['User', 'Repairer'] 
     },
-
     text: {
       type: String,
+      required: true, 
     },
-
   },
   { timestamps: true }
 );

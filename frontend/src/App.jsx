@@ -1,9 +1,10 @@
-//frontend/src/App.jsx
+// frontend/src/App.jsx
 import { useEffect } from "react";
-import { Routes, Route, Navigate,Link } from 'react-router-dom';
+import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Loader } from "lucide-react";
 import { axiosInstance } from './lib/axios'; // Preserving your axiosInstance import
 import { useAuthStore } from './store/authStore';
+import { connectSocket, disconnectSocket } from './services/socketService'; // <--- Ensure this import is present
 
 // Pages
 import Landing from './pages/Landing';
@@ -25,13 +26,16 @@ import UserInprogress from './pages/user/dashboard/Inprogress';
 import UserPendingservice from './pages/user/dashboard/Pendingservice';
 import UserMaindashboard from './pages/user/dashboard/Maindashboard';
 import Showservices from './pages/user/dashboard/Showservices';
+// CORRECTED PATH: UserMessagesPage is in 'messages' folder, not 'dashboard'
+import UserMessagesPage from './pages/user/dashboard/UserMessagesPage';
 
 // RepairerDashboard
 import RepairerMainDashboard from './pages/repairer/dashboard/Maindashboard';
 import RepairerSettingsPage from './pages/repairer/dashboard/RepairerSettingsPage';
 import RepairerProfilePage from './pages/repairer/dashboard/RepairerProfilePage';
 import RepairerAnalyticsPage from './pages/repairer/dashboard/RepairerAnalyticsPage';
-import RepairerMessagesPage from './pages/repairer/dashboard/RepairerMessagesPage';
+// CORRECTED PATH: RepairerMessagesPage is in 'messages' folder, not 'dashboard'
+import RepairerMessagesPage from './pages/repairer/dashboard/RepairerMessagesPage'; // <--- CORRECTED IMPORT PATH
 import RepairerNotificationsPage from './pages/repairer/dashboard/RepairerNotificationsPage';
 
 function App() {
@@ -42,14 +46,18 @@ function App() {
     clearUser,
     clearRepairer,
     clearAdmin,
-    isLoading, 
-    setIsLoading, 
+    isLoading,
+    setIsLoading,
     user,
     repairer,
     admin
   } = useAuthStore();
 
   useEffect(() => {
+    // START SOCKET.IO CONNECTION HERE
+    console.log("App useEffect: Attempting to connect Socket.IO...");
+    connectSocket(); // <--- CRITICAL: ADD THIS CALL
+
     const checkAuth = async () => {
       try {
         console.log("ye hai jwt token", document.cookie); // should contain jwt
@@ -69,7 +77,7 @@ function App() {
         }
       } catch (err) {
         console.error("Authentication check failed:", err);
-     
+
         clearUser();
         clearRepairer();
         clearAdmin();
@@ -78,11 +86,17 @@ function App() {
       }
     };
 
-    setIsLoading(true); 
+    setIsLoading(true);
     checkAuth();
-  }, [clearUser, clearRepairer, clearAdmin, setUser, setRepairer, setAdmin, setIsLoading]); 
 
-  if (isLoading) 
+    // CLEANUP FUNCTION: Disconnect Socket.IO when the App component unmounts
+    return () => {
+      console.log("App useEffect cleanup: Disconnecting Socket.IO...");
+      disconnectSocket(); // <--- CRITICAL: ADD THIS CALL
+    };
+  }, [clearUser, clearRepairer, clearAdmin, setUser, setRepairer, setAdmin, setIsLoading]);
+
+  if (isLoading)
     return (
       <div className="flex items-center justify-center h-screen">
         <Loader className="size-10 animate-spin" />
@@ -126,36 +140,32 @@ function App() {
           }
         />
 
-        {/* User Auth pages (accessible only if not logged in as user) */}
         <Route path="/user/getotp" element={user ? <Navigate to="/user/dashboard" /> : <UserGetotp />} />
         <Route path="/user/verify-otp" element={user ? <Navigate to="/user/dashboard" /> : <UserVerifyotp />} />
         <Route path="/user/login" element={user ? <Navigate to="/user/dashboard" /> : <UserLogin />} />
         <Route path="/user/signup" element={user ? <Navigate to="/user/dashboard" /> : <UserSignup />} />
 
-        {/* Repairer Auth pages (accessible only if not logged in as repairer) */}
         <Route path="/repairer/getotp" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerGetotp />} />
         <Route path="/repairer/verify-otp" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerVerifyotp />} />
         <Route path="/repairer/login" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerLogin />} />
         <Route path="/repairer/signup" element={repairer ? <Navigate to="/repairer/dashboard" /> : <RepairerSignup />} />
-        {/* user ? <Showservices /> : <Navigate to="/user/login" /> */}
+   
 
-        {/* User Dashboard - Protected by PrivateRoute */}
-        <Route path="/user/dashboard" element={user ? <UserMaindashboard /> : <Navigate to="/user/login" />} />
-        <Route path="/user/inprogress" element={user ? <UserInprogress /> : <Navigate to="/user/login" />} />
-        <Route path="/user/pending-service" element={user ? <UserPendingservice /> : <Navigate to="/user/login" />} />
-        <Route path="/user/show-services" element={user ? <Showservices /> : <Navigate to="/user/login" />} />
+        <Route path="/user/dashboard" element={<PrivateRoute allowedRoles={['user']}><UserMaindashboard /></PrivateRoute>} />
+        <Route path="/user/inprogress" element={<PrivateRoute allowedRoles={['user']}><UserInprogress /></PrivateRoute>} />
+        <Route path="/user/pending-service" element={<PrivateRoute allowedRoles={['user']}><UserPendingservice /></PrivateRoute>} />
+        <Route path="/user/show-services" element={<PrivateRoute allowedRoles={['user']}><Showservices /></PrivateRoute>} />
+        <Route path="/user/messages/:conversationId?" element={<PrivateRoute allowedRoles={['user']}><UserMessagesPage /></PrivateRoute>} />
 
-        {/* Repairer Dashboard - Protected by PrivateRoute */}
-        <Route path="/repairer/dashboard" element={repairer ? <RepairerMainDashboard /> : <Navigate to="/repairer/login" />} />
-        
-        <Route path="/repairer/settings" element={repairer ? <RepairerSettingsPage /> : <Navigate to="/repairer/login" />} />
-        <Route path="/repairer/profile" element={repairer ? <RepairerProfilePage /> : <Navigate to="/repairer/login" />} />
-        <Route path="/repairer/analytics" element={repairer ? <RepairerAnalyticsPage /> : <Navigate to="/repairer/login" />} />
-        <Route path="/repairer/messages" element={repairer ? <RepairerMessagesPage /> : <Navigate to="/repairer/login" />} />
-        <Route path="/repairer/notifications" element={repairer ? <RepairerNotificationsPage /> : <Navigate to="/repairer/login" />} />
+        <Route path="/repairer/dashboard" element={<PrivateRoute allowedRoles={['repairer']}><RepairerMainDashboard /></PrivateRoute>} />
+        <Route path="/repairer/settings" element={<PrivateRoute allowedRoles={['repairer']}><RepairerSettingsPage /></PrivateRoute>} />
+        <Route path="/repairer/profile" element={<PrivateRoute allowedRoles={['repairer']}><RepairerProfilePage /></PrivateRoute>} />
+        <Route path="/repairer/analytics" element={<PrivateRoute allowedRoles={['repairer']}><RepairerAnalyticsPage /></PrivateRoute>} />
+        <Route path="/repairer/notifications" element={<PrivateRoute allowedRoles={['repairer']}><RepairerNotificationsPage /></PrivateRoute>} />
+        <Route path="/repairer/messages/:conversationId?" element={<PrivateRoute allowedRoles={['repairer']}><RepairerMessagesPage /></PrivateRoute>} />
 
-        {/* Admin Dashboard - Protected by PrivateRoute */}
-        <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={['admin']}><div>Admin Dashboard Placeholder</div></PrivateRoute>} /> {/* Placeholder if you don't have AdminDashboardPage yet */}
+
+        <Route path="/admin/dashboard" element={<PrivateRoute allowedRoles={['admin']}><div>Admin Dashboard Placeholder</div></PrivateRoute>} />
 
         {/* Unauthorized Access Page */}
         <Route path="/unauthorized" element={
@@ -168,11 +178,11 @@ function App() {
 
         {/* Catch-all for undefined routes */}
         <Route path="*" element={
-            <div className="min-h-screen flex items-center justify-center bg-gray-100 text-gray-800">
-              <p className="text-xl font-semibold">404 - Page Not Found</p>
-              <Link to="/" className="mt-4 text-blue-600 hover:underline">Go to Home</Link>
-            </div>
-          } />
+          <div className="min-h-screen flex items-center justify-center bg-gray-100 text-gray-800">
+            <p className="text-xl font-semibold">404 - Page Not Found</p>
+            <Link to="/" className="mt-4 text-blue-600 hover:underline">Go to Home</Link>
+          </div>
+        } />
       </Routes>
     </div>
   );

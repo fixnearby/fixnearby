@@ -1,67 +1,99 @@
 // backend/controllers/serviceRequest.controller.js
 import ServiceRequest from '../models/serviceRequest.model.js';
-import User from '../models/user.model.js';     // To populate customer details
-import Repairer from '../models/repairer.model.js'; // To get repairer's services/location and populate repairer details
+import User from '../models/user.model.js';     
+import Repairer from '../models/repairer.model.js'; 
 
-// Helper to format location consistently for responses
+
 const formatLocationData = (location) => {
-    if (!location) return null;
-    return {
-        fullAddress: location.fullAddress || '',
-        pincode: location.pincode || '',
-        city: location.city || '',
-        state: location.state || '',
-        coordinates: location.coordinates || [],
-        captureMethod: location.captureMethod || '' // Include captureMethod in formatted data
-    };
+ if (!location) return null;
+ return {
+     fullAddress: location.fullAddress || '',
+ pincode: location.pincode || '',
+ city: location.city || '',
+ state: location.state || '',
+ coordinates: location.coordinates || [],
+ captureMethod: location.captureMethod || '' 
+  };
 };
 
-// 1. Create a new service request (User initiated)
 export const createServiceRequest = async (req, res) => {
-    try {
-        const { serviceType, description, locationData, preferredTimeSlot, urgency, repairerId , issue , category , quotation } = req.body;
-        const customerId = req.user._id; // From userProtectRoute middleware
+  try {
+    const {
+      title,
+      serviceType,
+      description,
+      locationData,
+      preferredTimeSlot,
+      urgency,
+      budget,
+      contactInfo,
+      repairerId,
+      issue,
+      category,
+      quotation
+    } = req.body;
 
-        // Basic validation for required fields
-        if ( !serviceType || !description || !locationData ||
-            !locationData.fullAddress || !locationData.pincode || !locationData.captureMethod) {
-            return res.status(400).json({ message: 'Please provide all required fields: title, serviceType, description, full address, postal code, and location capture method.' });
-        }
+    const customerId = req.user._id;
 
-        const newServiceRequest = new ServiceRequest({
-            customer: customerId,
-            serviceType: serviceType, // Ensure consistency
-            issue,
-            category,
-            quotation,
-            description,
-            location: {
-                address: locationData.fullAddress,
-                pincode: locationData.pincode,
-                // city: locationData.city,       // Optional, if provided
-                // state: locationData.state,     // Optional, if provided
-                // coordinates: locationData.coordinates, // Optional, if provided (e.g., [longitude, latitude])
-                captureMethod: locationData.captureMethod // THIS IS THE FIELD WE ADDED!
-            },
-            preferredTimeSlot, // Optional
-            urgency,           // Optional
-            repairer: repairerId || null, // Will be null if unassigned
-            status: repairerId ? 'in_progress' : 'requested' // If repairerId is provided (e.g., direct booking), set status
-        });
-
-        await newServiceRequest.save();
-        res.status(201).json({ success: true, message: 'Service request created successfully!', data: newServiceRequest });
-
-    } catch (error) {
-        console.error('Error creating service request:', error);
-        // Mongoose validation errors often have `error.errors`
-        if (error.name === 'ValidationError') {
-            const messages = Object.values(error.errors).map(err => err.message);
-            return res.status(400).json({ success: false, message: messages.join(', ') });
-        }
-        res.status(500).json({ success: false, message: 'Internal server error during service request creation.' });
+    if (
+      !title ||
+      !serviceType ||
+      !description ||
+      !locationData ||
+      !locationData.fullAddress ||
+      !locationData.pincode ||
+      !locationData.captureMethod ||
+      !preferredTimeSlot ||
+      !preferredTimeSlot.date ||
+      !preferredTimeSlot.time ||
+      !budget ||
+      !contactInfo
+    ) {
+      return res.status(400).json({
+        message: 'Please provide all required fields: title, service type, description, location details (address, postal code, capture method), preferred date and time, budget, and contact info.'
+      });
     }
+
+    const newServiceRequest = new ServiceRequest({
+      customer: customerId,
+      title: title,
+      serviceType: serviceType,
+      issue,
+      category,
+      quotation,
+      description,
+      location: {
+        address: locationData.fullAddress,
+        pincode: locationData.pincode,
+        city: locationData.city,
+        state: locationData.state,
+        coordinates: locationData.coordinates,
+        captureMethod: locationData.captureMethod
+      },
+      preferredTimeSlot: {
+        date: preferredTimeSlot.date,
+        time: preferredTimeSlot.time
+      },
+      urgency,
+      budget: budget,
+      contactInfo: contactInfo,
+      repairer: repairerId || null,
+      status: repairerId ? 'in_progress' : 'requested'
+    });
+
+    await newServiceRequest.save();
+    res.status(201).json({ success: true, message: 'Service request created successfully!', data: newServiceRequest });
+
+  } catch (error) {
+    console.error('Error creating service request:', error);
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({ success: false, message: messages.join(', ') });
+    }
+    res.status(500).json({ success: false, message: 'Internal server error during service request creation.' });
+  }
 };
+
 
 
 // 2. Get service requests by location (Used by user to find repairers, and by repairer to find incoming/in-progress jobs)

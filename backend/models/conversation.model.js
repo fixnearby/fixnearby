@@ -1,3 +1,4 @@
+// backend/models/conversation.model.js
 import mongoose from "mongoose";
 
 const conversationSchema = new mongoose.Schema(
@@ -6,7 +7,7 @@ const conversationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "ServiceRequest",
       required: true,
-      unique: true, 
+      unique: true,
     },
     participants: [
       {

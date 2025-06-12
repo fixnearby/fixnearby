@@ -1,335 +1,60 @@
-import axios from 'axios';
+// frontend/src/services/apiService.js
 
-const API_BASE_URL = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000'}/api`;
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  withCredentials: true,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-});
-
-// --- REPAIRER Service Calls ---
-
-export const getNearbyJobs = async () => {
+import { axiosInstance } from '../lib/axios';
+import { toast } from 'react-hot-toast'; 
+const apiRequest = async (method, url, data = {}, headers = {}) => {
   try {
-    const response = await api.get('/repairer/nearby-jobs');
-    return response.data;
+    const response = await axiosInstance({ 
+      method,
+      url,
+      data: method !== 'get' ? data : undefined,
+      params: method === 'get' ? data : undefined, 
+      headers,
+    });
+    return response.data; 
   } catch (error) {
-    console.error("API Error: getNearbyJobs:", error.response?.data || error.message);
-    throw error;
+  
+    const errorMessage = error.response?.data?.message || error.message || 'An unexpected error occurred.';
+    console.error(`API Error: ${method.toUpperCase()} ${url}:`, errorMessage);
+ 
+    toast.error(errorMessage);
+    throw error; 
   }
 };
 
-export const getRepairerDashboardStats = async () => {
-  try {
-    const response = await api.get('/repairer/dashboard-stats');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getRepairerDashboardStats:", error.response?.data || error.message);
-    throw error;
-  }
-};
 
-export const getRepairerRecentActivity = async () => {
-  try {
-    const response = await api.get('/repairer/recent-activity');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getRepairerRecentActivity:", error.response?.data || error.message);
-    throw error;
-  }
-};
 
-export const acceptJob = async (jobId) => {
-  try {
-    const response = await api.post(`/repairer/accept-job/${jobId}`);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: acceptJob:", error.response?.data || error.message);
-    throw error;
-  }
-};
+export const getNearbyJobs = async () => apiRequest('get', '/repairer/nearby-jobs');
+export const getRepairerDashboardStats = async () => apiRequest('get', '/repairer/dashboard-stats');
+export const getRepairerRecentActivity = async () => apiRequest('get', '/repairer/recent-activity');
+export const acceptJob = async (jobId) => apiRequest('post', `/repairer/accept-job/${jobId}`);
+export const completeJob = async (jobId, completionDetails) => apiRequest('put', `/service-requests/complete/${jobId}`, completionDetails);
+export const cancelRepairerJob = async (jobId, cancelDetails) => apiRequest('put', `/service-requests/cancel-by-repairer/${jobId}`, cancelDetails);
+export const getRepairerProfileDetails = async () => apiRequest('get', '/repairer/profile');
+export const updateRepairerProfile = async (profileData) => apiRequest('put', '/repairer/profile', profileData);
+export const updateRepairerSettings = async (settingsData) => apiRequest('put', '/repairer/settings', settingsData);
+export const getRepairerAnalytics = async () => apiRequest('get', '/repairer/analytics');
+export const getRepairerConversations = async () => apiRequest('get', '/repairer/conversations');
+export const getRepairerConversationMessages = async (conversationId) => apiRequest('get', `/repairer/conversations/${conversationId}/messages`);
+export const getRepairerNotifications = async () => apiRequest('get', '/repairer/notifications');
+export const markRepairerNotificationAsRead = async (notificationId) => apiRequest('put', `/repairer/notifications/read/${notificationId}`);
+export const getOtpRepairer = async (email) => apiRequest('post', '/repairer/get-otp', { email });
+export const verifyOtpRepairer = async (email, otp) => apiRequest('post', '/repairer/verify-otp', { email, otp });
+export const signupRepairer = async (signupData) => apiRequest('post', '/repairer/signup', signupData);
+export const loginRepairer = async (email, password) => apiRequest('post', '/repairer/login', { email, password });
+export const logoutRepairer = async () => apiRequest('post', '/repairer/logout')
+export const getOtpUser = async (email) => apiRequest('post', '/user/get-otp', { email });
+export const verifyOtpUser = async (email, otp) => apiRequest('post', '/user/verify-otp', { email, otp });
+export const signupUser = async (signupData) => apiRequest('post', '/user/signup', signupData);
+export const loginUser = async (email, password) => apiRequest('post', '/user/login', { email, password });
+export const logoutUser = async () => apiRequest('post', '/user/logout');
+export const getUserDashboardStats = async () => apiRequest('get', '/user/dashboard-stats');
+export const getUserRecentActivity = async () => apiRequest('get', '/user/recent-activity');
+export const requestService = async (serviceData) => apiRequest('post', '/service-requests', serviceData);
+export const getInProgressServices = async () => apiRequest('get', '/user/in-progress-services');
+export const getPendingServices = async () => apiRequest('get', '/user/pending-services');
+export const cancelUserJob = async (jobId) => apiRequest('put', `/user/cancel-job/${jobId}`);
+export const getUserConversations = async () => apiRequest('get', '/user/conversations');
+export const getUserConversationMessages = async (conversationId) => apiRequest('get', `/user/conversations/${conversationId}/messages`);
+export const checkAuthStatus = () => apiRequest('get', '/check-auth'); 
 
-export const completeJob = async (jobId, completionDetails) => {
-  try {
-    const response = await api.put(`/service-requests/complete/${jobId}`, completionDetails);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: completeJob:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const cancelRepairerJob = async (jobId, cancelDetails) => {
-  try {
-    const response = await api.put(`/service-requests/cancel-by-repairer/${jobId}`, cancelDetails);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: cancelRepairerJob:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getRepairerProfileDetails = async () => {
-  try {
-    const response = await api.get('/repairer/profile');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getRepairerProfileDetails:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const updateRepairerProfile = async (profileData) => {
-  try {
-    const response = await api.put('/repairer/profile', profileData);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: updateRepairerProfile:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const updateRepairerSettings = async (settingsData) => {
-  try {
-    const response = await api.put('/repairer/settings', settingsData);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: updateRepairerSettings:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getRepairerAnalytics = async () => {
-  try {
-    const response = await api.get('/repairer/analytics');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getRepairerAnalytics:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getRepairerConversations = async () => {
-  try {
-    const response = await api.get('/repairer/conversations');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getRepairerConversations:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getRepairerConversationMessages = async (conversationId) => {
-  try {
-    const response = await api.get(`/repairer/conversations/${conversationId}/messages`);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getRepairerConversationMessages:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getRepairerNotifications = async () => {
-  try {
-    const response = await api.get('/repairer/notifications');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getRepairerNotifications:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const markRepairerNotificationAsRead = async (notificationId) => {
-  try {
-    const response = await api.put(`/repairer/notifications/read/${notificationId}`);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: markRepairerNotificationAsRead:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getOtpRepairer = async (email) => {
-  try {
-    const response = await api.post('/repairer/get-otp', { email });
-    return response.data;
-  } catch (error) {
-    console.error('API Error (getOtpRepairer):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const verifyOtpRepairer = async (email, otp) => {
-  try {
-    const response = await api.post('/repairer/verify-otp', { email, otp });
-    return response.data;
-  } catch (error) {
-    console.error('API Error (verifyOtpRepairer):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const signupRepairer = async (signupData) => {
-  try {
-    const response = await api.post('/repairer/signup', signupData);
-    return response.data;
-  } catch (error) {
-    console.error('API Error (signupRepairer):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const loginRepairer = async (email, password) => {
-  try {
-    const response = await api.post('/repairer/login', { email, password });
-    return response.data;
-  } catch (error) {
-    console.error('API Error (loginRepairer):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const logoutRepairer = async () => {
-  try {
-    const response = await api.post('/repairer/logout');
-    return response.data;
-  } catch (error) {
-    console.error('API Error (logoutRepairer):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-// --- USER Service Calls ---
-
-export const getOtpUser = async (email) => {
-  try {
-    const response = await api.post('/user/get-otp', { email });
-    return response.data;
-  } catch (error) {
-    console.error('API Error (getOtpUser):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const verifyOtpUser = async (email, otp) => {
-  try {
-    const response = await api.post('/user/verify-otp', { email, otp });
-    return response.data;
-  } catch (error) {
-    console.error('API Error (verifyOtpUser):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const signupUser = async (signupData) => {
-  try {
-    const response = await api.post('/user/signup', signupData);
-    return response.data;
-  } catch (error) {
-    console.error('API Error (signupUser):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const loginUser = async (email, password) => {
-  try {
-    const response = await api.post('/user/login', { email, password });
-    return response.data;
-  } catch (error) {
-    console.error('API Error (loginUser):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const logoutUser = async () => {
-  try {
-    const response = await api.post('/user/logout');
-    return response.data;
-  } catch (error) {
-    console.error('API Error (logoutUser):', error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getUserDashboardStats = async () => {
-  try {
-    const response = await api.get('/user/dashboard-stats');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getUserDashboardStats:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getUserRecentActivity = async () => {
-  try {
-    const response = await api.get('/user/recent-activity');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getUserRecentActivity:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const requestService = async (serviceData) => {
-  try {
-    const response = await api.post('/service-requests', serviceData);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: requestService:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getInProgressServices = async () => {
-  try {
-    const response = await api.get('/user/in-progress-services');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getInProgressServices:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getPendingServices = async () => {
-  try {
-    const response = await api.get('/user/pending-services');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getPendingServices:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const cancelUserJob = async (jobId) => {
-  try {
-    const response = await api.put(`/user/cancel-job/${jobId}`);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: cancelUserJob:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getUserConversations = async () => {
-  try {
-    const response = await api.get('/user/conversations');
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getUserConversations:", error.response?.data || error.message);
-    throw error;
-  }
-};
-
-export const getUserConversationMessages = async (conversationId) => {
-  try {
-    const response = await api.get(`/user/conversations/${conversationId}/messages`);
-    return response.data;
-  } catch (error) {
-    console.error("API Error: getUserConversationMessages:", error.response?.data || error.message);
-    throw error;
-  }
-};

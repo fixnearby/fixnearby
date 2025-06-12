@@ -22,8 +22,8 @@ import {
 const router = express.Router();
 
 // Auth Routes
-// api/get-otp 
-router.post("/get-otp", getOtp);
+// api/getotp 
+router.post("/getotp", getOtp);
 // api/verify-otp
 router.post("/verify-otp", verifyOtp);
 // api/signup

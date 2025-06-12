@@ -11,16 +11,16 @@ import {
 } from "../libs/utils.js";
 import ServiceRequest from "../models/serviceRequest.model.js";
 import Notification from "../models/notification.model.js";
-import Conversation from "../models/conversation.model.js"; 
-import Message from "../models/message.model.js";     
-import Repairer from "../models/repairer.model.js"; 
+import Conversation from "../models/conversation.model.js";
+import Message from "../models/message.model.js";
+import Repairer from "../models/repairer.model.js";
 
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
-export const getOtp = async (req, res) => { 
+export const getOtp = async (req, res) => {
   const {
     email
   } = req.body;
@@ -62,7 +62,7 @@ export const getOtp = async (req, res) => {
   }
 };
 
-export const verifyOtp = async (req, res) => { /* ... */
+export const verifyOtp = async (req, res) => {
   const {
     email,
     otp
@@ -97,16 +97,19 @@ export const verifyOtp = async (req, res) => { /* ... */
   }
 };
 
-export const signup = async (req, res) => { /* ... */
+export const signup = async (req, res) => {
+  // --- MODIFIED: Added 'phone' to destructuring ---
   const {
     fullname,
     email,
-    password
+    password,
+    phone // <--- ADDED THIS LINE
   } = req.body;
   try {
-    if (!fullname || !email || !password) {
+    // --- MODIFIED: Added 'phone' to validation ---
+    if (!fullname || !email || !password || !phone) { // <--- ADDED '|| !phone'
       return res.status(400).json({
-        message: "All required fields must be filled"
+        message: "All required fields (fullname, email, password, phone) must be filled" // <--- UPDATED MESSAGE
       });
     }
     const existingUser = await User.findOne({
@@ -123,12 +126,18 @@ export const signup = async (req, res) => { /* ... */
       fullname,
       email,
       password: hashedPassword,
+      phone, // <--- ADDED THIS LINE: Pass phone to the User constructor
     });
     await newUser.save();
+
+    generateToken(newUser._id, "user", res);
+
     res.status(201).json({
       _id: newUser._id,
       fullname: newUser.fullname,
       email: newUser.email,
+      phone: newUser.phone, // Include phone in response
+      role: "user",
       message: "User account created successfully!",
     });
   } catch (error) {
@@ -145,7 +154,7 @@ export const signup = async (req, res) => { /* ... */
   }
 };
 
-export const login = async (req, res) => { /* ... */
+export const login = async (req, res) => {
   const {
     email,
     password
@@ -161,7 +170,9 @@ export const login = async (req, res) => { /* ... */
     if (!isMatch) return res.status(400).json({
       message: "Invalid credentials"
     });
+
     generateToken(user._id, "user", res);
+
     res.status(200).json({
       _id: user._id,
       fullname: user.fullname,
@@ -176,7 +187,7 @@ export const login = async (req, res) => { /* ... */
   }
 };
 
-export const logout = async (req, res) => { /* ... */
+export const logout = async (req, res) => {
   try {
     const token = req.cookies?.jwt;
     if (!token) return res.status(400).json({
@@ -187,7 +198,8 @@ export const logout = async (req, res) => { /* ... */
     });
     res.clearCookie("jwt", {
       httpOnly: true,
-      sameSite: "strict",
+      sameSite: "Lax",
+      secure: process.env.NODE_ENV === 'production',
     });
     res.status(200).json({
       message: "Logout successful"
@@ -254,7 +266,7 @@ export const getRecentActivity = async (req, res) => {
         updatedAt: -1
       })
       .limit(5)
-      .populate('repairer', 'fullname') // Populate repairer name
+      .populate('repairer', 'fullname')
       .lean();
 
     const activity = recentServiceRequests.map(sr => {
@@ -323,11 +335,15 @@ export const requestService = async (req, res) => {
     serviceType,
     urgency,
     location,
-    prefferedDate,
-    prefferedTime,
+    preferredDate,
+    preferredTime,
     quotation,
     estimatedPrice,
-    attachments
+    attachments,
+    category,
+    issue,
+    budget,
+    contactInfo
   } = req.body;
 
   if (!userId) {
@@ -336,11 +352,13 @@ export const requestService = async (req, res) => {
     });
   }
 
-  if (!title || !description || !serviceType || !urgency || !location || !location.address || !location.pincode) {
+  if (!title || !description || !serviceType || !urgency || !location || !location.address || !location.pincode ||
+    !category || !issue || !budget || !contactInfo || !preferredDate || !preferredTime) {
     return res.status(400).json({
-      message: "Missing required service request fields (title, description, serviceType, urgency, location)."
+      message: "Please provide all required service request fields: title, description, serviceType, urgency, location (address, pincode, captureMethod), category, issue, budget, contactInfo, preferredDate, and preferredTime."
     });
   }
+
 
   try {
     const newServiceRequest = new ServiceRequest({
@@ -350,11 +368,17 @@ export const requestService = async (req, res) => {
       serviceType,
       urgency,
       location,
-      prefferedDate: prefferedDate ? new Date(prefferedDate) : undefined,
-      prefferedTime,
+      preferredTimeSlot: {
+        date: new Date(preferredDate),
+        time: preferredTime
+      },
       quotation,
       estimatedPrice,
       attachments,
+      category,
+      issue,
+      budget,
+      contactInfo,
       status: 'requested',
     });
 
@@ -393,7 +417,7 @@ export const getInProgressServices = async (req, res) => {
           $in: ['accepted', 'in_progress', 'quoted']
         }
       })
-      .populate('repairer', 'fullname email phone') 
+      .populate('repairer', 'fullname email phone')
       .sort({
         createdAt: -1
       })
@@ -407,8 +431,8 @@ export const getInProgressServices = async (req, res) => {
       status: sr.status,
       urgency: sr.urgency,
       location: sr.location,
-      prefferedDate: sr.prefferedDate ? sr.prefferedDate.toISOString().split('T')[0] : null,
-      prefferedTime: sr.prefferedTime,
+      preferredDate: sr.preferredTimeSlot?.date ? sr.preferredTimeSlot.date.toISOString().split('T')[0] : null,
+      preferredTime: sr.preferredTimeSlot?.time || null,
       quotation: sr.quotation,
       estimatedPrice: sr.estimatedPrice,
       assignedRepairer: sr.repairer ? {
@@ -458,8 +482,8 @@ export const getPendingServices = async (req, res) => {
       status: sr.status,
       urgency: sr.urgency,
       location: sr.location,
-      prefferedDate: sr.prefferedDate ? sr.prefferedDate.toISOString().split('T')[0] : null,
-      prefferedTime: sr.prefferedTime,
+      preferredDate: sr.preferredTimeSlot?.date ? sr.preferredTimeSlot.date.toISOString().split('T')[0] : null,
+      preferredTime: sr.preferredTimeSlot?.time || null,
       quotation: sr.quotation,
       estimatedPrice: sr.estimatedPrice,
       createdAt: sr.createdAt,
@@ -480,7 +504,7 @@ export const cancelJob = async (req, res) => {
   const {
     jobId
   } = req.params;
-  const userId = req.user?._id; // Ensure it's the requesting user's job
+  const userId = req.user?._id;
 
   if (!jobId || !userId) {
     return res.status(400).json({
@@ -500,7 +524,6 @@ export const cancelJob = async (req, res) => {
       });
     }
 
-    // Only allow cancellation if status is 'requested', 'accepted', 'in_progress', or 'quoted'
     const cancellableStatuses = ['requested', 'accepted', 'in_progress', 'quoted', 'pending_quote'];
     if (!cancellableStatuses.includes(serviceRequest.status)) {
       return res.status(400).json({
@@ -509,17 +532,16 @@ export const cancelJob = async (req, res) => {
     }
 
     serviceRequest.status = 'cancelled';
-    serviceRequest.cancelledAt = new Date(); // Add a cancelledAt timestamp
+    serviceRequest.cancelledAt = new Date();
     await serviceRequest.save();
 
-    // Notify repairer if assigned
     if (serviceRequest.repairer) {
       await Notification.create({
         recipient: serviceRequest.repairer,
         recipientModel: 'Repairer',
         type: 'job_cancelled',
         message: `Service "${serviceRequest.title}" was cancelled by the customer.`,
-        link: `/repairer/dashboard`, // Link to dashboard or specific job page
+        link: `/repairer/dashboard`,
         relatedEntity: {
           id: jobId,
           model: 'ServiceRequest'
@@ -558,11 +580,11 @@ export const getUserConversations = async (req, res) => {
       })
       .populate({
         path: 'serviceRequest',
-        select: 'title repairer status', // Populate serviceRequest for title and repairer
+        select: 'title repairer status',
         populate: {
           path: 'repairer',
           select: 'fullname'
-        } // Populate repairer's fullname
+        }
       })
       .sort({
         updatedAt: -1
@@ -578,14 +600,14 @@ export const getUserConversations = async (req, res) => {
         id: conv._id.toString(),
         serviceId: conv.serviceRequest?._id.toString(),
         title: conv.serviceRequest?.title || 'Unknown Service Request',
-        sender: otherParticipantName, 
+        sender: otherParticipantName,
         lastMessage: conv.lastMessage?.text || 'No messages yet.',
         time: conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], {
           hour: '2-digit',
           minute: '2-digit'
         }) : '',
-        unread: false, 
-        isActive: isChatActive 
+        unread: false,
+        isActive: isChatActive
       };
     });
 
@@ -612,7 +634,7 @@ export const getConversationMessages = async (req, res) => {
   }
 
   try {
-    const conversation = await Conversation.findById(conversationId).populate('serviceRequest', 'status'); 
+    const conversation = await Conversation.findById(conversationId).populate('serviceRequest', 'status');
 
     if (!conversation) {
       return res.status(404).json({
@@ -620,7 +642,7 @@ export const getConversationMessages = async (req, res) => {
       });
     }
 
-    if (!conversation.participants.some(p => p.toString() === userId.toString())) { 
+    if (!conversation.participants.some(p => p.toString() === userId.toString())) {
       return res.status(403).json({
         message: "You are not a participant in this conversation."
       });
@@ -661,7 +683,7 @@ export const getConversationMessages = async (req, res) => {
     res.status(200).json({
       conversationId: conversation._id,
       messages: populatedMessages,
-      chatEnded: false 
+      chatEnded: false
     });
 
   } catch (error) {

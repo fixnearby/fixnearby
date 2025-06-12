@@ -1,34 +1,29 @@
-import React, { useState , useEffect} from 'react';
-import {  ArrowRight, Wrench, User, PhoneCall, Eye, Lock , EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowRight, Wrench, User, PhoneCall, Eye, Lock, EyeOff } from 'lucide-react';
 import { axiosInstance } from '../../../lib/axios';
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from 'react-router-dom';
-
-
-
 
 const Signup = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const email = location.state?.email;
+
   useEffect(() => {
     if (!email) {
       navigate("/user/getotp");
     }
   }, [email, navigate]);
 
-
-
   const [fullname, setFullname] = useState('');
   const [password, setPassword] = useState('');
   const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
- 
-    const handleSubmit = async (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validate email using our Zod-like schema
+
     if (!fullname || fullname.length < 3) {
       toast.error("Full name must be at least 3 characters");
       setIsLoading(false);
@@ -48,34 +43,31 @@ const Signup = () => {
     }
 
     setIsLoading(true);
-    
-    // Simulate API call
+
     try {
-      console.log("Submitting signup data:", { email, fullname, password, aadharCardNumber, phone });
-      const response = await axiosInstance.post("/user/signup",{email,fullname, password, aadharCardNumber, phone});
-      if (response.status ===200 || response.status === 201) {
-        toast.success('Signup successfull!');
-        setFullname(''); // Clear fullname input after successful submission
-        setPassword(''); // Clear password input after successful submission
-        setPhone(''); // Clear phone input after successful submission
+      console.log("Submitting signup data:", { email, fullname, password, phone });
+      const response = await axiosInstance.post("/user/signup", { email, fullname, password, phone });
+      if (response.status === 200 || response.status === 201) {
+        toast.success('Signup successful!');
+        setFullname('');
+        setPassword('');
+        setPhone('');
         navigate("/user/dashboard");
         window.location.reload();
-        
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
+      console.error("Signup failed:", error);
       toast.error('Failed to Signup . Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
-  
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
         <div className="text-center mb-8">
           <div className="flex items-center justify-center space-x-2 mb-6">
             <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-xl">
@@ -85,17 +77,14 @@ const Signup = () => {
               fixNearby
             </span>
           </div>
-          
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an Account</h1>
           <p className="text-gray-600">Register your {email}</p>
         </div>
 
-        {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="space-y-6">
-            {/* Full name Input */}
             <div className="space-y-2">
-              <label  className="block text-sm font-semibold text-gray-700">
+              <label className="block text-sm font-semibold text-gray-700">
                 Full Name (as per Aadhar Card)
               </label>
               <div className="relative">
@@ -108,13 +97,12 @@ const Signup = () => {
                   type="text"
                   value={fullname}
                   onChange={(e) => setFullname(e.target.value)}
-                  className={`block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 `}
+                  className="block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your Full Name as on Aadhar Card"
                 />
               </div>
             </div>
 
-            {/* Password Input */}
             <div className="space-y-2">
               <label htmlFor="password" className="block text-sm font-semibold text-gray-700">
                 Password
@@ -129,7 +117,7 @@ const Signup = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={`block w-full pl-10 pr-12 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 `}
+                  className="block w-full pl-10 pr-12 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your password"
                 />
                 <button
@@ -142,9 +130,8 @@ const Signup = () => {
               </div>
             </div>
 
-            {/* Phone number Input */}
             <div className="space-y-2">
-              <label  className="block text-sm font-semibold text-gray-700">
+              <label className="block text-sm font-semibold text-gray-700">
                 Phone Number
               </label>
               <div className="relative">
@@ -157,13 +144,12 @@ const Signup = () => {
                   type="text"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className={`block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 `}
+                  className="block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your Phone Number (10 digits)"
                 />
               </div>
             </div>
 
-            {/* Submit Button */}
             <button
               onClick={handleSubmit}
               disabled={isLoading}
@@ -183,7 +169,6 @@ const Signup = () => {
             </button>
           </div>
 
-          {/* Divider */}
           <div className="relative my-8">
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-gray-300"></div>
@@ -193,12 +178,12 @@ const Signup = () => {
             </div>
           </div>
 
-          {/* Repairer Login */}
           <div className="text-center space-y-4">
             <p className="text-gray-600 text-sm">
               Are you a service provider?
             </p>
-            <a href="/repairer/login"
+            <a
+              href="/repairer/login"
               className="w-full border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center space-x-2"
             >
               <User className="w-5 h-5" />
@@ -207,7 +192,6 @@ const Signup = () => {
           </div>
         </div>
 
-        {/* Footer Links */}
         <div className="text-center mt-8 space-y-2">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
@@ -242,4 +226,4 @@ const Signup = () => {
   );
 }
 
-export default Signup
+export default Signup;

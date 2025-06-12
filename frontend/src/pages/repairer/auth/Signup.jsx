@@ -55,6 +55,7 @@ const Signup = () => {
     }
   }, [location.state]);
 
+
   // Renamed 'professions' to 'servicesOffered' for clarity and alignment with 'services' field
 
   const servicesOffered = servicefromjson.home_services.map(item =>
@@ -141,9 +142,7 @@ const Signup = () => {
       newErrors.password = 'Password is required';
     } else if (formData.password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain uppercase, lowercase, and a number';
-    }
+    } 
     
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = 'Please confirm your password';
@@ -475,6 +474,7 @@ const Signup = () => {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Briefcase className="h-5 w-5 text-gray-400" />
                     </div>
+                    
                     <select
                       id="services" 
                       name="services" 
@@ -491,6 +491,7 @@ const Signup = () => {
                         </option>
                       ))}
                     </select>
+                    <center className='text-red-600 text-sm'>*You can add more services from profile section</center>
                   </div>
                   {errors.services && ( // CHANGED: errors.profession -> errors.services
                     <p className="mt-2 text-sm text-red-600">{errors.services}</p> // CHANGED: errors.profession -> errors.services

@@ -131,6 +131,7 @@ export const signup = async (req, res) => { /* ... */
         message: "Invalid services format"
       });
     }
+    
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const newRepairer = new Repairer({
@@ -143,6 +144,7 @@ export const signup = async (req, res) => { /* ... */
       pincode,
     });
     await newRepairer.save();
+    generateToken(newRepairer._id, "repairer", res);
     res.status(201).json({
       _id: newRepairer._id,
       fullname: newRepairer.fullname,
@@ -164,13 +166,11 @@ export const signup = async (req, res) => { /* ... */
   }
 };
 
-export const login = async (req, res) => { /* ... */
+export const login = async (req, res) => {
   const {
     email,
     password
   } = req.body;
-  console.log(email)
-  console.log(password)
   try {
     const repairer = await Repairer.findOne({
       email
@@ -178,34 +178,28 @@ export const login = async (req, res) => { /* ... */
     if (!repairer) return res.status(400).json({
       message: "Invalid credentials"
     });
-    console.log(repairer.password)
     const isMatch = await bcrypt.compare(password, repairer.password);
     console.log(isMatch)
     if (!isMatch) return res.status(400).json({
       message: "Invalid credentials"
     });
+
     generateToken(repairer._id, "repairer", res);
+
     res.status(200).json({
       _id: repairer._id,
       fullname: repairer.fullname,
       email: repairer.email,
       role: "repairer",
-      preferences: repairer.preferences,
-      pincode: repairer.pincode,
-      phone: repairer.phone,
-      bio: repairer.bio,
-      experience: repairer.experience,
-      services: repairer.services,
-      profileImageUrl: repairer.profileImageUrl,
-      rating: repairer.rating
     });
   } catch (error) {
-    console.error("Error in Repairer login controller", error.message);
+    console.error("Error in login controller", error.message);
     res.status(500).json({
       message: "Internal Server Error"
     });
   }
 };
+
 
 export const logout = async (req, res) => { /* ... */
   try {

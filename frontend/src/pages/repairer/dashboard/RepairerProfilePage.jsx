@@ -1,6 +1,7 @@
 // frontend/src/pages/RepairerProfilePage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import servicefromjson from '../../../services.json';
 // Import User icon from lucide-react, alongside others
 import { ArrowLeft, User, Star, MapPin, Wrench, Mail, Phone, Clock, Loader, Camera, Edit, Check, X } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
@@ -16,6 +17,10 @@ const normalizePhoneNumber = (phoneNumber) => {
 const normalizePincode = (pincode) => {
   return String(pincode).replace(/\D/g, '').substring(0, 6);
 };
+
+const servicesOffered = servicefromjson.home_services.map(item =>
+  item.main_category
+  );
 
 const RepairerProfilePage = () => {
   const { repairer, setRepairer } = useAuthStore();
@@ -414,15 +419,21 @@ const RepairerProfilePage = () => {
           {isEditing ? (
             <div>
               {editForm.services.map((service, index) => (
-                <div key={index} className="flex items-center space-x-2 mb-2 p-2 bg-gray-50 rounded">
-                  <input
-                    type="text"
-                    placeholder="Service Name (required)"
-                    value={service.name}
-                    onChange={(e) => handleServiceChange(index, 'name', e.target.value)}
-                    className="flex-1 p-1 border rounded"
-                    required
-                  />
+                <div key={index} className="flex items-center space-x-2 mb-2 p-1 bg-gray-50 rounded">
+                              <select 
+                      id="services" 
+                      name="services" 
+                      value={service.name} 
+                      onChange={(e) => handleServiceChange(index, 'name', e.target.value)}
+                      className={`block w-full pl-5 pr-3 py-1 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors `}
+                    >
+                      <option value="">Select your service</option> {/* CHANGED: profession -> service */}
+                      {servicesOffered.map((service) => ( // CHANGED: professions.map -> servicesOffered.map
+                        <option key={service} value={service}>
+                          {service}
+                        </option>
+                      ))}
+                    </select>
                   <input
                     type="number"
                     placeholder="Visiting Charge"

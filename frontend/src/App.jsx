@@ -32,6 +32,7 @@ import UserNotificationsPage from "./pages/user/dashboard/UserNotificationsPage"
 
 // RepairerDashboard
 import RepairerMainDashboard from './pages/repairer/dashboard/Maindashboard';
+import RepairerInprogress from './pages/repairer/dashboard/Inprogress';
 import RepairerSettingsPage from './pages/repairer/dashboard/RepairerSettingsPage';
 import RepairerProfilePage from './pages/repairer/dashboard/RepairerProfilePage';
 import RepairerAnalyticsPage from './pages/repairer/dashboard/RepairerAnalyticsPage';
@@ -161,6 +162,7 @@ function App() {
         <Route path="/repairer/settings" element={repairer ?  <RepairerSettingsPage /> :  <Navigate to="/repairer/login" />} />
         <Route path="/repairer/profile" element={repairer ?  <RepairerProfilePage /> :  <Navigate to="/repairer/login" />} />
         <Route path="/repairer/analytics" element={repairer ?  <RepairerAnalyticsPage /> :  <Navigate to="/repairer/login" />} />
+        <Route path="/repairer/inprogress" element={repairer ?  <RepairerInprogress /> :  <Navigate to="/repairer/login" />} />
         <Route path="/repairer/notifications" element={repairer ?  <RepairerNotificationsPage /> :  <Navigate to="/repairer/login" />} />
         <Route path="/repairer/messages/:conversationId?" element={repairer ?  <RepairerMessagesPage /> :  <Navigate to="/repairer/login" />} />
 

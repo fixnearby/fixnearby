@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
 import { Link , useNavigate } from 'react-router-dom';
-import { Mail, ArrowRight, Wrench, User, CheckCircle } from 'lucide-react';
+import { Mail, ArrowRight, Wrench, User, CheckCircle, Phone } from 'lucide-react';
 import { axiosInstance } from '../../../lib/axios';
 import toast from "react-hot-toast";
 
 // Zod-like validation (simulated since Zod isn't available)
-const emailSchema = {
-  validate: (email) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!email) {
-      return { success: false, error: 'Email is required' };
+const phoneSchema = {
+  validate: (phone) => {
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phone) {
+      return { success: false, error: 'Phone number is required' };
     }
-    if (!emailRegex.test(email)) {
-      return { success: false, error: 'Please enter a valid email address' };
+    if (!phoneRegex.test(phone)) {
+      return { success: false, error: 'Please enter a valid phone number' };
     }
     return { success: true };
   }
@@ -21,15 +21,15 @@ const emailSchema = {
 // Toast notification component (simulating react-hot-toast)
 
 const Getotp = () => {
-  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Validate email using our Zod-like schema
-    const validation = emailSchema.validate(email);
+    // Validate  using our Zod-like schema
+    const validation = phoneSchema.validate(phone);
     
     if (!validation.success) {
       toast.error(validation.error);
@@ -41,11 +41,11 @@ const Getotp = () => {
     
     // Simulate API call
     try {
-      const response = await axiosInstance.post("/user/getotp",{email});
+      const response = await axiosInstance.post("/user/getotp",{phone});
       if (response.status ===200 || response.status === 201) {
         toast.success('OTP sent successfully! Please check your email.');
-        setEmail(''); // Clear email input after successful submission
-        navigate("/user/verify-otp",{ state: { email } });
+        setPhone(''); // Clear email input after successful submission
+        navigate("/user/verify-otp",{ state: { phone } });
       } else {
         toast.error(response.data.message);
       }
@@ -73,33 +73,33 @@ const Getotp = () => {
           </div>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Get Started</h1>
-          <p className="text-gray-600">Enter your email to receive a verification code</p>
+          <p className="text-gray-600">Enter your phone to receive an OTP code</p>
         </div>
 
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="space-y-6">
-            {/* Email Input */}
+          
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
-                Email Address
+              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700">
+                Phone Number
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Phone className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSubmit(e)}
+                  id="phone"
+                  type="phone"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
-                  placeholder="Enter your email address"
+                  placeholder="Enter your phone Number"
                 />
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                We'll send a 6-digit verification code to this email
+                We'll send a 6-digit OTP code to this phone number
               </p>
             </div>
 
@@ -173,7 +173,7 @@ const Getotp = () => {
             <div>
               <h3 className="text-sm font-semibold text-blue-900 mb-1">Secure & Private</h3>
               <p className="text-xs text-blue-700">
-                Your email is encrypted and will only be used for account verification and service updates.
+                Your phone number is encrypted and will only be used for account verification and service updates.
               </p>
             </div>
           </div>

@@ -2,7 +2,6 @@
 import Repairer from "../models/repairer.model.js";
 import BlacklistToken from "../models/blacklistToken.model.js";
 import Otp from "../models/otp.model.js";
-import { send_email } from "./sendemail.js";
 import bcrypt from "bcryptjs";
 import { generateToken } from "../libs/utils.js";
 import ServiceRequest from "../models/serviceRequest.model.js";
@@ -10,45 +9,46 @@ import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";     
 import Notification from "../models/notification.model.js";
 import User from "../models/user.model.js"; 
+import { sendSignupOTP, serviceAccepted } from "./sendsms.js";
 
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
 export const getOtp = async (req, res) => { /* ... */
   const {
-    email
+    phone
   } = req.body;
-  console.log("Received email for OTP:", email);
-  if (!email) return res.status(400).json({
-    message: "Email is required"
+  console.log("Received phone for OTP:", phone);
+  if (!phone) return res.status(400).json({
+    message: "phone number is required"
   });
   const user = await Repairer.findOne({
-    email
+    phone
   });
   if (user) return res.status(400).json({
-    message: "Repairer with this email already exists"
+    message: "Repairer with this phone number already exists"
   });
   const otp_generated = generateOTP();
   try {
     await Otp.findOneAndUpdate({
-      email
+      phone
     }, {
-      email,
+      phone,
       otp: otp_generated,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     }, {
       upsert: true,
       new: true
     });
-    const is_email_sent = await send_email(email, otp_generated);
-    console.log("Email sent status:", is_email_sent);
-    if (!is_email_sent) {
+    const status = await sendSignupOTP(phone, otp_generated);
+    console.log("otp sent status:", status);
+    if (!status) {
       return res.status(500).json({
-        message: "Failed to send OTP email"
+        message: "Failed to send OTP"
       });
     }
     return res.status(200).json({
-      message: "OTP sent to email"
+      message: "OTP sent to phone"
     });
   } catch (err) {
     console.error(err);
@@ -60,18 +60,18 @@ export const getOtp = async (req, res) => { /* ... */
 
 export const verifyOtp = async (req, res) => { /* ... */
   const {
-    email,
+    phone,
     otp
   } = req.body;
-  if (!email || !otp) return res.status(400).json({
-    message: "Email and OTP are required"
+  if (!phone || !otp) return res.status(400).json({
+    message: "phone number and OTP are required"
   });
   try {
     const record = await Otp.findOne({
-      email
+      phone
     });
     if (!record) return res.status(400).json({
-      message: "No OTP found for this email"
+      message: "No OTP found for this phone number"
     });
     if (record.otp !== otp) return res.status(400).json({
       message: "Invalid verification code."
@@ -80,7 +80,7 @@ export const verifyOtp = async (req, res) => { /* ... */
       message: "OTP expired. Please request a new one."
     });
     await Otp.deleteOne({
-      email
+      phone
     });
     return res.status(200).json({
       message: "OTP verified successfully"
@@ -97,7 +97,7 @@ export const signup = async (req, res) => { /* ... */
   console.log('Received signup data on backend:', req.body);
   const {
     fullname,
-    email,
+    upiId,
     password,
     aadharcardNumber,
     phone,
@@ -105,17 +105,17 @@ export const signup = async (req, res) => { /* ... */
     pincode,
   } = req.body;
   try {
-    if (!fullname || !email || !password || !aadharcardNumber || !phone || !services || !pincode) {
+    if (!fullname  || !password || !aadharcardNumber || !phone || !services || !pincode || !upiId) {
       return res.status(400).json({
         message: "All required fields must be filled"
       });
     }
     const existingRepairer = await Repairer.findOne({
-      email
+      phone
     });
     if (existingRepairer) {
       return res.status(400).json({
-        message: "Repairer with this email already exists"
+        message: "Repairer with this phone number already exists"
       });
     }
     let serviceArray = [];
@@ -136,10 +136,10 @@ export const signup = async (req, res) => { /* ... */
     const hashedPassword = await bcrypt.hash(password, salt);
     const newRepairer = new Repairer({
       fullname,
-      email,
       password: hashedPassword,
       aadharcardNumber,
       phone,
+      upiId,
       services: serviceArray,
       pincode,
     });
@@ -148,7 +148,6 @@ export const signup = async (req, res) => { /* ... */
     res.status(201).json({
       _id: newRepairer._id,
       fullname: newRepairer.fullname,
-      email: newRepairer.email,
       services: newRepairer.services,
       message: "Repairer account created successfully!",
     });
@@ -168,12 +167,12 @@ export const signup = async (req, res) => { /* ... */
 
 export const login = async (req, res) => {
   const {
-    email,
+    phone,
     password
   } = req.body;
   try {
     const repairer = await Repairer.findOne({
-      email
+      phone
     }).select("+password");
     if (!repairer) return res.status(400).json({
       message: "Invalid credentials"
@@ -189,7 +188,7 @@ export const login = async (req, res) => {
     res.status(200).json({
       _id: repairer._id,
       fullname: repairer.fullname,
-      email: repairer.email,
+      phone: repairer.phone,
       role: "repairer",
     });
   } catch (error) {
@@ -493,6 +492,24 @@ export const acceptJob = async (req, res) => {
     serviceRequest.repairer = repairerId;
     serviceRequest.status = 'accepted';
     serviceRequest.assignedAt = new Date();
+
+    //usernumber,username,number,name,issue
+    const rep  = await Repairer.findById(repairerId)
+    const cus = await User.findById(serviceRequest.customer)
+    const name = rep.fullname
+    const number = rep.phone
+    const usernumber = serviceRequest.contactInfo;
+    const username = cus.fullname
+    const issue = serviceRequest.issue
+
+    const hehe = await serviceAccepted(usernumber,username,number,name,issue);
+
+    if (hehe===false) {
+      return res.status(400).json({
+        message: "Failed to send Accepted SMS"
+      });
+    }
+
 
     await serviceRequest.save();
 

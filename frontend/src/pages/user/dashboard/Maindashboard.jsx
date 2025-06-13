@@ -695,7 +695,7 @@ const ServiceRequestFormModal = ({
             {/* NEW: Contact Info Input */}
             <div className="mb-6">
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="contactInfo">
-                Contact Information (Phone or Email) *
+                Contact Information (Phone Number) *
               </label>
               <input
                 type="text"
@@ -704,9 +704,12 @@ const ServiceRequestFormModal = ({
                 value={serviceDetails.contactInfo}
                 onChange={handleServiceDetailsChange}
                 className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                placeholder="e.g., +919876543210 or your.email@example.com"
+                placeholder="e.g., 98765**210"
                 required
               />
+              <div className="text-center text-red-600 text-sm mt-1">
+    *This is where the repairer will call you or send your completion OTP
+  </div>
             </div>
 
             <div className="mb-6">

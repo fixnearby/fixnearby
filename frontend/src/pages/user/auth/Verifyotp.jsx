@@ -8,12 +8,12 @@ const Verifyotp = () => {
 
   const location = useLocation();
   const navigate = useNavigate();
-  const email = location.state?.email;
+  const phone = location.state?.phone;
   useEffect(() => {
-    if (!email) {
+    if (!phone) {
       navigate("/user/getotp");
     }
-  }, [email, navigate]);
+  }, [phone, navigate]);
 
 
   const [otp, setOtp] = useState('');
@@ -34,11 +34,11 @@ const Verifyotp = () => {
     
     // Simulate API call
     try {
-      const response = await axiosInstance.post("/user/verify-otp",{email,otp});
+      const response = await axiosInstance.post("/user/verify-otp",{phone,otp});
       if (response.status ===200 || response.status === 201) {
         toast.success('OTP verified successfully!');
         setOtp(''); 
-        navigate("/user/signup",{ state: { email } });
+        navigate("/user/signup",{ state: { phone } });
         window.location.reload();
       } else {
         toast.error(response.data.message);
@@ -67,7 +67,7 @@ const Verifyotp = () => {
           </div>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Verify OTP</h1>
-          <p className="text-gray-600">Enter your OTP to verify {email}</p>
+          <p className="text-gray-600">Enter your OTP to verify {phone}</p>
         </div>
 
         {/* Main Card */}
@@ -87,7 +87,7 @@ const Verifyotp = () => {
                   type="text"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleSubmit(e)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your OTP (6 digits)"
                 />
@@ -141,7 +141,7 @@ const Verifyotp = () => {
             <div>
               <h3 className="text-sm font-semibold text-blue-900 mb-1">Secure & Private</h3>
               <p className="text-xs text-blue-700">
-                Your email is encrypted and will only be used for account verification and service updates.
+                Your phone number is encrypted and will only be used for account verification and service updates.
               </p>
             </div>
           </div>

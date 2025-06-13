@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import bcrypt from "bcryptjs";
 
 const repairerSchema = new mongoose.Schema(
   {
@@ -7,16 +6,17 @@ const repairerSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
     password: {
       type: String,
       required: true,
-      minlength: 6,
+      minlength: 8,
       select: false, 
+    },
+    upiId:{
+      type: String,
+      required: true,
+      unique: true,
+      match : [ /^[\w.-]{2,256}@[a-zA-Z]{3,64}$/ , 'Please enter a valid UPI ID']
     },
     aadharcardNumber: {
       type: String,

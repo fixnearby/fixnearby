@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowRight, Wrench, User, PhoneCall, Eye, Lock, EyeOff } from 'lucide-react';
+import { ArrowRight, Wrench, User, Eye, Lock, EyeOff } from 'lucide-react';
 import { axiosInstance } from '../../../lib/axios';
 import toast from "react-hot-toast";
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -7,17 +7,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 const Signup = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const email = location.state?.email;
+  const phone = location.state?.phone;
 
   useEffect(() => {
-    if (!email) {
+    if (!phone) {
       navigate("/user/getotp");
     }
-  }, [email, navigate]);
+  }, [phone, navigate]);
 
   const [fullname, setFullname] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -30,28 +29,20 @@ const Signup = () => {
       return;
     }
 
-    if (!password || password.length < 6) {
-      toast.error("Password must be at least 6 characters");
+    if (!password || password.length < 8) {
+      toast.error("Password must be at least 8 characters");
       setIsLoading(false);
       return;
     }
-
-    if (!phone || !/^\d{10}$/.test(phone)) {
-      toast.error("Phone number must be exactly 10 digits");
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
 
     try {
-      console.log("Submitting signup data:", { email, fullname, password, phone });
-      const response = await axiosInstance.post("/user/signup", { email, fullname, password, phone });
+      console.log("Submitting signup data:", { fullname, password, phone });
+      const response = await axiosInstance.post("/user/signup", { fullname, password, phone });
       if (response.status === 200 || response.status === 201) {
         toast.success('Signup successful!');
         setFullname('');
         setPassword('');
-        setPhone('');
         navigate("/user/dashboard");
         window.location.reload();
       } else {
@@ -78,7 +69,7 @@ const Signup = () => {
             </span>
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an Account</h1>
-          <p className="text-gray-600">Register your {email}</p>
+          <p className="text-gray-600">Register your {phone}</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
@@ -127,26 +118,6 @@ const Signup = () => {
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-700">
-                Phone Number
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <PhoneCall className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  id="Phonenumber"
-                  name="Phonenumber"
-                  type="text"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
-                  placeholder="Enter your Phone Number (10 digits)"
-                />
               </div>
             </div>
 

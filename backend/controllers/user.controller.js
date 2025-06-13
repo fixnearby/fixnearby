@@ -2,9 +2,6 @@
 import User from "../models/user.model.js";
 import BlacklistToken from "../models/blacklistToken.model.js";
 import Otp from "../models/otp.model.js";
-import {
-  send_email
-} from "./sendemail.js";
 import bcrypt from "bcryptjs";
 import {
   generateToken
@@ -14,6 +11,7 @@ import Notification from "../models/notification.model.js";
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
 import Repairer from "../models/repairer.model.js";
+import { sendSignupOTP } from "./sendsms.js";
 
 
 function generateOTP() {
@@ -22,37 +20,37 @@ function generateOTP() {
 
 export const getOtp = async (req, res) => {
   const {
-    email
+    phone
   } = req.body;
-  if (!email) return res.status(400).json({
-    message: "Email is required"
+  if (!phone) return res.status(400).json({
+    message: "Phone Number is required"
   });
   const user = await User.findOne({
-    email
+    phone
   });
   if (user) return res.status(400).json({
-    message: "User with this email already exists"
+    message: "User with this phone already exists"
   });
   const otp_generated = generateOTP();
   try {
     await Otp.findOneAndUpdate({
-      email
+      phone
     }, {
-      email,
+      phone,
       otp: otp_generated,
       expiresAt: new Date(Date.now() + 5 * 60 * 1000),
     }, {
       upsert: true,
       new: true
     });
-    const is_email_sent = await send_email(email, otp_generated);
-    if (!is_email_sent) {
+    const status = await sendSignupOTP(phone, otp_generated);
+    if (status===false) {
       return res.status(500).json({
-        message: "Failed to send OTP email"
+        message: "Failed to send OTP"
       });
     }
     return res.status(200).json({
-      message: "OTP sent to email"
+      message: "OTP sent to phone"
     });
   } catch (err) {
     console.error(err);
@@ -64,18 +62,18 @@ export const getOtp = async (req, res) => {
 
 export const verifyOtp = async (req, res) => {
   const {
-    email,
+    phone,
     otp
   } = req.body;
-  if (!email || !otp) return res.status(400).json({
-    message: "Email and OTP are required"
+  if (!phone || !otp) return res.status(400).json({
+    message: "Phone Number and OTP are required"
   });
   try {
     const record = await Otp.findOne({
-      email
+      phone
     });
     if (!record) return res.status(400).json({
-      message: "No OTP found for this email"
+      message: "No OTP found for this phone"
     });
     if (record.otp !== otp) return res.status(400).json({
       message: "Invalid verification code."
@@ -84,7 +82,7 @@ export const verifyOtp = async (req, res) => {
       message: "OTP expired. Please request a new one."
     });
     await Otp.deleteOne({
-      email
+      phone
     });
     return res.status(200).json({
       message: "OTP verified successfully"
@@ -101,30 +99,28 @@ export const signup = async (req, res) => {
   // --- MODIFIED: Added 'phone' to destructuring ---
   const {
     fullname,
-    email,
     password,
     phone // <--- ADDED THIS LINE
   } = req.body;
   try {
     // --- MODIFIED: Added 'phone' to validation ---
-    if (!fullname || !email || !password || !phone) { // <--- ADDED '|| !phone'
+    if (!fullname  || !password || !phone) { // <--- ADDED '|| !phone'
       return res.status(400).json({
-        message: "All required fields (fullname, email, password, phone) must be filled" // <--- UPDATED MESSAGE
+        message: "All required fields (fullname, password, phone) must be filled" // <--- UPDATED MESSAGE
       });
     }
     const existingUser = await User.findOne({
-      email
+      phone
     });
     if (existingUser) {
       return res.status(400).json({
-        message: "User with this email already exists"
+        message: "User with this phone already exists"
       });
     }
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
     const newUser = new User({
       fullname,
-      email,
       password: hashedPassword,
       phone, // <--- ADDED THIS LINE: Pass phone to the User constructor
     });
@@ -135,7 +131,6 @@ export const signup = async (req, res) => {
     res.status(201).json({
       _id: newUser._id,
       fullname: newUser.fullname,
-      email: newUser.email,
       phone: newUser.phone, // Include phone in response
       role: "user",
       message: "User account created successfully!",
@@ -156,12 +151,12 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
   const {
-    email,
+    phone,
     password
   } = req.body;
   try {
     const user = await User.findOne({
-      email
+      phone
     }).select("+password");
     if (!user) return res.status(400).json({
       message: "Invalid credentials"
@@ -176,7 +171,7 @@ export const login = async (req, res) => {
     res.status(200).json({
       _id: user._id,
       fullname: user.fullname,
-      email: user.email,
+      phone: user.phone,
       role: "user",
     });
   } catch (error) {
@@ -417,7 +412,7 @@ export const getInProgressServices = async (req, res) => {
           $in: ['accepted', 'in_progress', 'quoted']
         }
       })
-      .populate('repairer', 'fullname email phone')
+      .populate('repairer', 'fullname phone')
       .sort({
         createdAt: -1
       })
@@ -438,7 +433,6 @@ export const getInProgressServices = async (req, res) => {
       assignedRepairer: sr.repairer ? {
         _id: sr.repairer._id,
         fullname: sr.repairer.fullname,
-        email: sr.repairer.email,
         phone: sr.repairer.phone
       } : null,
       createdAt: sr.createdAt,

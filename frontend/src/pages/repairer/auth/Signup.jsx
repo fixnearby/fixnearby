@@ -18,19 +18,26 @@ import {
   Star,
   Award,
   Loader,
-  CreditCard // Import CreditCard icon for Aadhar field
+  CreditCard, // Import CreditCard icon for Aadhar field
+  IdCard
 } from 'lucide-react';
 import { axiosInstance } from '../../../lib/axios';
 
 const Signup = () => {
   const location = useLocation();
   const navigate = useNavigate();
+    const phone = location.state?.phone;
+  
+    useEffect(() => {
+      if (!phone) {
+        navigate("/repairer/getotp");
+      }
+    }, [phone, navigate]);
 
   const [formData, setFormData] = useState({
     fullname: '',         // CHANGED: fullName -> fullname (matches backend)
-    email: '',
-    phone: '',
     password: '',
+    upiId: '',
     confirmPassword: '',
     services: '',         // CHANGED: profession -> services (matches backend)
     pincode: '',             // Keeping 'city' in state if frontend UI still uses it, but it won't be sent to backend in payload below.
@@ -42,19 +49,6 @@ const Signup = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [signupSuccess, setSignupSuccess] = useState(false);
-
-  // Effect to pre-fill email and phone from location.state
-  useEffect(() => {
-    if (location.state) {
-      const { email, phone } = location.state;
-      setFormData(prev => ({
-        ...prev,
-        email: email || '',
-        phone: phone || prev.phone
-      }));
-    }
-  }, [location.state]);
-
 
   // Renamed 'professions' to 'servicesOffered' for clarity and alignment with 'services' field
 
@@ -118,24 +112,18 @@ const Signup = () => {
     if (!formData.fullname.trim()) { // CHANGED: formData.fullName -> formData.fullname
       newErrors.fullname = 'Full name is required'; // CHANGED: newErrors.fullName -> newErrors.fullname
     }
-    
-    if (!formData.email) {
-      newErrors.email = 'Email address is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-    
-    if (!formData.phone) {
-      newErrors.phone = 'Phone number is required';
-    } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
-      newErrors.phone = 'Please enter a valid phone number (at least 10 digits)';
-    }
 
     // ADDED: Aadhar card validation
     if (!formData.aadharcardNumber.trim()) {
       newErrors.aadharcardNumber = 'Aadhar Card Number is required';
     } else if (!/^\d{12}$/.test(formData.aadharcardNumber.trim())) { // Simple 12-digit check
       newErrors.aadharcardNumber = 'Aadhar Card Number must be 12 digits';
+    }
+
+    if (!formData.upiId.trim()) {
+      newErrors.upiId = 'UPI ID is required';
+    } else if (!/^[\w.-]{2,256}@[a-zA-Z]{3,64}$/.test(formData.upiId.trim())) { 
+      newErrors.upiId = 'Please enter a correct UPI ID';
     }
     
     if (!formData.password) {
@@ -184,8 +172,8 @@ const Signup = () => {
       // Make sure the URL matches your backend API endpoint
       const response = await axiosInstance.post('/repairer/signup', {
         fullname: formData.fullname,             // CHANGED: fullName -> fullname (matches backend)
-        email: formData.email,
-        phone: formData.phone,
+        phone,
+        upiId: formData.upiId,
         password: formData.password,
         services: formData.services,             // CHANGED: profession -> services (matches backend)
         aadharcardNumber: formData.aadharcardNumber,
@@ -273,7 +261,7 @@ const Signup = () => {
               <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <User className="w-8 h-8 text-white" />
               </div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Your Account</h1>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">Register Your {phone}</h1>
               <p className="text-gray-600 text-lg">
                 Join as a professional and start earning today
               </p>
@@ -312,59 +300,6 @@ const Signup = () => {
                 )}
               </div>
 
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Email Address
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Mail className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="email"
-                      id="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      placeholder="john@example.com"
-                      readOnly
-                      className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                        errors.email ? 'border-red-300' : 'border-gray-200'
-                      } ${location.state?.email ? 'bg-gray-100 cursor-not-allowed' : ''}`}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                    Phone Number
-                  </label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Phone className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <input
-                      type="tel"
-                      id="phone"
-                      name="phone"
-                      value={formData.phone}
-                      onChange={handleInputChange}
-                      placeholder="+1 (555) 123-4567"
-                      className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                        errors.phone ? 'border-red-300' : 'border-gray-200'
-                      }`}
-                    />
-                  </div>
-                  {errors.phone && (
-                    <p className="mt-2 text-sm text-red-600">{errors.phone}</p>
-                  )}
-                </div>
-              </div>
-
               {/* NEW FIELD: Aadhar Card Number */}
               <div>
                 <label htmlFor="aadharcardNumber" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -372,7 +307,7 @@ const Signup = () => {
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <CreditCard className="h-5 w-5 text-gray-400" /> {/* Using CreditCard icon */}
+                    <IdCard className="h-5 w-5 text-gray-400" /> {/* Using CreditCard icon */}
                   </div>
                   <input
                     type="text"
@@ -388,6 +323,31 @@ const Signup = () => {
                 </div>
                 {errors.aadharcardNumber && (
                   <p className="mt-2 text-sm text-red-600">{errors.aadharcardNumber}</p>
+                )}
+              </div>
+
+              <div>
+                <label htmlFor="upiId" className="block text-sm font-semibold text-gray-700 mb-2">
+                  UPI ID
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <CreditCard className="h-5 w-5 text-gray-400" /> {/* Using CreditCard icon */}
+                  </div>
+                  <input
+                    type="text"
+                    id="upiId"
+                    name="upiId"
+                    value={formData.upiId}
+                    onChange={handleInputChange}
+                    placeholder="Enter your UPI ID"
+                    className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                      errors.upiId ? 'border-red-300' : 'border-gray-200'
+                    }`}
+                  />
+                </div>
+                {errors.upiId && (
+                  <p className="mt-2 text-sm text-red-600">{errors.upiId}</p>
                 )}
               </div>
 

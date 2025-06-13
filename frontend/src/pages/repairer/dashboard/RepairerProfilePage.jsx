@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import servicefromjson from '../../../services.json';
 // Import User icon from lucide-react, alongside others
-import { ArrowLeft, User, Star, MapPin, Wrench, Mail, Phone, Clock, Loader, Camera, Edit, Check, X } from 'lucide-react';
+import { ArrowLeft, User, Star, MapPin, Wrench, Mail, Phone, Clock, Loader, Camera, Edit, Check, X, CreditCard } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { getLucideIcon } from '../../../utils/lucideIconMap.js'; // Keep this for service icons
 import { getRepairerProfileDetails, updateRepairerProfile } from '../../../services/apiService';
@@ -61,7 +61,7 @@ const RepairerProfilePage = () => {
 
         setProfileData({
           fullname: fetchedData.fullname,
-          email: fetchedData.email,
+          upiId: fetchedData.upiId,
           phone: fetchedData.phone,
           aadharcardNumber: fetchedData.aadharcardNumber,
           experience: fetchedData.experience || 0,
@@ -365,7 +365,7 @@ const RepairerProfilePage = () => {
 
           <h3 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h3>
           <div className="space-y-2 text-gray-700">
-            <p className="flex items-center"><Mail className="w-4 h-4 mr-2" /> <strong>Email:</strong> {profileData.email}</p>
+            <p className="flex items-center">< CreditCard className="w-4 h-4 mr-2" /> <strong>UPI ID:</strong> {profileData.upiId}</p>
             <p className="flex items-center">
               <Phone className="w-4 h-4 mr-2" /> <strong>Phone:</strong>{" "}
               {isEditing ? (

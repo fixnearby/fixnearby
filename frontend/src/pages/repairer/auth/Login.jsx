@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, ArrowRight, Wrench, User, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, ArrowRight, Wrench, User, AlertCircle, Phone } from 'lucide-react';
 import { axiosInstance } from '../../../lib/axios';
 axiosInstance
 import toast from "react-hot-toast";
@@ -11,18 +11,18 @@ const loginSchema = {
     const errors = {};
     
     // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!data.email) {
-      errors.email = 'Email is required';
-    } else if (!emailRegex.test(data.email)) {
-      errors.email = 'Please enter a valid email address';
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!data.phone) {
+      errors.phone = 'phone number is required';
+    } else if (!phoneRegex.test(data.phone)) {
+      errors.phone = 'Please enter a valid phone number';
     }
     
     // Password validation
     if (!data.password) {
       errors.password = 'Password is required';
-    } else if (data.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters long';
+    } else if (data.password.length < 8) {
+      errors.password = 'Password must be at least 8 characters long';
     }
     
     return {
@@ -38,7 +38,7 @@ const loginSchema = {
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    email: '',
+    phone: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -109,7 +109,7 @@ const Login = () => {
           </div>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
-          <p className="text-gray-600">Sign in to your Professional account </p>
+          <p className="text-gray-600">Sign in to your Professional account to continue</p>
         </div>
 
         {/* Main Card */}
@@ -117,29 +117,29 @@ const Login = () => {
           <div className="space-y-6">
             {/* Email Input */}
             <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-semibold text-gray-700">
-                Email Address
+              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700">
+                Phone Number
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Phone className="h-5 w-5 text-gray-400" />
                 </div>
                 <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  value={formData.email}
+                  id="phone"
+                  name="phone"
+                  type="phone"
+                  value={formData.phone}
                   onChange={handleInputChange}
                   className={`block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
                     fieldErrors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
                   }`}
-                  placeholder="Enter your email address"
+                  placeholder="Enter your Phone Number"
                 />
               </div>
-              {fieldErrors.email && (
+              {fieldErrors.phone && (
                 <p className="text-red-500 text-xs mt-1 flex items-center space-x-1">
                   <AlertCircle className="w-3 h-3" />
-                  <span>{fieldErrors.email}</span>
+                  <span>{fieldErrors.phone}</span>
                 </p>
               )}
             </div>
@@ -220,13 +220,13 @@ const Login = () => {
           {/* Repairer Login */}
           <div className="text-center space-y-4">
             <p className="text-gray-600 text-sm">
-              Looking for repairers?
+              Looking for any services?
             </p>
             <a href="/user/login"
               className="w-full border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center space-x-2"
             >
               <User className="w-5 h-5" />
-              <span>Login as user</span>
+              <span>Login as User</span>
             </a>
           </div>
         </div>
@@ -260,7 +260,7 @@ const Login = () => {
                 For testing purposes, you can use:
               </p>
               <div className="text-xs text-amber-700 space-y-1">
-                <div><strong>Email:</strong> test@example.com</div>
+                <div><strong>Phone:</strong> 91666****0</div>
                 <div><strong>Password:</strong> password123</div>
               </div>
             </div>

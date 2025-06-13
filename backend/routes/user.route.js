@@ -18,6 +18,9 @@ import {
 import {
   userProtectRoute
 } from "../middleware/middleware.js"
+import {
+  getUserNotifications, markUserNotificationAsRead,deleteUserNotification
+} from '../controllers/userNotification.controller.js';
 
 const router = express.Router();
 
@@ -46,6 +49,10 @@ router.put("/cancel-job/:jobId",userProtectRoute, cancelJob); // New route for c
 // Chat Routes
 router.get("/conversations", userProtectRoute, getUserConversations); // Get all conversations for the user
 router.get("/conversations/:conversationId/messages", userProtectRoute, getConversationMessages); // Get messages for a specific conversation
+
+router.get('/notifications', userProtectRoute, getUserNotifications);
+router.put('/notifications/:notificationId/read', userProtectRoute, markUserNotificationAsRead);
+router.delete('/notifications/:notificationId',userProtectRoute, deleteUserNotification);
 
 
 export default router;

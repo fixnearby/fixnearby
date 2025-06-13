@@ -265,6 +265,7 @@ const ServiceRequestFormModal = ({
 
     setStep(2);
   };
+  
 
  const handleSubmit = async (e) => {
     e.preventDefault();
@@ -935,10 +936,10 @@ const UserMainDashboard = () => {
   };
 
   const handleNotificationsClick = () => {
-    console.log("User Notifications button clicked. Navigating to /user/notifications");
-    toast.info("Notifications page is under development!");
-  };
-
+      console.log("User Notifications button clicked. Navigating to /user/notifications");
+      navigate('/user/notifications'); 
+    };
+    
   if (!user && !loadingDashboardData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -1141,7 +1142,6 @@ const UserMainDashboard = () => {
 
       </main>
 
-      {/* Service Request Form Modal (handles both location and description) */}
       <ServiceRequestFormModal
         isOpen={showServiceFormModal}
         onClose={handleModalClose}

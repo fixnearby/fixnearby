@@ -58,3 +58,11 @@ export const getUserConversations = async () => apiRequest('get', '/user/convers
 export const getUserConversationMessages = async (conversationId) => apiRequest('get', `/user/conversations/${conversationId}/messages`);
 export const checkAuthStatus = () => apiRequest('get', '/check-auth'); 
 
+export const getUserNotifications = async () => {
+    try {
+        const response = await apiRequest('get', '/user/notifications');
+        return { success: true, notifications: response.notifications, message: "Notifications fetched successfully" };
+    } catch (error) {
+        return { success: false, message: error.response?.data?.message || 'Failed to fetch notifications.' };
+    }
+};

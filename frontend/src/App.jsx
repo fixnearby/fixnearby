@@ -2,9 +2,9 @@
 import { useEffect } from "react";
 import { Routes, Route, Navigate, Link } from 'react-router-dom';
 import { Loader } from "lucide-react";
-import { axiosInstance } from './lib/axios'; // Preserving your axiosInstance import
+import { axiosInstance } from './lib/axios'; 
 import { useAuthStore } from './store/authStore';
-import { connectSocket, disconnectSocket } from './services/socketService'; // <--- Ensure this import is present
+import { connectSocket, disconnectSocket } from './services/socketService'; 
 
 // Pages
 import Landing from './pages/Landing';
@@ -26,16 +26,16 @@ import UserInprogress from './pages/user/dashboard/Inprogress';
 import UserPendingservice from './pages/user/dashboard/Pendingservice';
 import UserMaindashboard from './pages/user/dashboard/Maindashboard';
 import Showservices from './pages/user/dashboard/Showservices';
-// CORRECTED PATH: UserMessagesPage is in 'messages' folder, not 'dashboard'
+import PaymentPage from "./pages/user/dashboard/PaymentPage";
 import UserMessagesPage from './pages/user/dashboard/UserMessagesPage';
+import UserNotificationsPage from "./pages/user/dashboard/UserNotificationsPage";
 
 // RepairerDashboard
 import RepairerMainDashboard from './pages/repairer/dashboard/Maindashboard';
 import RepairerSettingsPage from './pages/repairer/dashboard/RepairerSettingsPage';
 import RepairerProfilePage from './pages/repairer/dashboard/RepairerProfilePage';
 import RepairerAnalyticsPage from './pages/repairer/dashboard/RepairerAnalyticsPage';
-// CORRECTED PATH: RepairerMessagesPage is in 'messages' folder, not 'dashboard'
-import RepairerMessagesPage from './pages/repairer/dashboard/RepairerMessagesPage'; // <--- CORRECTED IMPORT PATH
+import RepairerMessagesPage from './pages/repairer/dashboard/RepairerMessagesPage'; 
 import RepairerNotificationsPage from './pages/repairer/dashboard/RepairerNotificationsPage';
 
 function App() {
@@ -54,9 +54,8 @@ function App() {
   } = useAuthStore();
 
   useEffect(() => {
-    // START SOCKET.IO CONNECTION HERE
     console.log("App useEffect: Attempting to connect Socket.IO...");
-    connectSocket(); // <--- CRITICAL: ADD THIS CALL
+    connectSocket(); 
 
     const checkAuth = async () => {
       try {
@@ -88,11 +87,9 @@ function App() {
 
     setIsLoading(true);
     checkAuth();
-
-    // CLEANUP FUNCTION: Disconnect Socket.IO when the App component unmounts
     return () => {
       console.log("App useEffect cleanup: Disconnecting Socket.IO...");
-      disconnectSocket(); // <--- CRITICAL: ADD THIS CALL
+      disconnectSocket();
     };
   }, [clearUser, clearRepairer, clearAdmin, setUser, setRepairer, setAdmin, setIsLoading]);
 
@@ -102,19 +99,17 @@ function App() {
         <Loader className="size-10 animate-spin" />
       </div>
     );
-
-  // Helper for private routes, using the auth store state
   const PrivateRoute = ({ children, allowedRoles }) => {
     const isAuthenticated = user || repairer || admin;
     const currentRole = user ? 'user' : repairer ? 'repairer' : admin ? 'admin' : null;
 
     if (!isAuthenticated) {
-      return <Navigate to="/user/login" replace />; // Redirect to user login by default
+      return <Navigate to="/user/login" replace />; 
     }
 
     if (allowedRoles && !allowedRoles.includes(currentRole)) {
-      // Authenticated but role not allowed for this route
-      return <Navigate to="/unauthorized" replace />; // Redirect to an unauthorized page
+     
+      return <Navigate to="/unauthorized" replace />; 
     }
 
     return children;
@@ -156,6 +151,10 @@ function App() {
         <Route path="/user/pending-service" element={user ?  <UserPendingservice /> :  <Navigate to="/user/login" />} />
         <Route path="/user/show-services" element={user ?  <Showservices /> :  <Navigate to="/user/login" />} />
         <Route path="/user/messages/:conversationId?" element={user ?  <UserMessagesPage /> :  <Navigate to="/user/login" />} />
+        <Route path="/user/chat/:serviceId" element={user ? <UserMessagesPage /> : <Navigate to="/user/login" />} /> 
+        <Route path="/user/payment/:serviceId" element={user ? <PaymentPage /> : <Navigate to="/user/login" />} /> 
+        <Route path="/user/notifications" element={<PrivateRoute allowedRoles={['user']}><UserNotificationsPage /></PrivateRoute>}/>
+
           
           
         <Route path="/repairer/dashboard" element={repairer ?  <RepairerMainDashboard /> :  <Navigate to="/repairer/login" />} />

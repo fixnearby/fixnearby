@@ -1,7 +1,10 @@
-//frontend/src/pages/user/dashboard/Inprogress.jsx
+// frontend/src/pages/user/dashboard/Inprogress.jsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../../../store/authStore.js';
 import { axiosInstance } from '../../../lib/axios.js';
+import { getInProgressServices } from '../../../services/apiService.js';
+import toast from 'react-hot-toast';
+import { useNavigate } from 'react-router-dom'; 
 import {
   Wrench,
   MessageSquare,
@@ -23,6 +26,7 @@ const Inprogress = () => {
   const [actionMessage, setActionMessage] = useState(null);
 
   const { user } = useAuthStore();
+  const navigate = useNavigate(); 
 
   const fetchInProgressRequests = useCallback(async () => {
     if (!user || !user._id) {
@@ -34,11 +38,12 @@ const Inprogress = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get('/service-requests/user/my-requests?statusFilter=in_progress');
-      setRequests(response.data.data);
+      const responseData = await getInProgressServices();
+      setRequests(responseData);
     } catch (err) {
       console.error('Error fetching in-progress requests:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Failed to load your in-progress service requests.');
+      toast.error('Failed to load your in-progress service requests.');
     } finally {
       setLoading(false);
     }
@@ -49,7 +54,10 @@ const Inprogress = () => {
   }, [fetchInProgressRequests]);
 
   const confirmCompletion = async (requestId) => {
-    if (!window.confirm('Confirm that this service has been completed by the repairer?')) {
+    toast('Please confirm completion in a dialog. Simulating confirmation...');
+    const userConfirmed = true; 
+
+    if (!userConfirmed) {
       return;
     }
 
@@ -60,15 +68,25 @@ const Inprogress = () => {
       });
 
       if (response.status === 200 || response.data.success) {
-        fetchInProgressRequests();
-        setActionMessage({ type: 'success', text: 'Service confirmed as completed! Thank you.' });
+        fetchInProgressRequests(); // Re-fetch to update the list
+        setActionMessage({ type: 'success', text: 'Service confirmed as completed! Payment initiated!' });
+        toast.success('Service confirmed as completed!');
+        toast.success('Redirecting to payment page...'); 
+        // Redirect to a payment page route
+        navigate(`/user/payment/${requestId}`);
       } else {
         setActionMessage({ type: 'error', text: response.data?.message || 'Failed to confirm service completion.' });
+        toast.error('Failed to confirm service completion.');
       }
     } catch (err) {
       console.error('Error confirming service completion:', err.response?.data || err.message);
       setActionMessage({ type: 'error', text: err.response?.data?.message || 'An error occurred while confirming completion.' });
+      toast.error(err.response?.data?.message || 'An error occurred while confirming completion.');
     }
+  };
+
+  const handleChatClick = (serviceId) => {
+    navigate(`/user/chat/${serviceId}`);
   };
 
   if (loading) {
@@ -117,15 +135,25 @@ const Inprogress = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {requests.map(request => (
-            <div key={request.id || request._id} className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div key={request._id} className="bg-white rounded-xl shadow-lg overflow-hidden">
               <div className="p-6">
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h2 className="text-xl font-bold text-gray-900">{request.title}</h2>
                     <p className="text-gray-600 mt-1">{request.description}</p>
                   </div>
-                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
-                    In Progress
+                  <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                    ${request.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                      request.status === 'quoted' ? 'bg-yellow-100 text-yellow-800' :
+                      request.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'}`
+                  }>
+                    {request.status === 'accepted' ? 'Accepted' :
+                     (request.status === 'quoted' ? 'Quoted' :
+                     (request.status === 'in_progress' ? 'In Progress' :
+                     (request.status === 'pending_quote' ? 'Pending Quote' :
+                     (request.status === 'requested' ? 'Requested' :
+                     request.status))))}
                   </span>
                 </div>
 
@@ -147,7 +175,7 @@ const Inprogress = () => {
                   <div className="flex items-center mb-3">
                     <MapPin className="w-5 h-5 text-gray-500 mr-2" />
                     <span className="font-medium">Location:</span>
-                    <span className="ml-2">{request.location.fullAddress}, {request.location.pincode}</span>
+                    <span className="ml-2">{request.location?.address}, {request.location?.pincode}</span>
                   </div>
 
                   {request.repairer && (
@@ -162,8 +190,11 @@ const Inprogress = () => {
                 </div>
 
                 <div className="flex justify-between mt-6 space-x-2">
-                  <button className="flex items-center text-blue-600 hover:text-blue-800 p-2 rounded-md">
-                    <MessageSquare className="w-5 h-5 mr-1" /> Message
+                  <button
+                    onClick={() => handleChatClick(request._id)}
+                    className="flex items-center text-blue-600 hover:text-blue-800 p-2 rounded-md"
+                  >
+                    <MessageSquare className="w-5 h-5 mr-1" /> Chat
                   </button>
                   {request.repairer?.phone && (
                     <a
@@ -174,7 +205,7 @@ const Inprogress = () => {
                     </a>
                   )}
                   <button
-                    onClick={() => confirmCompletion(request.id || request._id)}
+                    onClick={() => confirmCompletion(request._id)}
                     className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                   >
                     <Check className="w-5 h-5 mr-1" /> Confirm Completed

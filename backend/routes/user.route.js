@@ -15,6 +15,7 @@ import {
   getUserConversations, 
   getConversationMessages, 
   createRazorpayOrder,
+  serviceOtp,
   verifyAndTransferPayment,
   getServiceRequestById
 } from "../controllers/user.controller.js";
@@ -38,6 +39,9 @@ router.post("/signup", signup);
 router.post("/login", login);
 // api/logout
 router.post("/logout", logout);
+
+router.post("/verify-serviceotp" , serviceOtp)
+
 
 // Protected Routes (User Specific)
 

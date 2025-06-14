@@ -98,30 +98,50 @@ const Inprogress = () => {
 
     // Handler for confirming job completion
     const confirmCompletion = async (requestId) => {
-        if (!window.confirm("Are you sure you want to confirm this service as completed? This will initiate payment.")) {
+        const confirm = window.confirm("Are you sure you want to confirm this service as completed? This will initiate payment.");
+        if (!confirm) return;
+
+        const otp = window.prompt("Enter the 6-digit OTP sent to your phone:");
+        if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+            alert("Invalid OTP. Please enter a valid 6-digit code.");
             return;
         }
 
-        setActionMessage(null);
         try {
-            const response = await axiosInstance.put(`/service-requests/user/${requestId}/status`, {
-                status: 'completed'
-            });
+            // First verify OTP
+            const otpResponse = await axiosInstance.post("/user/verify-serviceotp/", { requestId, otp });
+            
+            if (otpResponse.status === 200 || otpResponse.status === 201) {
+                toast.success('OTP verified successfully!');
+                
+                setActionMessage(null);
+                
+                // Then update status to completed
+                const response = await axiosInstance.put(`/service-requests/user/${requestId}/status`, {
+                    status: 'completed'
+                });
 
-            if (response.status === 200 || response.data.success) {
-                fetchInProgressRequests(); // Re-fetch to update the list
-                setActionMessage({ type: 'success', text: 'Service confirmed as completed! Redirecting to payment...' });
-                toast.success('Service confirmed as completed!');
-                toast.success('Redirecting to payment page...');
-                navigate(`/user/payment/${requestId}`);
+                if (response.status === 200 || response.data.success) {
+                    fetchInProgressRequests(); // Re-fetch to update the list
+                    setActionMessage({ type: 'success', text: 'Service confirmed as completed! Redirecting to payment...' });
+                    toast.success('Service confirmed as completed!');
+                    toast.success('Redirecting to payment page...');
+                    navigate(`/user/payment/${requestId}`);
+                } else {
+                    setActionMessage({ type: 'error', text: response.data?.message || 'Failed to confirm service completion.' });
+                    toast.error('Failed to confirm service completion.');
+                }
             } else {
-                setActionMessage({ type: 'error', text: response.data?.message || 'Failed to confirm service completion.' });
-                toast.error('Failed to confirm service completion.');
+                toast.error('OTP verification failed.');
             }
         } catch (err) {
-            console.error('Error confirming service completion:', err.response?.data || err.message);
-            setActionMessage({ type: 'error', text: err.response?.data?.message || 'An error occurred while confirming completion.' });
-            toast.error(err.response?.data?.message || 'An error occurred while confirming completion.');
+            console.error('Error in completion process:', err.response?.data || err.message);
+            if (err.response?.status === 400) {
+                toast.error('Invalid OTP. Please try again.');
+            } else {
+                setActionMessage({ type: 'error', text: err.response?.data?.message || 'An error occurred during verification.' });
+                toast.error(err.response?.data?.message || 'An error occurred during verification.');
+            }
         }
     };
 
@@ -163,14 +183,6 @@ const Inprogress = () => {
                     <button onClick={() => setActionMessage(null)} className="ml-auto text-current">
                         <XCircle size={16} />
                     </button>
-                </div>
-            )}
-
-            {error && (
-                <div className="text-center py-6 bg-red-100 text-red-700 rounded-xl shadow-lg mb-6">
-                    <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-                    <h3 className="text-xl font-medium mb-2">Error</h3>
-                    <p>{error}</p>
                 </div>
             )}
 
@@ -244,7 +256,7 @@ const Inprogress = () => {
                                         {request.estimatedPrice > 0 && (
                                             <div className="flex items-center mb-3">
                                                 <IndianRupee className="w-5 h-5 text-gray-700 mr-2" />
-                                                <span className="font-medium text-lg text-gray-900">Quoted Amount:</span>
+                                                <span className="font-medium text-lg text-gray-900">Final Amount:</span>
                                                 <span className="ml-2 text-xl font-bold text-green-700">₹{request.estimatedPrice}</span>
                                             </div>
                                         )}
@@ -314,12 +326,12 @@ const Inprogress = () => {
                                         </>
                                     )}
 
-                                    {request.status === 'accepted' && (
+                                    {request.status === 'pending_otp' && (
                                         <button
                                             onClick={() => confirmCompletion(request._id)}
                                             className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                                         >
-                                            <Check className="w-5 h-5 mr-1" /> Confirm Completed
+                                            <Check className="w-5 h-5 mr-1" /> Confirm Completed & Verify OTP
                                         </button>
                                     )}
                                 </div>

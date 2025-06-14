@@ -21,7 +21,8 @@ const userNotificationSchema = new mongoose.Schema(
         "reminder",
         "job_accepted",
         "quote_accepted",
-        "quote_rejected"
+        "quote_rejected",
+        "repairer_assigned"
       ],
     },
     message: {

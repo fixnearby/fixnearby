@@ -3,6 +3,9 @@ import ServiceRequest from '../models/serviceRequest.model.js';
 import User from '../models/user.model.js';
 import Repairer from '../models/repairer.model.js';
 import { createUserNotification } from './userNotification.controller.js';
+import AcceptOtp from '../models/acceptOtp.model.js';
+import { serviceCompleteOTP } from './sendsms.js';
+
 
 const formatLocationData = (location) => {
     if (!location) return null;
@@ -235,6 +238,29 @@ export const getUserServiceRequests = async (req, res) => {
         });
     }
 };
+export const completeJob = async (serviceId,repairerId) => {
+    try {
+
+        const serviceRequest = await ServiceRequest.findOne({ _id: serviceId, repairer: repairerId });
+
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: 'Service request not found or not assigned to you.' });
+        }
+        if (serviceRequest.status !== 'accepted' && serviceRequest.status !== 'in_progress') {
+            return res.status(400).json({ success: false, message: 'Job cannot be completed in its current status.' });
+        }
+        serviceRequest.status = 'completed';
+        serviceRequest.completedAt = new Date();
+
+        await serviceRequest.save();
+
+        res.status(200).json({ success: true, message: 'Job marked as completed successfully!', serviceRequest });
+
+    } catch (error) {
+        console.error('Error completing job:', error);
+        res.status(500).json({ success: false, message: 'Server error: Failed to complete job.' });
+    }
+};
 export const updateServiceRequestStatusByCustomer = async (req, res) => {
     try {
         const { id } = req.params;
@@ -257,6 +283,7 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
         } else if (status === 'completed' && ['accepted', 'in_progress'].includes(serviceRequest.status)) {
             serviceRequest.status = status;
             serviceRequest.completedAt = new Date();
+            completeJob(id,serviceRequest.repairer)
         } else {
             return res.status(400).json({ message: `Invalid status transition from '${serviceRequest.status}' to '${status}' for customer.` });
         }
@@ -465,7 +492,7 @@ export const getAssignedJobs = async (req, res) => {
 
         const assignedJobs = await ServiceRequest.find({
             repairer: repairerId,
-            status: { $in: ['pending_quote', 'quoted', 'accepted', 'in_progress', 'completed'] }
+            status: { $in: ['pending_quote', 'quoted', 'accepted', 'in_progress', 'completed','pending_otp'] }
         })
         .populate('customer', 'fullname phone contactInfo')
         .sort({ createdAt: -1 });
@@ -518,12 +545,47 @@ export const getServiceRequestById = async (req, res) => {
     }
 };
 
-export const completeJob = async (req, res) => {
+
+
+function generateOTP() {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
+export const PendingOtp = async (req, res) => {
     try {
         const { serviceId } = req.params;
         const repairerId = req.repairer._id;
 
+        // usernumber,otp,issue,estimatedPrice
+
         const serviceRequest = await ServiceRequest.findOne({ _id: serviceId, repairer: repairerId });
+
+        const usernumber = serviceRequest.contactInfo
+        const issue = serviceRequest.issue
+        const estimatedPrice = serviceRequest.estimatedPrice
+
+        const otp = generateOTP()
+
+        await AcceptOtp.findOneAndUpdate({
+            serviceId
+            }, {
+            serviceId,
+            otp,
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+            }, {
+            upsert: true,
+            new: true
+            });
+
+
+
+            const status = await serviceCompleteOTP(usernumber,otp,issue,estimatedPrice);
+            console.log("otp sent status:", status);
+            if (!status) {
+            return res.status(400).json({
+                message: "Failed to send complete OTP"
+            });
+            }
 
         if (!serviceRequest) {
             return res.status(404).json({ success: false, message: 'Service request not found or not assigned to you.' });
@@ -531,7 +593,7 @@ export const completeJob = async (req, res) => {
         if (serviceRequest.status !== 'accepted' && serviceRequest.status !== 'in_progress') {
             return res.status(400).json({ success: false, message: 'Job cannot be completed in its current status.' });
         }
-        serviceRequest.status = 'completed';
+        serviceRequest.status = 'pending_otp';
         serviceRequest.completedAt = new Date();
 
         await serviceRequest.save();

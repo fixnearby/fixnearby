@@ -12,6 +12,7 @@ import Repairer from "../models/repairer.model.js";
 import Payment from "../models/payment.model.js"; 
 import { sendSignupOTP } from "./sendsms.js";
 import Razorpay from 'razorpay'; 
+import AcceptOtp from "../models/acceptOtp.model.js";
 
 const razorpayInstance = new Razorpay({
     key_id: 'rzp_test_b5tKSvdT2o41aP',
@@ -323,7 +324,7 @@ export const getInProgressServices = async (req, res) => {
     try {
         let query = {
             customer: userId,
-            status: { $in: ['requested', 'pending_quote', 'quoted', 'accepted', 'in_progress'] }
+            status: { $in: ['requested', 'pending_quote', 'quoted', 'accepted', 'in_progress','pending_otp'] }
         };
 
         console.log('--- DEBUG: getInProgressServices (user.controller.js) called ---');
@@ -790,3 +791,22 @@ export const getServiceRequestById = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch service request details." });
     }
 };
+
+
+
+
+export const serviceOtp = async (req,res)=>{
+    const { serviceId, otp } = req.body;
+    if (!serviceId || !otp) return res.status(400).json({ message: " OTP is required" });
+    try {
+        const record = await AcceptOtp.findOne({ serviceId });
+        if (!record) return res.status(400).json({ message: "No OTP found for this service" });
+        if (record.otp !== otp) return res.status(400).json({ message: "Invalid verification code." });
+        if (record.expiresAt < new Date()) return res.status(400).json({ message: "OTP expired. Please request a new one." });
+        await AcceptOtp.deleteOne({ serviceId });
+        return res.status(200).json({ message: "OTP verified successfully" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "OTP verification failed" });
+    }
+}

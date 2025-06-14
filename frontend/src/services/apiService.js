@@ -84,6 +84,11 @@ export const submitRepairerQuote = async (serviceId, quotation) => {
     }
 };
 
+export const PendingOtp = async (serviceId) => {
+    const response = await apiRequest('post', `/service-requests/repairer/${serviceId}/pending`);
+    return response;
+};
+
 export const completeJob = async (serviceId) => {
     const response = await apiRequest('post', `/service-requests/repairer/${serviceId}/complete`);
     return response;

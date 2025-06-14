@@ -7,7 +7,8 @@ import {
     updateServiceRequestStatusByCustomer, 
     updateServiceRequestStatusByRepairer,
     acceptQuote,rejectQuote,
-    submitRepairerQuote,getAssignedJobs,completeJob
+    submitRepairerQuote,getAssignedJobs,completeJob,
+    PendingOtp
 } from "../controllers/serviceRequest.controller.js";
 import { userProtectRoute, repairerProtectRoute } from "../middleware/middleware.js"; 
 
@@ -33,6 +34,6 @@ router.put('/user/:id/reject-quote', userProtectRoute, rejectQuote);
 router.get('/repairer/assigned-jobs', repairerProtectRoute, getAssignedJobs);
 router.put('/repairer/:id/quote', repairerProtectRoute, submitRepairerQuote);
 router.post('/repairer/:serviceId/complete', repairerProtectRoute, completeJob);
-
+router.post('/repairer/:serviceId/pending', repairerProtectRoute, PendingOtp);
 
 export default router;

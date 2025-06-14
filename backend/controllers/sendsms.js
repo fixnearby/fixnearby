@@ -42,13 +42,13 @@ export const  serviceAccepted = async (usernumber,username,number,name,issue)=> 
   }
 }
 
-export const  serviceCompleteOTP = async (usernumber,otp,issue,quotation)=> {
+export const  serviceCompleteOTP = async (usernumber,otp,issue,estimatedPrice)=> {
   try {
     const response = await axios.post(
       `${BASE_URL}/gateway/devices/${DEVICE_ID}/send-sms`,
       {
         recipients: [`+91${usernumber}`], // <-- Your number
-        message:  `To confirm completion of your FixNearby service for "${issue}", share OTP: ${otp} with your repairer. Pay ₹${quotation} via website QR at repairer's end.`
+        message:  `To confirm completion of your FixNearby service for "${issue}", verify OTP: ${otp} . Pay ₹${estimatedPrice} via website QR Code.`
 
       },
       {

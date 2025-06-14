@@ -14,6 +14,7 @@ import { sendSignupOTP, serviceAccepted } from "./sendsms.js";
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
+
 export const getOtp = async (req, res) => { 
   const {
     phone

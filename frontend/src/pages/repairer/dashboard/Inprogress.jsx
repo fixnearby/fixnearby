@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { 
     getRepairerAssignedJobs, 
     submitRepairerQuote, 
-    completeJob, 
+    PendingOtp, 
     getRepairerConversationsMap, 
     createConversation 
 } from '../../../services/apiService.js';
@@ -89,14 +89,11 @@ const Inprogress = () => {
         }
     };
 
-    const handleStartJob = (jobId) => {
-        console.log(`Starting job: ${jobId}`);
-        toast(`Logic for starting Job ${jobId} and potentially showing OTP for completion.`);
-    };
+    
 
     const handleConfirmCompleted = async (jobId) => {
         try {
-            await completeJob(jobId);
+            await PendingOtp(jobId);
             toast.success("Job marked as completed!");
             fetchRepairerJobs(); 
         } catch (error) {
@@ -275,28 +272,23 @@ const Inprogress = () => {
 
                             {job.status === 'accepted' && (
                                 <>
-                                    <div className="mt-4 p-4 bg-green-50 rounded-lg flex items-center justify-between">
-                                        <div>
-                                            <p className="text-green-800 font-semibold flex items-center">
-                                                <CheckCircle className="w-5 h-5 mr-2" /> Quote Accepted:
-                                            </p>
-                                            <p className="text-xl font-bold text-green-900">₹{job.estimatedPrice || job.quotation}</p>
-                                        </div>
-                                        <button
-                                            onClick={() => handleStartJob(job._id)}
-                                            className="px-5 py-3 bg-purple-600 text-white rounded-xl shadow-md hover:bg-purple-700 transition-colors"
-                                        >
-                                            Start Job (with OTP)
-                                        </button>
+                                    <div className="mt-4 p-4 bg-green-50 rounded-lg flex items-center justify-center">
+                                    <div className="flex flex-col items-center text-center">
+                                        <p className="text-green-800 font-semibold flex items-center">
+                                        <CheckCircle className="w-5 h-5 mr-2" /> Quote Accepted:
+                                        </p>
+                                        <p className="text-xl font-bold text-green-900">₹{job.estimatedPrice || job.quotation}</p>
                                     </div>
+                                    </div>
+
 
                                     {/* Confirm Completed button */}
                                     {job.status !== 'completed' && ( // Ensure it's not already completed
                                         <button
                                             onClick={() => handleConfirmCompleted(job._id)}
-                                            className="mt-6 w-full p-4 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-colors flex items-center justify-center"
+                                            className="mt-6 w-full p-4 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-colors flex items-center justify-center cursor-pointer"
                                         >
-                                            <CheckCircle className="w-6 h-6 mr-2" /> Confirm Completed
+                                            <CheckCircle className="w-6 h-6 mr-2" /> Confirm Completion & Send OTP
                                         </button>
                                     )}
                                 </>

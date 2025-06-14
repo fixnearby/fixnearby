@@ -586,7 +586,7 @@ export const createRazorpayOrder = async (req, res) => {
             return res.status(404).json({ message: "Service Request not found or unauthorized." });
         }
 
-        if (serviceRequest.status !== 'completed' || serviceRequest.estimatedPrice <= 0) {
+        if (serviceRequest.status !== 'pending_payment' || serviceRequest.estimatedPrice <= 0) {
             return res.status(400).json({ message: "Payment can only be initiated for completed services with a valid estimated price." });
         }
 
@@ -796,14 +796,17 @@ export const getServiceRequestById = async (req, res) => {
 
 
 export const serviceOtp = async (req,res)=>{
-    const { serviceId, otp } = req.body;
-    if (!serviceId || !otp) return res.status(400).json({ message: " OTP is required" });
+    const { requestId, otp } = req.body;
+    const serviceId = requestId
+
+    if (!requestId || !otp) return res.status(400).json({ message: " OTP is required" });
     try {
         const record = await AcceptOtp.findOne({ serviceId });
+       
         if (!record) return res.status(400).json({ message: "No OTP found for this service" });
-        if (record.otp !== otp) return res.status(400).json({ message: "Invalid verification code." });
+        if (record.otp != otp) return res.status(400).json({ message: "Invalid verification code." });
         if (record.expiresAt < new Date()) return res.status(400).json({ message: "OTP expired. Please request a new one." });
-        await AcceptOtp.deleteOne({ serviceId });
+        await AcceptOtp.deleteOne({ requestId });
         return res.status(200).json({ message: "OTP verified successfully" });
     } catch (err) {
         console.error(err);

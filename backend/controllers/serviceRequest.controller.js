@@ -280,10 +280,9 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
         if (status === 'cancelled' && ['requested', 'in_progress', 'quoted', 'pending_quote', 'accepted'].includes(serviceRequest.status)) {
             serviceRequest.status = status;
             serviceRequest.cancelledAt = new Date();
-        } else if (status === 'completed' && ['accepted', 'in_progress'].includes(serviceRequest.status)) {
-            serviceRequest.status = status;
+        } else if (status === 'pending_otp' && ['accepted', 'in_progress'].includes(serviceRequest.status)) {
+            serviceRequest.status = 'pending_payment';
             serviceRequest.completedAt = new Date();
-            completeJob(id,serviceRequest.repairer)
         } else {
             return res.status(400).json({ message: `Invalid status transition from '${serviceRequest.status}' to '${status}' for customer.` });
         }

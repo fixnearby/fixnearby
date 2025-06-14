@@ -66,7 +66,7 @@ const PaymentPage = () => {
             return;
         }
 
-        const allowedPaymentInitiationStatuses = ['quoted', 'accepted', 'in_progress', 'completed'];
+        const allowedPaymentInitiationStatuses = ['quoted', 'accepted', 'in_progress','pending_otp'];
         if (!allowedPaymentInitiationStatuses.includes(serviceDetails.status)) {
             setError(`Payment cannot be initiated for a job in '${serviceDetails.status}' status. It must be quoted, accepted, in progress, or completed by you.`);
             return;
@@ -156,7 +156,7 @@ const PaymentPage = () => {
         }
     };
 
-    const isPayButtonDisabled = paymentProcessing || serviceDetails?.estimatedPrice <= 0 || !['quoted', 'accepted', 'in_progress', 'completed'].includes(serviceDetails?.status);
+    const isPayButtonDisabled = paymentProcessing || serviceDetails?.estimatedPrice <= 0 || !['quoted', 'accepted', 'in_progress', 'pending_otp'].includes(serviceDetails?.status);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-800 p-4">

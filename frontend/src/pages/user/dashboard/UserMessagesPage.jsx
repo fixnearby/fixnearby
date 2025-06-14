@@ -1,19 +1,19 @@
 // frontend/src/pages/user/messages/UserMessagesPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Loader, User2 } from 'lucide-react'; 
+import { ArrowLeft, MessageCircle, Loader, User2 } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
-import { getUserConversations } from '../../../services/apiService'; 
-import ChatWindow from '../../../components/Chat/ChatWindow'; 
-import toast from 'react-hot-toast'; 
+import { getUserConversations } from '../../../services/apiService';
+import ChatWindow from '../../../components/Chat/ChatWindow';
+import toast from 'react-hot-toast';
 
 const UserMessagesPage = () => {
   const { user } = useAuthStore();
-  const { conversationId: paramConversationId } = useParams(); 
+  const { conversationId: paramConversationId } = useParams();
   const [conversations, setConversations] = useState([]);
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [error, setError] = useState(null);
-  const [selectedConversation, setSelectedConversation] = useState(null); 
+  const [selectedConversation, setSelectedConversation] = useState(null);
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -26,18 +26,24 @@ const UserMessagesPage = () => {
       setError(null);
       try {
         const fetchedConversations = await getUserConversations();
-        setConversations(fetchedConversations);
+        // Filter out conversations that are not active
+        const activeConversations = fetchedConversations.filter(conv => conv.isActive);
+        setConversations(activeConversations);
 
         if (paramConversationId) {
-          const preSelected = fetchedConversations.find(conv => conv.id === paramConversationId);
+          const preSelected = activeConversations.find(conv => conv.id === paramConversationId);
           if (preSelected) {
             setSelectedConversation(preSelected);
-          } else if (fetchedConversations.length > 0) {
-            setSelectedConversation(fetchedConversations[0]);
-            toast.error("Conversation not found. Displaying first available chat.");
+          } else if (activeConversations.length > 0) {
+            setSelectedConversation(activeConversations[0]);
+            toast.error("Conversation not found or is inactive. Displaying first available chat.");
+          } else {
+            setSelectedConversation(null); 
           }
-        } else if (fetchedConversations.length > 0) {
-          setSelectedConversation(fetchedConversations[0]);
+        } else if (activeConversations.length > 0) {
+          setSelectedConversation(activeConversations[0]);
+        } else {
+          setSelectedConversation(null); 
         }
       } catch (err) {
         console.error("Error fetching conversations:", err);
@@ -50,6 +56,7 @@ const UserMessagesPage = () => {
 
     fetchConversations();
   }, [user, paramConversationId]);
+
   const handleChatSelect = (conversationSummary) => {
     setSelectedConversation(conversationSummary);
   };
@@ -80,7 +87,6 @@ const UserMessagesPage = () => {
   }
 
   if (error && (!conversations.length && !selectedConversation)) {
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8 text-center">
@@ -97,7 +103,6 @@ const UserMessagesPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 flex flex-col md:flex-row h-[70vh]">
-        {/* Sidebar for chat list */}
         <div className="w-full md:w-1/3 border-r border-gray-200 pr-4 md:pr-8 overflow-y-auto flex-none custom-scrollbar">
           <div className="flex items-center space-x-4 mb-8">
             <Link to="/user/dashboard" className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -111,7 +116,7 @@ const UserMessagesPage = () => {
 
           <ul className="space-y-4">
             {conversations.length === 0 ? (
-              <li className="text-center text-gray-500 py-4">No conversations yet.</li>
+              <li className="text-center text-gray-500 py-4">No active conversations.</li>
             ) : (
               conversations.map((conv) => (
                 <li
@@ -122,46 +127,36 @@ const UserMessagesPage = () => {
                     ${conv.unread ? 'border-l-4 border-blue-500 font-semibold' : ''}`}
                 >
                   <div className="flex-shrink-0 w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3">
-                    <User2 className="w-5 h-5 text-blue-700" /> {/* Using User2 icon */}
+                    <User2 className="w-5 h-5 text-blue-700" />
                   </div>
                   <div className="flex-grow">
                     <div className="text-gray-900 font-medium">{conv.sender}</div>
                     <div className="text-gray-600 text-sm truncate">{conv.lastMessage}</div>
                   </div>
                   <div className="text-xs text-gray-500 ml-auto flex-shrink-0">{conv.time}</div>
-                  {/* Optional: unread indicator (requires backend implementation to track) */}
                   {conv.unread && <span className="w-2 h-2 bg-blue-500 rounded-full ml-2"></span>}
-                  {/* Indicator for closed chats */}
-                  {!conv.isActive && (
-                    <span className="text-xs text-red-500 ml-2">(Closed)</span>
-                  )}
                 </li>
               ))
             )}
           </ul>
         </div>
 
-        {/* Main Chat Window Area */}
         <div className="flex-1 pl-4 md:pl-8 flex flex-col pt-8 md:pt-0">
           {selectedConversation ? (
             <>
-              {/* Chat Header showing the other participant's name and job title */}
               <div className="flex-none pb-4 border-b border-gray-200 mb-4">
                 <h2 className="text-xl font-bold text-gray-900">Chat with {selectedConversation.sender}</h2>
                 <p className="text-gray-600 text-sm">Job: {selectedConversation.title}</p>
-                {!selectedConversation.isActive && (
-                    <p className="text-red-500 text-sm mt-1 font-semibold">This chat is closed (Job {selectedConversation.serviceRequestStatus}).</p>
-                )}
+                {/* No need for this status check here as we only show active chats */}
               </div>
-              {/* Pass conversationId and participant role to ChatWindow */}
               <ChatWindow
                 conversationId={selectedConversation.id}
-                participantRole="user" // Indicates the current user's role in the chat
+                participantRole="user"
               />
             </>
           ) : (
             <div className="flex items-center justify-center h-full text-gray-500 text-lg">
-              Select a conversation from the left to start chatting.
+              {conversations.length === 0 ? "No active conversations to display." : "Select a conversation from the left to start chatting."}
             </div>
           )}
         </div>

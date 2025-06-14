@@ -3,9 +3,11 @@ import express from "express";
 import {
     createServiceRequest,
     getServiceRequestsByLocation,       
-    getUserServiceRequests,             
+    getUserServiceRequests,            
     updateServiceRequestStatusByCustomer, 
-    updateServiceRequestStatusByRepairer 
+    updateServiceRequestStatusByRepairer,
+    acceptQuote,rejectQuote,
+    submitRepairerQuote,getAssignedJobs,completeJob
 } from "../controllers/serviceRequest.controller.js";
 import { userProtectRoute, repairerProtectRoute } from "../middleware/middleware.js"; 
 
@@ -23,6 +25,14 @@ router.put("/user/:id/status", userProtectRoute, updateServiceRequestStatusByCus
 router.get("/repairer/my-requests", repairerProtectRoute, getServiceRequestsByLocation); 
 
 router.put("/repairer/:id/status", repairerProtectRoute, updateServiceRequestStatusByRepairer);
+
+
+router.put('/user/:id/accept-quote', userProtectRoute, acceptQuote);
+router.put('/user/:id/reject-quote', userProtectRoute, rejectQuote);
+
+router.get('/repairer/assigned-jobs', repairerProtectRoute, getAssignedJobs);
+router.put('/repairer/:id/quote', repairerProtectRoute, submitRepairerQuote);
+router.post('/repairer/:serviceId/complete', repairerProtectRoute, completeJob);
 
 
 export default router;

@@ -18,6 +18,7 @@ import {
   markNotificationAsRead,
   getRepairerConversations, 
   getConversationMessages, 
+  createRepairerConversation
 } from "../controllers/repairer.controller.js";
 import {
   repairerProtectRoute as isRepairerAuthenticated
@@ -44,7 +45,9 @@ router.get("/analytics", isRepairerAuthenticated, getRepairerAnalytics);
 router.get("/notifications", isRepairerAuthenticated, getRepairerNotifications);
 router.put("/notifications/read/:notificationId", isRepairerAuthenticated, markNotificationAsRead);
 
-// New Chat Routes
+
+
+router.post("/conversations/create", isRepairerAuthenticated, createRepairerConversation);
 router.get("/conversations", isRepairerAuthenticated, getRepairerConversations); 
 router.get("/conversations/:conversationId/messages", isRepairerAuthenticated, getConversationMessages);
 

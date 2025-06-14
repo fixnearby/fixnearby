@@ -2,424 +2,544 @@
 import ServiceRequest from '../models/serviceRequest.model.js';
 import User from '../models/user.model.js';
 import Repairer from '../models/repairer.model.js';
-import { createUserNotification } from './userNotification.controller.js'; 
+import { createUserNotification } from './userNotification.controller.js';
 
 const formatLocationData = (location) => {
-    if (!location) return null;
-    return {
-        fullAddress: location.fullAddress || '',
-        pincode: location.pincode || '',
-        city: location.city || '',
-        state: location.state || '',
-        coordinates: location.coordinates || [],
-        captureMethod: location.captureMethod || ''
-    };
+    if (!location) return null;
+    return {
+        fullAddress: location.fullAddress || '',
+        pincode: location.pincode || '',
+        city: location.city || '',
+        state: location.state || '',
+        coordinates: location.coordinates || [],
+        captureMethod: location.captureMethod || ''
+    };
 };
 
 export const createServiceRequest = async (req, res) => {
-    try {
-        const {
-            title,
-            serviceType,
-            description,
-            locationData,
-            preferredTimeSlot,
-            urgency,
-            contactInfo,
-            repairerId,
-            issue,
-            category,
-            quotation
-        } = req.body;
+    try {
+        const {
+            title,
+            serviceType,
+            description,
+            locationData,
+            preferredTimeSlot,
+            urgency,
+            contactInfo,
+            repairerId,
+            issue,
+            category,
+            quotation
+        } = req.body;
 
-        const customerId = req.user._id;
+        const customerId = req.user._id;
 
-        if (
-            !title ||
-            !serviceType ||
-            !description ||
-            !locationData ||
-            !locationData.fullAddress ||
-            !locationData.pincode ||
-            !locationData.captureMethod ||
-            !preferredTimeSlot ||
-            !preferredTimeSlot.time ||
-            !preferredTimeSlot.date ||
-            !contactInfo
-        ) {
-            return res.status(400).json({
-                message: 'Please provide all required fields: title, service type, description, location details (address, postal code, capture method), preferred date and time, budget, and contact info.'
-            });
-        }
+        if (
+            !title ||
+            !serviceType ||
+            !description ||
+            !locationData ||
+            !locationData.fullAddress ||
+            !locationData.pincode ||
+            !locationData.captureMethod ||
+            !preferredTimeSlot ||
+            !preferredTimeSlot.time ||
+            !preferredTimeSlot.date ||
+            !contactInfo
+        ) {
+            return res.status(400).json({
+                message: 'Please provide all required fields: title, service type, description, location details (address, postal code, capture method), preferred date and time, budget, and contact info.'
+            });
+        }
 
-        const newServiceRequest = new ServiceRequest({
-            customer: customerId,
-            title: title,
-            contactInfo,
-            serviceType: serviceType,
-            issue,
-            category,
-            quotation,
-            description,
-            location: {
-                address: locationData.fullAddress,
-                pincode: locationData.pincode,
-                city: locationData.city,
-                state: locationData.state,
-                coordinates: locationData.coordinates,
-                captureMethod: locationData.captureMethod
-            },
-            preferredTimeSlot: {
-                date: preferredTimeSlot.date,
-                time: preferredTimeSlot.time
-            },
-            urgency,
-            repairer: repairerId || null,
-            status: repairerId ? 'in_progress' : 'requested'
-        });
+        const newServiceRequest = new ServiceRequest({
+            customer: customerId,
+            title: title,
+            contactInfo,
+            serviceType: serviceType,
+            issue,
+            category,
+            quotation,
+            description,
+            location: {
+                address: locationData.fullAddress,
+                pincode: locationData.pincode,
+                city: locationData.city,
+                state: locationData.state,
+                coordinates: locationData.coordinates,
+                captureMethod: locationData.captureMethod
+            },
+            preferredTimeSlot: {
+                date: preferredTimeSlot.date,
+                time: preferredTimeSlot.time
+            },
+            urgency,
+            repairer: repairerId || null,
+            status: repairerId ? 'in_progress' : 'requested'
+        });
 
-        await newServiceRequest.save();
-        res.status(201).json({ success: true, message: 'Service request created successfully!', data: newServiceRequest });
+        await newServiceRequest.save();
+        res.status(201).json({ success: true, message: 'Service request created successfully!', data: newServiceRequest });
 
-    } catch (error) {
-        console.error('Error creating service request:', error);
-        if (error.name === 'ValidationError') {
-            const messages = Object.values(error.errors).map(err => err.message);
-            return res.status(400).json({ success: false, message: messages.join(', ') });
-        }
-        res.status(500).json({ success: false, message: 'Internal server error during service request creation.' });
-    }
+    } catch (error) {
+        console.error('Error creating service request:', error);
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(err => err.message);
+            return res.status(400).json({ success: false, message: messages.join(', ') });
+        }
+        res.status(500).json({ success: false, message: 'Internal server error during service request creation.' });
+    }
 };
 
-// 2. Get service requests by location (Used by user to find repairers, and by repairer to find incoming/in-progress jobs)
 export const getServiceRequestsByLocation = async (req, res) => {
-    try {
-        const { pincode, serviceType, latitude, longitude, radius, statusFilter } = req.query;
+    try {
+        const { pincode, serviceType, latitude, longitude, radius, statusFilter } = req.query;
 
-        const isRepairerAccess = req.repairer && req.repairer._id;
-        let repairerServices = [];
-        let repairerId = null;
-        let query = {};
+        const isRepairerAccess = req.repairer && req.repairer._id;
+        let repairerServices = [];
+        let repairerId = null;
+        let query = {};
 
-        if (isRepairerAccess) {
-            // Fetch the current repairer's services and their actual postal code
-            const currentRepairer = await Repairer.findById(req.repairer._id).select('location services');
-            if (!currentRepairer) {
-                return res.status(404).json({ message: "Repairer profile not found." });
-            }
-            // Override pincode with the repairer's actual registered postal code for their search
-            req.query.pincode = currentRepairer.location?.postalCode;
-            repairerServices = currentRepairer.services.map(s => s.name);
-            repairerId = currentRepairer._id;
-        }
+        if (isRepairerAccess) {
+            const currentRepairer = await Repairer.findById(req.repairer._id).select('location services');
+            if (!currentRepairer) {
+                return res.status(404).json({ message: "Repairer profile not found." });
+            }
+            req.query.pincode = currentRepairer.location?.postalCode;
+            repairerServices = currentRepairer.services.map(s => s.name);
+            repairerId = currentRepairer._id;
+        }
 
-        // Apply pincode filter
-        if (req.query.pincode) {
-            query['location.pincode'] = req.query.pincode;
-        } else if (latitude && longitude && radius) {
-            // Placeholder for actual geospatial search if implemented later
-            return res.status(400).json({ message: 'GPS-based search for repairers not yet fully implemented for this endpoint.' });
-        } else if (!isRepairerAccess) {
-            // Only require pincode if it's a general user search (not repairer context)
-            return res.status(400).json({ message: 'Postal code is required for service search.' });
-        }
+        if (req.query.pincode) {
+            query['location.pincode'] = req.query.pincode;
+        } else if (latitude && longitude && radius) {
+            return res.status(400).json({ message: 'GPS-based search for repairers not yet fully implemented for this endpoint.' });
+        } else if (!isRepairerAccess) {
+            return res.status(400).json({ message: 'Postal code is required for service search.' });
+        }
 
-        // Filter by serviceType (if provided in query, or by repairer's offered services)
-        if (serviceType) {
-            query.serviceType = serviceType.toLowerCase();
-        } else if (isRepairerAccess && repairerServices.length > 0) {
-            query.serviceType = { $in: repairerServices.map(s => s.toLowerCase()) };
-        }
+        if (serviceType) {
+            query.serviceType = serviceType.toLowerCase();
+        } else if (isRepairerAccess && repairerServices.length > 0) {
+            query.serviceType = { $in: repairerServices.map(s => s.toLowerCase()) };
+        }
 
-        // Status filtering logic
-        if (isRepairerAccess) {
-            // For repairers:
-            // - show 'requested' (unassigned) jobs in their area/service,
-            // - and jobs 'in_progress' or 'completed' that are assigned to them.
-            query.$or = [
-                { status: 'requested', repairer: null },
-                { status: 'in_progress', repairer: repairerId },
-                { status: 'completed', repairer: repairerId }
-            ];
+        if (isRepairerAccess) {
+            query.$or = [
+                { status: 'requested', repairer: null },
+                { status: 'in_progress', repairer: repairerId },
+                { status: 'completed', repairer: repairerId }
+            ];
 
-            // If a specific statusFilter is provided by the repairer, prioritize it
-            if (statusFilter) {
-                const specificStatusQuery = [{ status: statusFilter, repairer: repairerId }];
-                if (statusFilter === 'requested') {
-                    specificStatusQuery.push({ status: 'requested', repairer: null });
-                }
-                query.$or = specificStatusQuery;
-            }
-        } else if (statusFilter) {
-            // For general user queries (e.g., checking status of a specific job), apply statusFilter directly
-            query.status = statusFilter;
-        } else {
-            // Default for user searching repairers (initial match): show only 'requested' status (jobs that can be accepted)
-            query.status = 'requested';
-        }
+            if (statusFilter) {
+                const specificStatusQuery = [{ status: statusFilter, repairer: repairerId }];
+                if (statusFilter === 'requested') {
+                    specificStatusQuery.push({ status: 'requested', repairer: null });
+                }
+                query.$or = specificStatusQuery;
+            }
+        } else if (statusFilter) {
+            query.status = statusFilter;
+        } else {
+            query.status = 'requested';
+        }
 
-        const serviceRequests = await ServiceRequest.find(query)
-            .populate('customer', 'fullname phone')
-            .populate('repairer', 'fullname businessName phone'); // Populate repairer if assigned
+        const serviceRequests = await ServiceRequest.find(query)
+            .populate('customer', 'fullname phone')
+            .populate('repairer', 'fullname businessName phone');
 
-        res.json({
-            success: true,
-            count: serviceRequests.length,
-            data: serviceRequests.map(request => ({
-                id: request._id, // Transform _id to id
-                title: request.title,
-                description: request.description,
-                serviceType: request.serviceType,
-                location: formatLocationData(request.location), // Use helper
-                urgency: request.urgency,
-                status: request.status,
-                customer: request.customer,
-                repairer: request.repairer,
-                preferredTimeSlot: request.preferredTimeSlot,
-                createdAt: request.createdAt,
-                updatedAt: request.updatedAt
-            }))
-        });
+        res.json({
+            success: true,
+            count: serviceRequests.length,
+            data: serviceRequests.map(request => ({
+                id: request._id,
+                title: request.title,
+                description: request.description,
+                serviceType: request.serviceType,
+                location: formatLocationData(request.location),
+                urgency: request.urgency,
+                status: request.status,
+                customer: request.customer,
+                repairer: request.repairer,
+                preferredTimeSlot: request.preferredTimeSlot,
+                createdAt: request.createdAt,
+                updatedAt: request.updatedAt
+            }))
+        });
 
-    } catch (error) {
-        console.error('Error fetching service requests by location:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error during service request retrieval.'
-        });
-    }
+    } catch (error) {
+        console.error('Error fetching service requests by location:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error during service request retrieval.'
+        });
+    }
 };
-
-// 3. Get all service requests for a specific user (Customer)
 export const getUserServiceRequests = async (req, res) => {
-    try {
-        const customerId = req.user._id; // From userProtectRoute middleware
-        const { statusFilter } = req.query; // Allow filtering by status (e.g., 'in_progress', 'completed')
+    try {
+        const customerId = req.user._id;
+        const { statusFilter } = req.query;
 
-        let query = { customer: customerId };
+        let query = { customer: customerId };
 
-        if (statusFilter) {
-            query.status = statusFilter;
-        }
+        if (statusFilter) {
+            const statuses = Array.isArray(statusFilter) ? statusFilter : (typeof statusFilter === 'string' ? statusFilter.split(',') : [statusFilter]);
+            query.status = { $in: statuses };
+        } else {
+            query.status = { $in: ['requested', 'pending_quote', 'quoted', 'accepted', 'in_progress'] };
+        }
 
-        const serviceRequests = await ServiceRequest.find(query)
-            .populate('repairer', 'fullname phone businessName') // Populate assigned repairer details
-            .sort({ createdAt: -1 });
+        console.log('--- DEBUG: getUserServiceRequests called ---');
+        console.log('DEBUG: User ID:', customerId);
+        console.log('DEBUG: statusFilter from req.query:', statusFilter);
+        console.log('DEBUG: Final Mongoose Query:', JSON.stringify(query, null, 2));
 
-        res.status(200).json({
-            success: true,
-            count: serviceRequests.length,
-            data: serviceRequests.map(request => ({
-                id: request._id,
-                title: request.title,
-                description: request.description,
-                serviceType: request.serviceType,
-                location: formatLocationData(request.location),
-                urgency: request.urgency,
-                status: request.status,
-                repairer: request.repairer, // Show assigned repairer
-                preferredTimeSlot: request.preferredTimeSlot,
-                createdAt: request.createdAt,
-                updatedAt: request.createdAt
-            }))
-        });
+        const serviceRequests = await ServiceRequest.find(query)
+            .populate('repairer', 'fullname phone businessName')
+            .sort({ createdAt: -1 });
 
-    } catch (error) {
-        console.error('Error fetching service requests by customer:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error during service request retrieval for customer.'
-        });
-    }
+        console.log('DEBUG: Number of service requests found:', serviceRequests.length);
+        if (serviceRequests.length > 0) {
+            serviceRequests.forEach((reqItem, index) => {
+                console.log(`DEBUG: [${index}] Service ID: ${reqItem._id}, Status: ${reqItem.status}, Title: ${reqItem.title}`);
+            });
+        } else {
+            console.log(' No service requests found for this query.');
+        }
+
+        res.status(200).json({
+            success: true,
+            count: serviceRequests.length,
+            data: serviceRequests.map(request => ({
+                id: request._id,
+                title: request.title,
+                description: request.description,
+                serviceType: request.serviceType,
+                location: formatLocationData(request.location),
+                urgency: request.urgency,
+                status: request.status,
+                repairer: request.repairer,
+                preferredTimeSlot: request.preferredTimeSlot,
+                createdAt: request.createdAt,
+                updatedAt: request.updatedAt,
+                estimatedPrice: request.estimatedPrice,
+                quotation: request.quotation
+            }))
+        });
+
+    } catch (error) {
+        console.error('Error fetching service requests by customer:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error during service request retrieval for customer.'
+        });
+    }
 };
-
-// 4. Update service request status by Customer (e.g., cancel, confirm completed)
 export const updateServiceRequestStatusByCustomer = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status } = req.body;
-        const customerId = req.user._id; // From userProtectRoute middleware
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const customerId = req.user._id;
 
-        if (!status) {
-            return res.status(400).json({ message: 'Status is required.' });
-        }
+        if (!status) {
+            return res.status(400).json({ message: 'Status is required.' });
+        }
 
-        const serviceRequest = await ServiceRequest.findOne({ _id: id, customer: customerId });
+        const serviceRequest = await ServiceRequest.findOne({ _id: id, customer: customerId });
 
-        if (!serviceRequest) {
-            return res.status(404).json({ message: 'Service request not found or not owned by this user.' });
-        }
+        if (!serviceRequest) {
+            return res.status(404).json({ message: 'Service request not found or not owned by this user.' });
+        }
 
-        // Define allowed status transitions for the customer
-        if (status === 'cancelled' && ['requested', 'in_progress'].includes(serviceRequest.status)) {
-            serviceRequest.status = status;
-            serviceRequest.cancelledAt = new Date(); // Set cancellation timestamp
-            // Optionally, notify repairer if already assigned
-        } else if (status === 'completed' && ['accepted', 'in_progress'].includes(serviceRequest.status)) {
-            serviceRequest.status = status;
-            serviceRequest.completedAt = new Date(); // Set completion timestamp
-            // Optionally, trigger a review/rating prompt for the user
-        } else {
-            return res.status(400).json({ message: `Invalid status transition from '${serviceRequest.status}' to '${status}' for customer.` });
-        }
+        if (status === 'cancelled' && ['requested', 'in_progress', 'quoted', 'pending_quote', 'accepted'].includes(serviceRequest.status)) {
+            serviceRequest.status = status;
+            serviceRequest.cancelledAt = new Date();
+        } else if (status === 'completed' && ['accepted', 'in_progress'].includes(serviceRequest.status)) {
+            serviceRequest.status = status;
+            serviceRequest.completedAt = new Date();
+        } else {
+            return res.status(400).json({ message: `Invalid status transition from '${serviceRequest.status}' to '${status}' for customer.` });
+        }
 
-        await serviceRequest.save();
-        res.status(200).json({ success: true, message: `Service request status updated to ${status}.` });
+        await serviceRequest.save();
+        res.status(200).json({ success: true, message: `Service request status updated to ${status}.` });
 
-    } catch (error) {
-        console.error('Error updating service request status by customer:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error during service request status update by customer.'
-        });
-    }
+    } catch (error) {
+        console.error('Error updating service request status by customer:', error);
+        res.status(500).json({
+            success: false,
+            message: 'Internal server error during service request status update by customer.'
+        });
+    }
 };
-
-// 5. Update service request status by Repairer (e.g., accept, mark as completed)
 export const updateServiceRequestStatusByRepairer = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const { status } = req.body;
-        const repairerId = req.repairer._id; // From repairerProtectRoute middleware
+    const { id } = req.params;
+    const { status } = req.body;
+    const currentUserId = req.repairer._id;
 
-        console.log(`\n--- DEBUG: updateServiceRequestStatusByRepairer called ---`);
-        console.log(`Request ID: ${id}, New Status: ${status}, Repairer ID: ${repairerId}`);
+    try {
+        const serviceRequest = await ServiceRequest.findById(id).populate('customer');
 
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: 'Service request not found.' });
+        }
 
-        if (!status) {
-            console.log('DEBUG: Status is missing in request body.');
-            return res.status(400).json({ message: 'Status is required.' });
-        }
+        if (serviceRequest.repairer && serviceRequest.repairer.toString() !== currentUserId.toString()) {
+            return res.status(403).json({ success: false, message: 'Unauthorized: You are not assigned to this request.' });
+        }
 
-        // --- MODIFICATION START: Populate 'customer' here ---
-        const serviceRequest = await ServiceRequest.findById(id).populate('customer'); // ADD .populate('customer')
-        // --- MODIFICATION END ---
+        if (status === 'accept_request_for_quote' && serviceRequest.status === 'requested' && !serviceRequest.repairer) {
+            serviceRequest.repairer = currentUserId;
+            serviceRequest.assignedAt = new Date();
+            serviceRequest.status = 'pending_quote';
 
-        if (!serviceRequest) {
-            console.log(`DEBUG: Service Request with ID ${id} not found.`);
-            return res.status(404).json({ message: 'Service request not found.' });
-        }
+            if (serviceRequest.customer) {
+                console.log('DEBUG: Service Request Customer ID:', serviceRequest.customer._id);
+                console.log('DEBUG: Customer found for notification:', serviceRequest.customer.fullname);
+                const notificationResult = await createUserNotification({
+                    userId: serviceRequest.customer._id,
+                    type: 'repairer_assigned',
+                    message: `A repairer has accepted your service request "${serviceRequest.title || 'Unknown Service'}". They will provide a quote shortly!`,
+                    link: `/user/dashboard/inprogress`,
+                    relatedEntity: {
+                        id: serviceRequest._id,
+                        model: 'ServiceRequest'
+                    }
+                });
+                if (!notificationResult.success) {
+                    console.error('Notification creation failed:', notificationResult.message);
+                } else {
+                    console.log('SUCCESS: User Notification trigger completed. Notification ID:', notificationResult.notification._id);
+                }
+            } else {
+                console.log('DEBUG: Customer not found or not populated for notification.');
+            }
 
-        console.log(`DEBUG: Found Service Request. Current Status: ${serviceRequest.status}, Current Repairer: ${serviceRequest.repairer}`);
+        } else if (status === 'in_progress' && serviceRequest.status === 'accepted' && serviceRequest.repairer.toString() === currentUserId.toString()) {
+            serviceRequest.status = 'in_progress';
 
+        } else if (status === 'completed' && serviceRequest.status === 'in_progress' && serviceRequest.repairer.toString() === currentUserId.toString()) {
+            serviceRequest.status = 'completed';
+            serviceRequest.completedAt = new Date();
 
-        // 1. Repairer accepts a 'requested' job (assigns themselves)
-        if (status === 'in_progress' && serviceRequest.status === 'requested' && serviceRequest.repairer === null) {
-            console.log('DEBUG: Repairer is accepting a new job (status change from requested to in_progress).');
-            serviceRequest.status = status;
-            serviceRequest.repairer = repairerId; // Assign the repairer to the request
+            if (serviceRequest.customer) {
+                await createUserNotification({
+                    userId: serviceRequest.customer._id,
+                    type: 'job_completed_by_repairer',
+                    message: `Your service request "${serviceRequest.title}" has been marked as completed by the repairer.`,
+                    link: `/user/dashboard/jobs/${serviceRequest._id}/feedback`,
+                    relatedEntity: { id: serviceRequest._id, model: 'ServiceRequest' }
+                });
+            }
+        }
+        else {
+            return res.status(400).json({ success: false, message: `Invalid status transition from '${serviceRequest.status}' to '${status}' by repairer.` });
+        }
 
-            // --- USER NOTIFICATION LOGIC START ---
-            console.log('\n--- DEBUG: Attempting to send User (Customer) Notification for Job Acceptance ---');
-            console.log('Service Request ID:', serviceRequest._id);
-            console.log('Service Request Customer ID:', serviceRequest.customer); // Ensure this ID is correct
+        await serviceRequest.save();
+        res.status(200).json({ success: true, message: `Service request status updated to ${serviceRequest.status}`, serviceRequest });
 
-            if (!serviceRequest.customer) {
-                console.error('ERROR: ServiceRequest.customer is missing. Cannot send notification.');
-            } else {
-                // Here, serviceRequest.customer is already a populated object due to .populate('customer') above
-                // const customer = await User.findById(serviceRequest.customer); // This line is no longer strictly necessary if already populated, but won't hurt.
-                // If you keep the User.findById, ensure you're passing customer._id from the *populated* object
-                // If you remove it, directly use serviceRequest.customer._id
-                // For clarity and robustness, let's keep the explicit customer variable after populating.
-                const customer = serviceRequest.customer; // Use the already populated customer object
-
-                if (customer) { // This check is still valid
-                    console.log('DEBUG: Customer found for notification:', customer.fullname || customer._id);
-                    const notificationResult = await createUserNotification({
-                        userId: customer._id, // Use _id from the populated customer object
-                        type: 'job_accepted',
-                        message: `Your service request "${serviceRequest.title || 'Unknown Service'}" has been accepted by a repairer!`,
-                        link: `/user/services/${serviceRequest._id}`,
-                        relatedEntity: {
-                            id: serviceRequest._id,
-                            model: 'ServiceRequest'
-                        }
-                    });
-
-                    if (notificationResult.success) {
-                        console.log(`SUCCESS: User Notification trigger completed. Notification ID: ${notificationResult.notification._id}`);
-                    } else {
-                        console.error('ERROR: createUserNotification returned failure:', notificationResult.message);
-                    }
-                } else {
-                    console.warn(`WARNING: Customer with ID ${serviceRequest.customer} not found in database. Cannot send acceptance notification.`);
-                }
-            }
-            console.log('--- DEBUG: End of User Notification Attempt ---\n');
-            // --- USER NOTIFICATION LOGIC END ---
-
-        }
-        // 2. Repairer marks their assigned 'in_progress' job as 'completed'
-        else if (status === 'completed' && serviceRequest.status === 'in_progress' && serviceRequest.repairer.toString() === repairerId.toString()) {
-            console.log('DEBUG: Repairer is marking job as completed.');
-            serviceRequest.status = status;
-            // Optionally, add a notification here too if the customer needs to know the job is completed by repairer
-            // (This is separate from customer confirming completion)
-        }
-        // 3. Prevent other invalid transitions or unauthorized access
-        else {
-            if (serviceRequest.repairer && serviceRequest.repairer.toString() !== repairerId.toString()) {
-                console.log('DEBUG: Attempt to update job assigned to another repairer.');
-                return res.status(403).json({ message: 'You are not authorized to update this service request (it is assigned to another repairer).' });
-            }
-            console.log(`DEBUG: Invalid status transition attempted from '${serviceRequest.status}' to '${status}' for repairer.`);
-            return res.status(400).json({ message: `Invalid status transition from '${serviceRequest.status}' to '${status}' for repairer.` });
-        }
-
-        await serviceRequest.save();
-        console.log(`DEBUG: Service Request ${serviceRequest._id} saved with new status: ${serviceRequest.status}`);
-        res.status(200).json({ success: true, message: `Service request status updated to ${status}.` });
-
-    } catch (error) {
-        console.error('CRITICAL ERROR in updateServiceRequestStatusByRepairer:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Internal server error during service request status update by repairer.'
-        });
-    }
+    } catch (error) {
+        console.error('Error updating service request status by repairer:', error);
+        res.status(500).json({ success: false, message: 'Server error updating service request status.' });
+    }
 };
 
-// 6. Get a single service request by ID (for detail view by either customer or assigned repairer)
+export const acceptQuote = async (req, res) => {
+    const { id } = req.params;
+    const userId = req.user._id;
+
+    try {
+        const serviceRequest = await ServiceRequest.findOne({ _id: id, customer: userId });
+
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: 'Service request not found or not assigned to you.' });
+        }
+        if (serviceRequest.status !== 'quoted' || !serviceRequest.estimatedPrice || serviceRequest.estimatedPrice <= 0) {
+            return res.status(400).json({ success: false, message: 'Cannot accept quote. Request is not in a quotable state or no valid quote has been provided.' });
+        }
+        serviceRequest.status = 'accepted';
+        serviceRequest.acceptedAt = new Date(); 
+        await serviceRequest.save();
+
+        if (serviceRequest.repairer) {
+            await createUserNotification({
+                userId: serviceRequest.repairer._id,
+                type: 'quote_accepted',
+                message: `Your quote for "${serviceRequest.title}" was accepted by the customer!`,
+                link: `/repairer/dashboard/jobs/${serviceRequest._id}`
+            });
+        }
+
+        res.status(200).json({ success: true, message: 'Quotation accepted successfully!', serviceRequest });
+
+    } catch (error) {
+        console.error('Error in acceptQuote controller:', error.message);
+        res.status(500).json({ success: false, message: 'Internal server error while accepting quote.' });
+    }
+};
+
+export const rejectQuote = async (req, res) => {
+    const { id } = req.params; 
+    const userId = req.user._id; 
+
+    try {
+        const serviceRequest = await ServiceRequest.findOne({ _id: id, customer: userId }).populate('repairer');
+
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: 'Service request not found or you are not the customer.' });
+        }
+
+        if (serviceRequest.status !== 'quoted' || !serviceRequest.estimatedPrice || serviceRequest.estimatedPrice <= 0) {
+            return res.status(400).json({ success: false, message: 'Cannot reject quote. Request is not in a quotable state or no valid quote has been provided.' });
+        }
+
+        serviceRequest.status = 'rejected'; 
+        await serviceRequest.save();
+
+        if (serviceRequest.repairer) {
+            await createUserNotification({
+                userId: serviceRequest.repairer._id,
+                type: 'quote_rejected',
+                message: `Your quote for "${serviceRequest.title}" (₹${serviceRequest.estimatedPrice}) was rejected by the customer.`,
+                link: `/repairer/dashboard/jobs`,
+                relatedEntity: { id: serviceRequest._id, model: 'ServiceRequest' }
+            });
+        }
+
+        return res.status(200).json({ success: true, message: 'Quotation rejected successfully!', serviceRequest });
+
+    } catch (error) {
+        console.error('Error rejecting quote:', error);
+        return res.status(500).json({ success: false, message: 'Server error: Failed to reject quotation.' });
+    }
+};
+
+export const submitRepairerQuote = async (req, res) => {
+    console.log('Hey');
+    try {
+        const { id } = req.params;
+        const { quotation } = req.body;
+        const repairerId = req.repairer._id;
+
+        if (!quotation || typeof quotation !== 'number' || parseFloat(quotation) <= 0) {
+            return res.status(400).json({ success: false, message: 'Please provide a valid numeric quote amount greater than zero.' });
+        }
+
+        const serviceRequest = await ServiceRequest.findOne({ _id: id, repairer: repairerId });
+
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: 'Service request not found or not assigned to you.' });
+        }
+
+        if (serviceRequest.status !== 'pending_quote' && serviceRequest.status !== 'quoted') {
+            return res.status(400).json({ success: false, message: 'Cannot submit or edit quote for a job in its current status.' });
+        }
+        
+        if (serviceRequest.status === 'accepted' || serviceRequest.status === 'in_progress' || serviceRequest.status === 'completed') {
+            return res.status(400).json({ success: false, message: 'Cannot edit quote for an accepted or in-progress/completed job.' });
+        }
+
+        serviceRequest.estimatedPrice = quotation;
+        if (serviceRequest.status === 'pending_quote') {
+            serviceRequest.status = 'quoted';
+        }
+        
+        await serviceRequest.save();
+
+        res.status(200).json({ success: true, message: 'Quote submitted/updated successfully!', serviceRequest });
+
+    } catch (error) {
+        console.error('Error submitting/editing repairer quote:', error);
+        res.status(500).json({ success: false, message: 'Server error: Failed to submit/edit quote.' });
+    }
+};
+
+export const getAssignedJobs = async (req, res) => {
+    try {
+        const repairerId = req.repairer._id;
+
+        if (!repairerId) {
+            return res.status(401).json({ success: false, message: 'Repairer not authenticated.' });
+        }
+
+        const assignedJobs = await ServiceRequest.find({
+            repairer: repairerId,
+            status: { $in: ['pending_quote', 'quoted', 'accepted', 'in_progress', 'completed'] }
+        })
+        .populate('customer', 'fullname phone contactInfo')
+        .sort({ createdAt: -1 });
+
+        res.status(200).json(assignedJobs);
+    } catch (error) {
+        console.error('Error fetching assigned jobs for repairer:', error);
+        res.status(500).json({ success: false, message: 'Server error: Failed to fetch assigned jobs.' });
+    }
+};
 export const getServiceRequestById = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const serviceRequest = await ServiceRequest.findById(id)
-            .populate('customer', 'fullname phone')
-            .populate('repairer', 'fullname phone businessName'); // Populate both for detail view
+    try {
+        const { id } = req.params;
+        const serviceRequest = await ServiceRequest.findById(id)
+            .populate('customer', 'fullname phone')
+            .populate('repairer', 'fullname phone businessName');
 
-        if (!serviceRequest) {
-            return res.status(404).json({ message: 'Service request not found.' });
-        }
+        if (!serviceRequest) {
+            return res.status(404).json({ message: 'Service request not found.' });
+        }
 
-        // Authorization check: Only the owning customer or the assigned repairer can view
-        const isUserAuthorized = req.user && serviceRequest.customer && req.user._id.toString() === serviceRequest.customer.toString();
-        const isRepairerAuthorized = req.repairer && serviceRequest.repairer && req.repairer._id.toString() === serviceRequest.repairer.toString();
+        const isUserAuthorized = req.user && serviceRequest.customer && req.user._id.toString() === serviceRequest.customer.toString();
+        const isRepairerAuthorized = req.repairer && serviceRequest.repairer && req.repairer._id.toString() === serviceRequest.repairer.toString();
 
-        if (!isUserAuthorized && !isRepairerAuthorized) {
-            return res.status(403).json({ message: 'You are not authorized to view this service request.' });
-        }
+        if (!isUserAuthorized && !isRepairerAuthorized) {
+            return res.status(403).json({ message: 'You are not authorized to view this service request.' });
+        }
 
-        res.status(200).json({
-            success: true,
-            data: {
-                id: serviceRequest._id,
-                title: serviceRequest.title,
-                description: serviceRequest.description,
-                serviceType: serviceRequest.serviceType,
-                location: formatLocationData(serviceRequest.location),
-                urgency: serviceRequest.urgency,
-                status: serviceRequest.status,
-                customer: serviceRequest.customer,
-                repairer: serviceRequest.repairer,
-                preferredTimeSlot: serviceRequest.preferredTimeSlot,
-                createdAt: serviceRequest.createdAt,
-                updatedAt: serviceRequest.updatedAt
-            }
-        });
+        res.status(200).json({
+            success: true,
+            data: {
+                id: serviceRequest._id,
+                title: serviceRequest.title,
+                description: serviceRequest.description,
+                serviceType: serviceRequest.serviceType,
+                location: formatLocationData(serviceRequest.location),
+                urgency: serviceRequest.urgency,
+                status: serviceRequest.status,
+                customer: serviceRequest.customer,
+                repairer: serviceRequest.repairer,
+                preferredTimeSlot: serviceRequest.preferredTimeSlot,
+                createdAt: serviceRequest.createdAt,
+                updatedAt: serviceRequest.updatedAt
+            }
+        });
 
-    } catch (error) {
-        console.error('Error fetching service request by ID:', error);
-        res.status(500).json({ success: false, message: 'Internal server error.' });
-    }
+    } catch (error) {
+        console.error('Error fetching service request by ID:', error);
+        res.status(500).json({ success: false, message: 'Internal server error.' });
+    }
+};
+
+export const completeJob = async (req, res) => {
+    try {
+        const { serviceId } = req.params;
+        const repairerId = req.repairer._id;
+
+        const serviceRequest = await ServiceRequest.findOne({ _id: serviceId, repairer: repairerId });
+
+        if (!serviceRequest) {
+            return res.status(404).json({ success: false, message: 'Service request not found or not assigned to you.' });
+        }
+        if (serviceRequest.status !== 'accepted' && serviceRequest.status !== 'in_progress') {
+            return res.status(400).json({ success: false, message: 'Job cannot be completed in its current status.' });
+        }
+        serviceRequest.status = 'completed';
+        serviceRequest.completedAt = new Date();
+
+        await serviceRequest.save();
+
+        res.status(200).json({ success: true, message: 'Job marked as completed successfully!', serviceRequest });
+
+    } catch (error) {
+        console.error('Error completing job:', error);
+        res.status(500).json({ success: false, message: 'Server error: Failed to complete job.' });
+    }
 };

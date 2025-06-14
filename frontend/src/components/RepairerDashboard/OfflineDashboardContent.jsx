@@ -1,11 +1,9 @@
-// frontend/src/components/RepairerDashboard/OfflineDashboardContent.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Loader, MessageCircle, TrendingUp, User, Wrench } from 'lucide-react'; // Ensure necessary icons are imported for potential direct use or fallback
-import { getLucideIcon } from '../../utils/lucideIconMap.js'; // Import the helper function
+import { Loader, TrendingUp, User, Wrench, ClipboardList } from 'lucide-react';
+import { getLucideIcon } from '../../utils/lucideIconMap.js';
 
 const OfflineDashboardContent = ({
-  
   stats,
   loadingStats,
   errorStats,
@@ -14,11 +12,9 @@ const OfflineDashboardContent = ({
   errorActivity,
   onViewAnalyticsClick,
   onManageProfileClick,
-  onMessagesClick,
 }) => {
   return (
     <div className="space-y-8">
-      {/* Overview Section */}
       <section>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Dashboard Overview</h2>
         {loadingStats ? (
@@ -40,12 +36,11 @@ const OfflineDashboardContent = ({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {stats.map((stat, index) => {
-              // Dynamically get the Lucide icon component
-              const IconComponent = getLucideIcon(stat.icon, Wrench); // Wrench as a fallback if icon name is invalid
+              const IconComponent = getLucideIcon(stat.icon, Wrench);
               return (
                 <div key={index} className="bg-white p-6 rounded-xl shadow-md flex items-center space-x-4">
                   <div className="flex-shrink-0 w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                    <IconComponent className="w-6 h-6" /> {/* Render the actual icon component */}
+                    <IconComponent className="w-6 h-6" />
                   </div>
                   <div>
                     <div className="text-sm text-gray-600">{stat.title}</div>
@@ -59,7 +54,6 @@ const OfflineDashboardContent = ({
         )}
       </section>
 
-      {/* Quick Actions Section */}
       <section>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -71,14 +65,14 @@ const OfflineDashboardContent = ({
             <span className="font-semibold text-lg">View Analytics</span>
             <span className="text-sm opacity-80 text-center">Track your performance & earnings.</span>
           </button>
-          <button
-            onClick={onMessagesClick}
+          <Link
+            to="/repairer/inprogress"
             className="flex flex-col items-center justify-center p-6 bg-purple-600 text-white rounded-xl shadow-md hover:bg-purple-700 transition-colors duration-200 ease-in-out transform hover:-translate-y-1"
           >
-            <MessageCircle className="w-10 h-10 mb-2" />
-            <span className="font-semibold text-lg">Messages</span>
-            <span className="text-sm opacity-80 text-center">Communicate with customers.</span>
-          </button>
+            <ClipboardList className="w-10 h-10 mb-2" />
+            <span className="font-semibold text-lg">Assigned Jobs</span>
+            <span className="text-sm opacity-80 text-center">Manage your active service requests.</span>
+          </Link>
           <button
             onClick={onManageProfileClick}
             className="flex flex-col items-center justify-center p-6 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-colors duration-200 ease-in-out transform hover:-translate-y-1"
@@ -90,7 +84,6 @@ const OfflineDashboardContent = ({
         </div>
       </section>
 
-      {/* Recent Activity Section */}
       <section>
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Recent Activity</h2>
         {loadingActivity ? (
@@ -118,14 +111,28 @@ const OfflineDashboardContent = ({
           <div className="bg-white p-6 rounded-xl shadow-md">
             <ul className="divide-y divide-gray-200">
               {recentActivity.map((activity, index) => {
-                const Icon = getLucideIcon(activity.type === 'completed' ? 'CheckCircle' : activity.type === 'accepted' ? 'Handshake' : 'Bell', Wrench); // Example mapping for activity types
+                const Icon = getLucideIcon(
+                  activity.type === 'completed'
+                    ? 'CheckCircle'
+                    : activity.type === 'accepted'
+                    ? 'Handshake'
+                    : 'Bell',
+                  Wrench
+                );
                 return (
                   <li key={index} className="flex items-center py-4 first:pt-0 last:pb-0">
-                    <div className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4
-                      ${activity.type === 'completed' ? 'bg-green-100 text-green-600' :
-                        activity.type === 'accepted' ? 'bg-blue-100 text-blue-600' :
-                        activity.type === 'new_request' ? 'bg-purple-100 text-purple-600' :
-                        'bg-gray-100 text-gray-600'}`}>
+                    <div
+                      className={`flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center mr-4
+                        ${
+                          activity.type === 'completed'
+                            ? 'bg-green-100 text-green-600'
+                            : activity.type === 'accepted'
+                            ? 'bg-blue-100 text-blue-600'
+                            : activity.type === 'new_request'
+                            ? 'bg-purple-100 text-purple-600'
+                            : 'bg-gray-100 text-gray-600'
+                        }`}
+                    >
                       <Icon className="w-5 h-5" />
                     </div>
                     <div className="flex-grow">

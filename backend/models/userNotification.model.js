@@ -1,5 +1,3 @@
-// backend/models/UserNotification.js
-
 import mongoose from "mongoose";
 
 const userNotificationSchema = new mongoose.Schema(
@@ -21,7 +19,9 @@ const userNotificationSchema = new mongoose.Schema(
         "quote_provided",
         "visit_scheduled",
         "reminder",
-        "job_accepted" // <--- ADD THIS LINE!
+        "job_accepted",
+        "quote_accepted",
+        "quote_rejected"
       ],
     },
     message: {

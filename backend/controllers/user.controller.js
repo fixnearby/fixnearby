@@ -3,687 +3,790 @@ import User from "../models/user.model.js";
 import BlacklistToken from "../models/blacklistToken.model.js";
 import Otp from "../models/otp.model.js";
 import bcrypt from "bcryptjs";
-import {
-  generateToken
-} from "../libs/utils.js";
+import { generateToken } from "../libs/utils.js";
 import ServiceRequest from "../models/serviceRequest.model.js";
 import Notification from "../models/notification.model.js";
 import Conversation from "../models/conversation.model.js";
 import Message from "../models/message.model.js";
-import Repairer from "../models/repairer.model.js";
+import Repairer from "../models/repairer.model.js"; 
+import Payment from "../models/payment.model.js"; 
 import { sendSignupOTP } from "./sendsms.js";
+import Razorpay from 'razorpay'; 
+
+const razorpayInstance = new Razorpay({
+    key_id: 'rzp_test_b5tKSvdT2o41aP',
+    key_secret:'qmjsSv7KSQ672wCNK8xlXNWb',
+});
+const formatLocationData = (location) => {
+    if (!location) return null;
+    return {
+        fullAddress: location.fullAddress || '',
+        pincode: location.pincode || '',
+        city: location.city || '',
+        state: location.state || '',
+        coordinates: location.coordinates || [],
+        captureMethod: location.captureMethod || ''
+    };
+};
+
 
 
 function generateOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+    return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 export const getOtp = async (req, res) => {
-  const {
-    phone
-  } = req.body;
-  if (!phone) return res.status(400).json({
-    message: "Phone Number is required"
-  });
-  const user = await User.findOne({
-    phone
-  });
-  if (user) return res.status(400).json({
-    message: "User with this phone already exists"
-  });
-  const otp_generated = generateOTP();
-  try {
-    await Otp.findOneAndUpdate({
-      phone
-    }, {
-      phone,
-      otp: otp_generated,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-    }, {
-      upsert: true,
-      new: true
-    });
-    const status = await sendSignupOTP(phone, otp_generated);
-    if (status===false) {
-      return res.status(500).json({
-        message: "Failed to send OTP"
-      });
+    const { phone } = req.body;
+    if (!phone) return res.status(400).json({ message: "Phone Number is required" });
+    const user = await User.findOne({ phone });
+    if (user) return res.status(400).json({ message: "User with this phone already exists" });
+    const otp_generated = generateOTP();
+    try {
+        await Otp.findOneAndUpdate({ phone }, {
+            phone,
+            otp: otp_generated,
+            expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        }, { upsert: true, new: true });
+        const status = await sendSignupOTP(phone, otp_generated);
+        if (status === false) {
+            return res.status(500).json({ message: "Failed to send OTP" });
+        }
+        return res.status(200).json({ message: "OTP sent to phone" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "Failed to send OTP" });
     }
-    return res.status(200).json({
-      message: "OTP sent to phone"
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      message: "Failed to send OTP"
-    });
-  }
 };
 
 export const verifyOtp = async (req, res) => {
-  const {
-    phone,
-    otp
-  } = req.body;
-  if (!phone || !otp) return res.status(400).json({
-    message: "Phone Number and OTP are required"
-  });
-  try {
-    const record = await Otp.findOne({
-      phone
-    });
-    if (!record) return res.status(400).json({
-      message: "No OTP found for this phone"
-    });
-    if (record.otp !== otp) return res.status(400).json({
-      message: "Invalid verification code."
-    });
-    if (record.expiresAt < new Date()) return res.status(400).json({
-      message: "OTP expired. Please request a new one."
-    });
-    await Otp.deleteOne({
-      phone
-    });
-    return res.status(200).json({
-      message: "OTP verified successfully"
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      message: "OTP verification failed"
-    });
-  }
+    const { phone, otp } = req.body;
+    if (!phone || !otp) return res.status(400).json({ message: "Phone Number and OTP are required" });
+    try {
+        const record = await Otp.findOne({ phone });
+        if (!record) return res.status(400).json({ message: "No OTP found for this phone" });
+        if (record.otp !== otp) return res.status(400).json({ message: "Invalid verification code." });
+        if (record.expiresAt < new Date()) return res.status(400).json({ message: "OTP expired. Please request a new one." });
+        await Otp.deleteOne({ phone });
+        return res.status(200).json({ message: "OTP verified successfully" });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: "OTP verification failed" });
+    }
 };
 
 export const signup = async (req, res) => {
-  // --- MODIFIED: Added 'phone' to destructuring ---
-  const {
-    fullname,
-    password,
-    phone // <--- ADDED THIS LINE
-  } = req.body;
-  try {
-    // --- MODIFIED: Added 'phone' to validation ---
-    if (!fullname  || !password || !phone) { // <--- ADDED '|| !phone'
-      return res.status(400).json({
-        message: "All required fields (fullname, password, phone) must be filled" // <--- UPDATED MESSAGE
-      });
-    }
-    const existingUser = await User.findOne({
-      phone
-    });
-    if (existingUser) {
-      return res.status(400).json({
-        message: "User with this phone already exists"
-      });
-    }
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-    const newUser = new User({
-      fullname,
-      password: hashedPassword,
-      phone, // <--- ADDED THIS LINE: Pass phone to the User constructor
-    });
-    await newUser.save();
+    const { fullname, password, phone } = req.body;
+    try {
+        if (!fullname || !password || !phone) {
+            return res.status(400).json({ message: "All required fields (fullname, password, phone) must be filled" });
+        }
+        const existingUser = await User.findOne({ phone });
+        if (existingUser) {
+            return res.status(400).json({ message: "User with this phone already exists" });
+        }
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+        const newUser = new User({
+            fullname,
+            password: hashedPassword,
+            phone,
+        });
+        await newUser.save();
 
-    generateToken(newUser._id, "user", res);
+        generateToken(newUser._id, "user", res);
 
-    res.status(201).json({
-      _id: newUser._id,
-      fullname: newUser.fullname,
-      phone: newUser.phone, // Include phone in response
-      role: "user",
-      message: "User account created successfully!",
-    });
-  } catch (error) {
-    console.error("Error in signupUser controller:", error);
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(val => val.message);
-      return res.status(400).json({
-        message: `Validation Error: ${messages.join(', ')}`
-      });
+        res.status(201).json({
+            _id: newUser._id,
+            fullname: newUser.fullname,
+            phone: newUser.phone,
+            role: "user",
+            message: "User account created successfully!",
+        });
+    } catch (error) {
+        console.error("Error in signupUser controller:", error);
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({ message: `Validation Error: ${messages.join(', ')}` });
+        }
+        res.status(500).json({ message: "Internal Server Error during signup. Please try again." });
     }
-    res.status(500).json({
-      message: "Internal Server Error during signup. Please try again."
-    });
-  }
 };
 
 export const login = async (req, res) => {
-  const {
-    phone,
-    password
-  } = req.body;
-  try {
-    const user = await User.findOne({
-      phone
-    }).select("+password");
-    if (!user) return res.status(400).json({
-      message: "Invalid credentials"
-    });
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({
-      message: "Invalid credentials"
-    });
+    const { phone, password } = req.body;
+    try {
+        const user = await User.findOne({ phone }).select("+password");
+        if (!user) return res.status(400).json({ message: "Invalid credentials" });
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
-    generateToken(user._id, "user", res);
+        generateToken(user._id, "user", res);
 
-    res.status(200).json({
-      _id: user._id,
-      fullname: user.fullname,
-      phone: user.phone,
-      role: "user",
-    });
-  } catch (error) {
-    console.error("Error in login controller", error.message);
-    res.status(500).json({
-      message: "Internal Server Error"
-    });
-  }
+        res.status(200).json({
+            _id: user._id,
+            fullname: user.fullname,
+            phone: user.phone,
+            role: "user",
+        });
+    } catch (error) {
+        console.error("Error in login controller", error.message);
+        res.status(500).json({ message: "Internal Server Error" });
+    }
 };
 
 export const logout = async (req, res) => {
-  try {
-    const token = req.cookies?.jwt;
-    if (!token) return res.status(400).json({
-      message: "No token found in cookies"
-    });
-    await BlacklistToken.create({
-      token
-    });
-    res.clearCookie("jwt", {
-      httpOnly: true,
-      sameSite: "Lax",
-      secure: process.env.NODE_ENV === 'production',
-    });
-    res.status(200).json({
-      message: "Logout successful"
-    });
-  } catch (err) {
-    console.error("Logout error:", err);
-    res.status(500).json({
-      message: "Server error during logout"
-    });
-  }
+    try {
+        const token = req.cookies?.jwt;
+        if (!token) return res.status(400).json({ message: "No token found in cookies" });
+        await BlacklistToken.create({ token });
+        res.clearCookie("jwt", {
+            httpOnly: true,
+            sameSite: "Lax",
+            secure: process.env.NODE_ENV === 'production',
+        });
+        res.status(200).json({ message: "Logout successful" });
+    } catch (err) {
+        console.error("Logout error:", err);
+        res.status(500).json({ message: "Server error during logout" });
+    }
 };
 
 export const getDashboardStats = async (req, res) => {
-  const userId = req.user?._id;
+    const userId = req.user?._id;
 
-  if (!userId) {
-    return res.status(401).json({
-      message: "Unauthorized: User ID not found."
-    });
-  }
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
 
-  try {
-    const totalServices = await ServiceRequest.countDocuments({
-      customer: userId
-    });
-    const completedServices = await ServiceRequest.countDocuments({
-      customer: userId,
-      status: 'completed'
-    });
-    const inProgressServices = await ServiceRequest.countDocuments({
-      customer: userId,
-      status: {
-        $in: ['accepted', 'in_progress', 'quoted', 'pending_quote']
-      }
-    });
+    try {
+        const totalServices = await ServiceRequest.countDocuments({ customer: userId });
+        const completedServices = await ServiceRequest.countDocuments({ customer: userId, status: 'completed' });
+        const inProgressServices = await ServiceRequest.countDocuments({
+            customer: userId,
+            status: { $in: ['accepted', 'in_progress', 'quoted', 'pending_quote'] }
+        });
 
-    res.status(200).json({
-      totalServices,
-      completedServices,
-      inProgressServices,
-    });
-  } catch (error) {
-    console.error("Error fetching user dashboard stats:", error);
-    res.status(500).json({
-      message: "Failed to fetch dashboard stats."
-    });
-  }
+        res.status(200).json({
+            totalServices,
+            completedServices,
+            inProgressServices,
+        });
+    } catch (error) {
+        console.error("Error fetching user dashboard stats:", error);
+        res.status(500).json({ message: "Failed to fetch dashboard stats." });
+    }
 };
 
 export const getRecentActivity = async (req, res) => {
-  const userId = req.user?._id;
+    const userId = req.user?._id;
 
-  if (!userId) {
-    return res.status(401).json({
-      message: "Unauthorized: User ID not found."
-    });
-  }
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
 
-  try {
-    const recentServiceRequests = await ServiceRequest.find({
-        customer: userId
-      })
-      .sort({
-        updatedAt: -1
-      })
-      .limit(5)
-      .populate('repairer', 'fullname')
-      .lean();
+    try {
+        const recentServiceRequests = await ServiceRequest.find({ customer: userId })
+            .sort({ updatedAt: -1 })
+            .limit(5)
+            .populate('repairer', 'fullname')
+            .lean();
 
-    const activity = recentServiceRequests.map(sr => {
-      let message = "";
-      let type = "";
+        const activity = recentServiceRequests.map(sr => {
+            let message = "";
+            let type = "";
 
-      const diffMs = new Date() - sr.updatedAt;
-      const diffMins = Math.floor(diffMs / (1000 * 60));
-      const diffHours = Math.floor(diffMins / 60);
-      const diffDays = Math.floor(diffHours / 24);
+            const diffMs = new Date() - sr.updatedAt;
+            const diffMins = Math.floor(diffMs / (1000 * 60));
+            const diffHours = Math.floor(diffMins / 60);
+            const diffDays = Math.floor(diffHours / 24);
 
-      let timeAgo = '';
-      if (diffMins < 60) {
-        timeAgo = `${diffMins} mins ago`;
-      } else if (diffHours < 24) {
-        timeAgo = `${diffHours} hours ago`;
-      } else {
-        timeAgo = `${diffDays} days ago`;
-      }
+            let timeAgo = '';
+            if (diffMins < 60) {
+                timeAgo = `${diffMins} mins ago`;
+            } else if (diffHours < 24) {
+                timeAgo = `${diffHours} hours ago`;
+            } else {
+                timeAgo = `${diffDays} days ago`;
+            }
 
-      if (sr.status === 'completed') {
-        type = "completed";
-        message = `Service "${sr.title}" completed by ${sr.repairer?.fullname || 'a repairer'}`;
-      } else if (sr.status === 'in_progress') {
-        type = "in_progress";
-        message = `Service "${sr.title}" is in progress with ${sr.repairer?.fullname || 'a repairer'}`;
-      } else if (sr.status === 'accepted') {
-        type = "accepted";
-        message = `Service "${sr.title}" accepted by ${sr.repairer?.fullname || 'a repairer'}`;
-      } else if (sr.status === 'quoted') {
-        type = "quoted";
-        message = `Quotation received for "${sr.title}" from ${sr.repairer?.fullname || 'a repairer'}`;
-      } else if (sr.status === 'requested') {
-        type = "new_request";
-        message = `New service request placed: "${sr.title}"`;
-      } else if (sr.status === 'cancelled') {
-        type = "cancelled";
-        message = `Service "${sr.title}" was cancelled`;
-      } else {
-        type = "updated";
-        message = `Service "${sr.title}" updated`;
-      }
+            if (sr.status === 'completed') {
+                type = "completed";
+                message = `Service "${sr.title}" completed by ${sr.repairer?.fullname || 'a repairer'}`;
+            } else if (sr.status === 'in_progress') {
+                type = "in_progress";
+                message = `Service "${sr.title}" is in progress with ${sr.repairer?.fullname || 'a repairer'}`;
+            } else if (sr.status === 'accepted') {
+                type = "accepted";
+                message = `Service "${sr.title}" accepted by ${sr.repairer?.fullname || 'a repairer'}`;
+            } else if (sr.status === 'quoted') {
+                type = "quoted";
+                message = `Quotation received for "${sr.title}" from ${sr.repairer?.fullname || 'a repairer'}`;
+            } else if (sr.status === 'requested') {
+                type = "new_request";
+                message = `New service request placed: "${sr.title}"`;
+            } else if (sr.status === 'cancelled') {
+                type = "cancelled";
+                message = `Service "${sr.title}" was cancelled`;
+            } else {
+                type = "updated";
+                message = `Service "${sr.title}" updated`;
+            }
 
-      return {
-        type,
-        message,
-        time: timeAgo,
-      };
-    });
+            return {
+                type,
+                message,
+                time: timeAgo,
+            };
+        });
 
-    res.status(200).json(activity);
-  } catch (error) {
-    console.error("Error fetching user recent activity:", error);
-    res.status(500).json({
-      message: "Failed to fetch recent activity."
-    });
-  }
+        res.status(200).json(activity);
+    } catch (error) {
+        console.error("Error fetching user recent activity:", error);
+        res.status(500).json({ message: "Failed to fetch recent activity." });
+    }
 };
 
 
 export const requestService = async (req, res) => {
-  const userId = req.user?._id;
-  const {
-    title,
-    description,
-    serviceType,
-    urgency,
-    location,
-    preferredDate,
-    preferredTime,
-    quotation,
-    estimatedPrice,
-    attachments,
-    category,
-    issue,
-    budget,
-    contactInfo
-  } = req.body;
+    const userId = req.user?._id;
+    const {
+        title,
+        description,
+        serviceType,
+        urgency,
+        location,
+        preferredDate,
+        preferredTime,
+        quotation,
+        estimatedPrice,
+        attachments,
+        category,
+        issue,
+        budget,
+        contactInfo
+    } = req.body;
 
-  if (!userId) {
-    return res.status(401).json({
-      message: "Unauthorized: User ID not found."
-    });
-  }
-
-  if (!title || !description || !serviceType || !urgency || !location || !location.address || !location.pincode ||
-    !category || !issue || !budget || !contactInfo || !preferredDate || !preferredTime) {
-    return res.status(400).json({
-      message: "Please provide all required service request fields: title, description, serviceType, urgency, location (address, pincode, captureMethod), category, issue, budget, contactInfo, preferredDate, and preferredTime."
-    });
-  }
-
-
-  try {
-    const newServiceRequest = new ServiceRequest({
-      customer: userId,
-      title,
-      description,
-      serviceType,
-      urgency,
-      location,
-      preferredTimeSlot: {
-        date: new Date(preferredDate),
-        time: preferredTime
-      },
-      quotation,
-      estimatedPrice,
-      attachments,
-      category,
-      issue,
-      budget,
-      contactInfo,
-      status: 'requested',
-    });
-
-    await newServiceRequest.save();
-
-    res.status(201).json({
-      message: "Service request created successfully!",
-      serviceRequest: newServiceRequest
-    });
-  } catch (error) {
-    console.error("Error creating service request:", error);
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(val => val.message);
-      return res.status(400).json({
-        message: `Validation Error: ${messages.join(', ')}`
-      });
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User ID not found." });
     }
-    res.status(500).json({
-      message: "Failed to create service request."
-    });
-  }
+
+    if (!title || !description || !serviceType || !urgency || !location || !location.address || !location.pincode ||
+        !category || !issue || !budget || !contactInfo || !preferredDate || !preferredTime) {
+        return res.status(400).json({
+            message: "Please provide all required service request fields: title, description, serviceType, urgency, location (address, pincode, captureMethod), category, issue, budget, contactInfo, preferredDate, and preferredTime."
+        });
+    }
+
+
+    try {
+        const newServiceRequest = new ServiceRequest({
+            customer: userId,
+            title,
+            description,
+            serviceType,
+            urgency,
+            location,
+            preferredTimeSlot: {
+                date: new Date(preferredDate),
+                time: preferredTime
+            },
+            quotation,
+            estimatedPrice,
+            attachments,
+            category,
+            issue,
+            budget,
+            contactInfo,
+            status: 'requested',
+        });
+
+        await newServiceRequest.save();
+
+        res.status(201).json({ message: "Service request created successfully!", serviceRequest: newServiceRequest });
+    } catch (error) {
+        console.error("Error creating service request:", error);
+        if (error.name === 'ValidationError') {
+            const messages = Object.values(error.errors).map(val => val.message);
+            return res.status(400).json({ message: `Validation Error: ${messages.join(', ')}` });
+        }
+        res.status(500).json({ message: "Failed to create service request." });
+    }
 };
 
+
 export const getInProgressServices = async (req, res) => {
-  const userId = req.user?._id;
-  if (!userId) {
-    return res.status(401).json({
-      message: "Unauthorized: User ID not found."
-    });
-  }
+    const userId = req.user?._id;
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
 
-  try {
-    const inProgressServices = await ServiceRequest.find({
-        customer: userId,
-        status: {
-          $in: ['accepted', 'in_progress', 'quoted']
+    try {
+        let query = {
+            customer: userId,
+            status: { $in: ['requested', 'pending_quote', 'quoted', 'accepted', 'in_progress'] }
+        };
+
+        console.log('--- DEBUG: getInProgressServices (user.controller.js) called ---');
+        console.log('DEBUG: User ID:', userId);
+        console.log('DEBUG: Final Mongoose Query for In Progress Services:', JSON.stringify(query, null, 2));
+
+        const inProgressServices = await ServiceRequest.find(query)
+            .populate('repairer', 'fullname phone businessName')
+            .sort({ createdAt: -1 })
+            .lean();
+
+        console.log('DEBUG: Number of In Progress Service Requests found:', inProgressServices.length);
+        if (inProgressServices.length > 0) {
+            inProgressServices.forEach((reqItem, index) => {
+                console.log(`DEBUG: [${index}] Service ID: ${reqItem._id}, Status: ${reqItem.status}, Title: ${reqItem.title}`);
+            });
+        } else {
+            console.log('DEBUG: No in-progress service requests found for this user/query.');
         }
-      })
-      .populate('repairer', 'fullname phone')
-      .sort({
-        createdAt: -1
-      })
-      .lean();
 
-    const formattedServices = inProgressServices.map(sr => ({
-      _id: sr._id,
-      title: sr.title,
-      description: sr.description,
-      serviceType: sr.serviceType,
-      status: sr.status,
-      urgency: sr.urgency,
-      location: sr.location,
-      preferredDate: sr.preferredTimeSlot?.date ? sr.preferredTimeSlot.date.toISOString().split('T')[0] : null,
-      preferredTime: sr.preferredTimeSlot?.time || null,
-      quotation: sr.quotation,
-      estimatedPrice: sr.estimatedPrice,
-      assignedRepairer: sr.repairer ? {
-        _id: sr.repairer._id,
-        fullname: sr.repairer.fullname,
-        phone: sr.repairer.phone
-      } : null,
-      createdAt: sr.createdAt,
-      updatedAt: sr.updatedAt,
-    }));
+        const formattedServices = inProgressServices.map(sr => ({
+            _id: sr._id,
+            title: sr.title,
+            description: sr.description,
+            serviceType: sr.serviceType,
+            status: sr.status,
+            urgency: sr.urgency,
+            location: formatLocationData(sr.location),
+            preferredDate: sr.preferredTimeSlot?.date ? sr.preferredTimeSlot.date.toISOString().split('T')[0] : null,
+            preferredTime: sr.preferredTimeSlot?.time || null,
+            quotation: sr.quotation,
+            estimatedPrice: sr.estimatedPrice,
+            assignedRepairer: sr.repairer ? {
+                _id: sr.repairer._id,
+                fullname: sr.repairer.fullname,
+                phone: sr.repairer.phone,
+                businessName: sr.repairer.businessName
+            } : null,
+            createdAt: sr.createdAt,
+            updatedAt: sr.updatedAt,
+        }));
 
-    res.status(200).json(formattedServices);
-  } catch (error) {
-    console.error("Error fetching in-progress services:", error);
-    res.status(500).json({
-      message: "Failed to fetch in-progress services."
-    });
-  }
+        res.status(200).json(formattedServices);
+    } catch (error) {
+        console.error("Error fetching in-progress services:", error);
+        res.status(500).json({ message: "Failed to fetch in-progress services." });
+    }
 };
 
 export const getPendingServices = async (req, res) => {
-  const userId = req.user?._id;
-  if (!userId) {
-    return res.status(401).json({
-      message: "Unauthorized: User ID not found."
-    });
-  }
+    const userId = req.user?._id;
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
 
-  try {
-    const pendingServices = await ServiceRequest.find({
-        customer: userId,
-        status: {
-          $in: ['requested', 'pending_quote']
-        }
-      })
-      .sort({
-        createdAt: -1
-      })
-      .lean();
+    try {
+        const pendingServices = await ServiceRequest.find({
+            customer: userId,
+            status: { $in: ['requested', 'pending_quote'] }
+        })
+            .sort({ createdAt: -1 })
+            .lean();
 
-    const formattedServices = pendingServices.map(sr => ({
-      _id: sr._id,
-      title: sr.title,
-      description: sr.description,
-      serviceType: sr.serviceType,
-      status: sr.status,
-      urgency: sr.urgency,
-      location: sr.location,
-      preferredDate: sr.preferredTimeSlot?.date ? sr.preferredTimeSlot.date.toISOString().split('T')[0] : null,
-      preferredTime: sr.preferredTimeSlot?.time || null,
-      quotation: sr.quotation,
-      estimatedPrice: sr.estimatedPrice,
-      createdAt: sr.createdAt,
-      updatedAt: sr.updatedAt,
-    }));
+        const formattedServices = pendingServices.map(sr => ({
+            _id: sr._id,
+            title: sr.title,
+            description: sr.description,
+            serviceType: sr.serviceType,
+            status: sr.status,
+            urgency: sr.urgency,
+            location: formatLocationData(sr.location),
+            preferredDate: sr.preferredTimeSlot?.date ? sr.preferredTimeSlot.date.toISOString().split('T')[0] : null,
+            preferredTime: sr.preferredTimeSlot?.time || null,
+            quotation: sr.quotation,
+            estimatedPrice: sr.estimatedPrice,
+            createdAt: sr.createdAt,
+            updatedAt: sr.updatedAt,
+        }));
 
-    res.status(200).json(formattedServices);
-  } catch (error) {
-    console.error("Error fetching pending services:", error);
-    res.status(500).json({
-      message: "Failed to fetch pending services."
-    });
-  }
+        res.status(200).json(formattedServices);
+    } catch (error) {
+        console.error("Error fetching pending services:", error);
+        res.status(500).json({ message: "Failed to fetch pending services." });
+    }
 };
 
 
 export const cancelJob = async (req, res) => {
-  const {
-    jobId
-  } = req.params;
-  const userId = req.user?._id;
+    const { jobId } = req.params;
+    const userId = req.user?._id;
 
-  if (!jobId || !userId) {
-    return res.status(400).json({
-      message: "Job ID and User ID are required."
-    });
-  }
-
-  try {
-    const serviceRequest = await ServiceRequest.findOne({
-      _id: jobId,
-      customer: userId
-    });
-
-    if (!serviceRequest) {
-      return res.status(404).json({
-        message: "Service Request not found or you are not authorized to cancel this job."
-      });
+    if (!jobId || !userId) {
+        return res.status(400).json({ message: "Job ID and User ID are required." });
     }
 
-    const cancellableStatuses = ['requested', 'accepted', 'in_progress', 'quoted', 'pending_quote'];
-    if (!cancellableStatuses.includes(serviceRequest.status)) {
-      return res.status(400).json({
-        message: `Job cannot be cancelled in '${serviceRequest.status}' status.`
-      });
-    }
+    try {
+        const serviceRequest = await ServiceRequest.findOne({ _id: jobId, customer: userId });
 
-    serviceRequest.status = 'cancelled';
-    serviceRequest.cancelledAt = new Date();
-    await serviceRequest.save();
-
-    if (serviceRequest.repairer) {
-      await Notification.create({
-        recipient: serviceRequest.repairer,
-        recipientModel: 'Repairer',
-        type: 'job_cancelled',
-        message: `Service "${serviceRequest.title}" was cancelled by the customer.`,
-        link: `/repairer/dashboard`,
-        relatedEntity: {
-          id: jobId,
-          model: 'ServiceRequest'
+        if (!serviceRequest) {
+            return res.status(404).json({ message: "Service Request not found or you are not authorized to cancel this job." });
         }
-      });
-    }
 
-    res.status(200).json({
-      message: `Service Request ${jobId} cancelled successfully!`
-    });
-  } catch (error) {
-    console.error("Error cancelling service request:", error);
-    res.status(500).json({
-      message: "Failed to cancel service request."
-    });
-  }
+        const cancellableStatuses = ['requested', 'accepted', 'in_progress', 'quoted', 'pending_quote'];
+        if (!cancellableStatuses.includes(serviceRequest.status)) {
+            return res.status(400).json({ message: `Job cannot be cancelled in '${serviceRequest.status}' status.` });
+        }
+
+        serviceRequest.status = 'cancelled';
+        serviceRequest.cancelledAt = new Date();
+        await serviceRequest.save();
+
+        if (serviceRequest.repairer) {
+            await Notification.create({
+                recipient: serviceRequest.repairer,
+                recipientModel: 'Repairer',
+                type: 'job_cancelled',
+                message: `Service "${serviceRequest.title}" was cancelled by the customer.`,
+                link: `/repairer/dashboard`,
+                relatedEntity: {
+                    id: jobId,
+                    model: 'ServiceRequest'
+                }
+            });
+        }
+
+        res.status(200).json({ message: `Service Request ${jobId} cancelled successfully!` });
+    } catch (error) {
+        console.error("Error cancelling service request:", error);
+        res.status(500).json({ message: "Failed to cancel service request." });
+    }
 };
 
 
 export const getUserConversations = async (req, res) => {
-  const userId = req.user?._id;
+    const userId = req.user?._id;
 
-  if (!userId) {
-    return res.status(401).json({
-      message: "Unauthorized: User ID not found."
-    });
-  }
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
 
-  try {
-    const conversations = await Conversation.find({
-        participants: userId
-      })
-      .populate({
-        path: 'lastMessage',
-        select: 'text createdAt senderId'
-      })
-      .populate({
-        path: 'serviceRequest',
-        select: 'title repairer status',
-        populate: {
-          path: 'repairer',
-          select: 'fullname'
-        }
-      })
-      .sort({
-        updatedAt: -1
-      })
-      .lean();
+    try {
+        const conversations = await Conversation.find({ participants: userId })
+            .populate({
+                path: 'lastMessage',
+                select: 'text createdAt senderId'
+            })
+            .populate({
+                path: 'serviceRequest',
+                select: 'title repairer status',
+                populate: {
+                    path: 'repairer',
+                    select: 'fullname'
+                }
+            })
+            .sort({ updatedAt: -1 })
+            .lean();
 
-    const formattedConversations = conversations.map(conv => {
-      const repairerParticipant = conv.serviceRequest?.repairer;
-      const otherParticipantName = repairerParticipant?.fullname || `Repairer (ID: ${conv.serviceRequest?.repairer?._id?.toString().substring(0, 4)})`;
-      const isChatActive = !['completed', 'cancelled', 'rejected'].includes(conv.serviceRequest?.status);
+        const formattedConversations = conversations.map(conv => {
+            const repairerParticipant = conv.serviceRequest?.repairer;
+            const otherParticipantName = repairerParticipant?.fullname || `Repairer (ID: ${conv.serviceRequest?.repairer?._id?.toString().substring(0, 4)})`;
+            const isChatActive = !['completed', 'cancelled', 'rejected'].includes(conv.serviceRequest?.status);
 
-      return {
-        id: conv._id.toString(),
-        serviceId: conv.serviceRequest?._id.toString(),
-        title: conv.serviceRequest?.title || 'Unknown Service Request',
-        sender: otherParticipantName,
-        lastMessage: conv.lastMessage?.text || 'No messages yet.',
-        time: conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        }) : '',
-        unread: false,
-        isActive: isChatActive
-      };
-    });
+            return {
+                id: conv._id.toString(),
+                serviceId: conv.serviceRequest?._id.toString(),
+                title: conv.serviceRequest?.title || 'Unknown Service Request',
+                sender: otherParticipantName,
+                lastMessage: conv.lastMessage?.text || 'No messages yet.',
+                time: conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+                unread: false,
+                isActive: isChatActive
+            };
+        });
 
-    res.status(200).json(formattedConversations);
-  } catch (error) {
-    console.error("Error fetching user conversations:", error);
-    res.status(500).json({
-      message: "Failed to fetch conversations."
-    });
-  }
+        res.status(200).json(formattedConversations);
+    } catch (error) {
+        console.error("Error fetching user conversations:", error);
+        res.status(500).json({ message: "Failed to fetch conversations." });
+    }
 };
 
 
 export const getConversationMessages = async (req, res) => {
-  const {
-    conversationId
-  } = req.params;
-  const userId = req.user?._id;
+    const { conversationId } = req.params;
+    const userId = req.user?._id;
 
-  if (!conversationId || !userId) {
-    return res.status(400).json({
-      message: "Conversation ID and User ID are required."
-    });
-  }
-
-  try {
-    const conversation = await Conversation.findById(conversationId).populate('serviceRequest', 'status');
-
-    if (!conversation) {
-      return res.status(404).json({
-        message: "Conversation not found."
-      });
+    if (!conversationId || !userId) {
+        return res.status(400).json({ message: "Conversation ID and User ID are required." });
     }
 
-    if (!conversation.participants.some(p => p.toString() === userId.toString())) {
-      return res.status(403).json({
-        message: "You are not a participant in this conversation."
-      });
+    try {
+        const conversation = await Conversation.findById(conversationId).populate('serviceRequest', 'status');
+
+        if (!conversation) {
+            return res.status(404).json({ message: "Conversation not found." });
+        }
+
+        if (!conversation.participants.some(p => p.toString() === userId.toString())) {
+            return res.status(403).json({ message: "You are not a participant in this conversation." });
+        }
+
+        const serviceRequest = conversation.serviceRequest;
+        if (!serviceRequest || ['completed', 'cancelled', 'rejected'].includes(serviceRequest.status)) {
+            return res.status(200).json({
+                conversationId: conversation._id,
+                messages: [],
+                chatEnded: true,
+                chatEndedReason: `Chat is no longer active for this job. Job status is ${serviceRequest?.status || 'unknown'}.`
+            });
+        }
+
+        const messages = await Message.find({ conversation: conversation._id })
+            .sort({ createdAt: 1 })
+            .lean();
+
+        const populatedMessages = await Promise.all(messages.map(async (msg) => {
+            let senderName = "Unknown";
+            if (msg.senderModel === "Repairer") {
+                const sender = await Repairer.findById(msg.senderId).select('fullname').lean();
+                senderName = sender?.fullname || "Repairer";
+            } else if (msg.senderModel === "User") {
+                const sender = await User.findById(msg.senderId).select('fullname').lean();
+                senderName = sender?.fullname || "Customer";
+            }
+            return { ...msg, senderName };
+        }));
+
+        res.status(200).json({
+            conversationId: conversation._id,
+            messages: populatedMessages,
+            chatEnded: false
+        });
+
+    } catch (error) {
+        console.error("Error fetching conversation messages:", error);
+        res.status(500).json({ message: "Failed to fetch messages for conversation." });
+    }
+};
+
+
+
+
+export const createRazorpayOrder = async (req, res) => {
+    const userId = req.user?._id;
+    const { serviceRequestId } = req.body; 
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
+    if (!serviceRequestId) {
+        return res.status(400).json({ message: "Service Request ID is required." });
     }
 
-    const serviceRequest = conversation.serviceRequest;
-    if (!serviceRequest || ['completed', 'cancelled', 'rejected'].includes(serviceRequest.status)) {
-      return res.status(200).json({
-        conversationId: conversation._id,
-        messages: [],
-        chatEnded: true,
-        chatEndedReason: `Chat is no longer active for this job. Job status is ${serviceRequest?.status || 'unknown'}.`
-      });
+    try {
+        const serviceRequest = await ServiceRequest.findOne({ _id: serviceRequestId, customer: userId })
+                                                .populate('repairer', 'upiId'); 
+
+        if (!serviceRequest) {
+            return res.status(404).json({ message: "Service Request not found or unauthorized." });
+        }
+
+        if (serviceRequest.status !== 'completed' || serviceRequest.estimatedPrice <= 0) {
+            return res.status(400).json({ message: "Payment can only be initiated for completed services with a valid estimated price." });
+        }
+
+        if (!serviceRequest.repairer || !serviceRequest.repairer.upiId) {
+            console.error(`Repairer or UPI ID missing for Service Request ${serviceRequestId}`);
+            return res.status(400).json({ message: "Repairer or Repairer's UPI ID missing for this service." });
+        }
+
+        const totalAmountPaisa = Math.round(serviceRequest.estimatedPrice * 100);
+        const platformFeePercentage = 3; 
+        const platformFeeAmountPaisa = Math.round(totalAmountPaisa * (platformFeePercentage / 100));
+        const repairerPayoutAmountPaisa = totalAmountPaisa - platformFeeAmountPaisa;
+
+        const newPayment = new Payment({
+            serviceRequest: serviceRequest._id,
+            customer: userId,
+            repairer: serviceRequest.repairer._id,
+            amount: totalAmountPaisa,
+            platformFeePercentage: platformFeePercentage,
+            platformFeeAmount: platformFeeAmountPaisa,
+            repairerPayoutAmount: repairerPayoutAmountPaisa,
+            status: 'created', 
+            currency: "INR"
+        });
+        await newPayment.save();
+
+        const options = {
+            amount: totalAmountPaisa, 
+            currency: "INR",
+            receipt: `receipt_payment_${newPayment._id}`, 
+            payment_capture: 1, // Auto capture
+            notes: {
+                serviceRequestId: serviceRequest._id.toString(),
+                paymentRecordId: newPayment._id.toString(),
+                customerName: req.user.fullname, 
+                repairerId: serviceRequest.repairer._id.toString()
+            }
+        };
+
+        const order = await razorpayInstance.orders.create(options);
+        newPayment.razorpayOrderId = order.id;
+        newPayment.status = 'pending';
+        await newPayment.save();
+
+        res.status(200).json({
+            orderId: order.id,
+            currency: order.currency,
+            amount: order.amount, // Amount in paisa
+            key_id: process.env.RAZORPAY_KEY_ID, // Send key_id to frontend for checkout
+            serviceTitle: serviceRequest.title,
+            customerName: req.user.fullname, // For Razorpay popup
+            customerPhone: req.user.phone, // For Razorpay popup
+            paymentRecordId: newPayment._id // Send our internal Payment ID to frontend
+        });
+
+    } catch (error) {
+        console.error("Error creating Razorpay order:", error);
+        res.status(500).json({ message: "Failed to create Razorpay order." });
+    }
+};
+
+export const verifyAndTransferPayment = async (req, res) => {
+    const userId = req.user?._id;
+    const {
+        razorpay_order_id,
+        razorpay_payment_id,
+        razorpay_signature,
+        paymentRecordId 
+    } = req.body;
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !paymentRecordId) {
+        return res.status(400).json({ message: "Payment verification details are incomplete." });
     }
 
-    const messages = await Message.find({
-        conversation: conversation._id
-      })
-      .sort({
-        createdAt: 1
-      })
-      .lean();
+    try {
+        const paymentRecord = await Payment.findById(paymentRecordId).populate('serviceRequest').populate('repairer', 'upiId');
 
-    const populatedMessages = await Promise.all(messages.map(async (msg) => {
-      let senderName = "Unknown";
-      if (msg.senderModel === "Repairer") {
-        const sender = await Repairer.findById(msg.senderId).select('fullname').lean();
-        senderName = sender?.fullname || "Repairer";
-      } else if (msg.senderModel === "User") {
-        const sender = await User.findById(msg.senderId).select('fullname').lean();
-        senderName = sender?.fullname || "Customer";
-      }
-      return { ...msg,
-        senderName
-      };
-    }));
+        if (!paymentRecord || paymentRecord.customer.toString() !== userId.toString()) {
+            return res.status(404).json({ message: "Payment record not found or unauthorized." });
+        }
+        const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
+        shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
+        const digest = shasum.digest('hex');
 
-    res.status(200).json({
-      conversationId: conversation._id,
-      messages: populatedMessages,
-      chatEnded: false
-    });
+        if (digest !== razorpay_signature) {
+            paymentRecord.status = 'failed'; 
+            await paymentRecord.save();
+            console.error(`DEBUG: Signature Mismatch for Payment ID: ${razorpay_payment_id}`);
+            return res.status(400).json({ message: "Payment verification failed: Signature mismatch." });
+        }
+        paymentRecord.razorpayPaymentId = razorpay_payment_id;
+        paymentRecord.razorpaySignature = razorpay_signature;
+        paymentRecord.status = 'captured';
+        paymentRecord.paymentDate = new Date();
+        await paymentRecord.save();
+        console.log('--- DEBUG: Razorpay Payment Verified & Captured ---');
+        console.log('DEBUG: Payment Record ID:', paymentRecord._id);
+        console.log('DEBUG: Service Request ID:', paymentRecord.serviceRequest._id);
+        console.log('DEBUG: Status updated to:', paymentRecord.status)
+        if (paymentRecord.repairer && paymentRecord.repairer.upiId && paymentRecord.repairerPayoutAmount > 0) {
+            try {
+                const transferOptions = {
+                    account: paymentRecord.repairer.upiId, 
+                    amount: paymentRecord.repairerPayoutAmount, 
+                    currency: "INR",
+                    notes: {
+                        paymentFor: `Service: ${paymentRecord.serviceRequest.title}`,
+                        serviceRequestId: paymentRecord.serviceRequest._id.toString(),
+                        platformFee: paymentRecord.platformFeeAmount / 100 
+                    }
+                };
+                
+                
+                const transfer = await razorpayInstance.payouts.create({
+                    account_number: '2323230006767575', 
+                    fund_account_id: 'fund_account_upi_test_id', 
+                    amount: paymentRecord.repairerPayoutAmount,
+                    currency: "INR",
+                    mode: 'UPI',
+                    purpose: 'refund',
+                    notes: {
+                        "UpiId": paymentRecord.repairer.upiId 
+                    },
+                    queue_if_scanned: true
+                });
 
-  } catch (error) {
-    console.error("Error fetching conversation messages:", error);
-    res.status(500).json({
-      message: "Failed to fetch messages for conversation."
-    });
-  }
+                paymentRecord.razorpayTransferId = transfer.id;
+                paymentRecord.status = 'payout_initiated';
+                paymentRecord.payoutDetails = {
+                    upiId: paymentRecord.repairer.upiId,
+                    transferTimestamp: new Date()
+                };
+                await paymentRecord.save();
+                const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
+                if (serviceRequest && serviceRequest.status === 'quoted') { 
+                    serviceRequest.status = 'accepted';
+                    serviceRequest.acceptedAt = new Date();
+                    await serviceRequest.save();
+                    console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'accepted'.`);
+                }
+
+                console.log(' Payout initiated to Repairer. Transfer ID:', transfer.id);
+                return res.status(200).json({
+                    message: "Payment verified and payout initiated successfully!",
+                    paymentRecord: paymentRecord,
+                    serviceRequestStatus: serviceRequest?.status
+                });
+
+            } catch (transferError) {
+                console.error("Error initiating Razorpay transfer:", transferError);
+                
+                return res.status(500).json({ message: "Payment verified, but failed to initiate payout. Please contact support." });
+            }
+        } else {
+            console.log(' No payout initiated: Repairer or UPI ID missing, or payout amount is zero.');
+      
+            const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
+            if (serviceRequest && serviceRequest.status === 'quoted') {
+                serviceRequest.status = 'accepted';
+                serviceRequest.acceptedAt = new Date();
+                await serviceRequest.save();
+                console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'accepted' (no payout needed/possible).`);
+            }
+            return res.status(200).json({
+                message: "Payment verified successfully. No payout needed or possible at this time.",
+                paymentRecord: paymentRecord,
+                serviceRequestStatus: serviceRequest?.status
+            });
+        }
+
+    } catch (error) {
+        console.error("Error verifying payment:", error);
+        res.status(500).json({ message: "Failed to verify payment." });
+    }
+};
+
+export const getServiceRequestById = async (req, res) => {
+    const userId = req.user?._id;
+    const { id } = req.params; 
+
+    if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User ID not found." });
+    }
+    if (!id) {
+        return res.status(400).json({ message: "Service Request ID is required." });
+    }
+
+    try {
+        const serviceRequest = await ServiceRequest.findOne({ _id: id, customer: userId })
+                                                    .populate('repairer', 'fullname businessName'); 
+
+        if (!serviceRequest) {
+            return res.status(404).json({ message: "Service Request not found or not authorized." });
+        }
+
+        res.status(200).json(serviceRequest);
+    } catch (error) {
+        console.error("Error fetching single service request:", error);
+        res.status(500).json({ message: "Failed to fetch service request details." });
+    }
 };

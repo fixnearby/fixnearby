@@ -14,6 +14,9 @@ import {
   cancelJob,
   getUserConversations, 
   getConversationMessages, 
+  createRazorpayOrder,
+  verifyAndTransferPayment,
+  getServiceRequestById
 } from "../controllers/user.controller.js";
 import {
   userProtectRoute
@@ -53,6 +56,12 @@ router.get("/conversations/:conversationId/messages", userProtectRoute, getConve
 router.get('/notifications', userProtectRoute, getUserNotifications);
 router.put('/notifications/:notificationId/read', userProtectRoute, markUserNotificationAsRead);
 router.delete('/notifications/:notificationId',userProtectRoute, deleteUserNotification);
+
+router.post("/create-razorpay-order", userProtectRoute, createRazorpayOrder);
+router.post("/verify-and-transfer-payment", userProtectRoute, verifyAndTransferPayment);
+
+router.get("/service-requests/:id", userProtectRoute, getServiceRequestById); 
+
 
 
 export default router;

@@ -1,12 +1,16 @@
-// frontend/src/components/RepairerDashboard/Header.jsx
 import React from 'react';
-import { LogOut, Bell, User, Settings } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { LogOut, Bell, User, Settings, ClipboardList, MessageSquare } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
 
-const Header = ({ displayName, isOnline, setIsOnline, onSettingsClick, onLogout, onNotificationsClick, onProfileClick, unreadNotificationCount }) => {
+const Header = ({ displayName, isOnline, setIsOnline, onSettingsClick, onLogout, onNotificationsClick, onProfileClick, unreadNotificationCount, onMessagesClick }) => {
+  const navigate = useNavigate();
+
+  const handleAssignedJobsClick = () => {
+    navigate('/repairer/inprogress');
+  };
+
   return (
     <header className="bg-white shadow-md p-4 flex items-center justify-between rounded-b-3xl">
-      {/* Left section: Welcome and Status */}
       <div className="flex items-center space-x-4">
         <h1 className="text-xl md:text-2xl font-bold text-gray-800">
           Welcome, {displayName}!
@@ -19,7 +23,6 @@ const Header = ({ displayName, isOnline, setIsOnline, onSettingsClick, onLogout,
         </div>
       </div>
 
-      {/* Center section: Toggle Online/Offline */}
       <div className="flex items-center space-x-4">
         <span className="text-gray-700 font-medium hidden md:block">Go {isOnline ? 'Offline' : 'Online'}:</span>
         <label className="relative inline-flex items-center cursor-pointer">
@@ -33,9 +36,23 @@ const Header = ({ displayName, isOnline, setIsOnline, onSettingsClick, onLogout,
         </label>
       </div>
 
-      {/* Right section: Actions */}
       <div className="flex items-center space-x-4">
-        {/* Notifications Button */}
+        <button
+          onClick={onMessagesClick}
+          className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          aria-label="Messages"
+        >
+          <MessageSquare className="w-6 h-6 text-gray-700" />
+        </button>
+
+        <button
+          onClick={handleAssignedJobsClick}
+          className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
+          aria-label="Assigned Jobs"
+        >
+          <ClipboardList className="w-6 h-6 text-gray-700" />
+        </button>
+
         <button
           onClick={onNotificationsClick}
           className="relative p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -49,7 +66,6 @@ const Header = ({ displayName, isOnline, setIsOnline, onSettingsClick, onLogout,
           )}
         </button>
 
-        {/* Profile Button */}
         <button
           onClick={onProfileClick}
           className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -58,7 +74,6 @@ const Header = ({ displayName, isOnline, setIsOnline, onSettingsClick, onLogout,
           <User className="w-6 h-6 text-gray-700" />
         </button>
 
-        {/* Settings Button */}
         <button
           onClick={onSettingsClick}
           className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
@@ -67,7 +82,6 @@ const Header = ({ displayName, isOnline, setIsOnline, onSettingsClick, onLogout,
           <Settings className="w-6 h-6 text-gray-700" />
         </button>
 
-        {/* Logout Button */}
         <button
           onClick={onLogout}
           className="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors hidden md:block"

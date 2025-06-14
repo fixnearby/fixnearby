@@ -1,4 +1,3 @@
-// frontend/src/pages/repairer/dashboard/Maindashboard.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../../../store/authStore.js';
@@ -132,30 +131,27 @@ const RepairerMainDashboard = () => {
     fetchUnreadNotifications();
   }, [fetchDashboardStats, fetchRecentActivity, fetchUnreadNotifications]);
 
-  const handleAcceptJob = async (jobId) => {
+ const handleAcceptJob = async (jobId) => {
     console.log(`Attempting to accept job: ${jobId}`);
     if (!repairerId) {
-      toast.error("Repairer ID not available. Please log in again.");
-      return;
+        toast.error("Repairer ID not available. Please log in again.");
+        return;
     }
     try {
-      setJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
-      const response = await acceptJob(jobId);
-      toast.success('Job accepted successfully!');
-      fetchDashboardStats();
-      fetchRecentActivity();
-      fetchUnreadNotifications();
-      if (response.conversationId) {
-        navigate(`/repairer/messages/${response.conversationId}`);
-      } else {
-        console.warn("No conversationId received after job acceptance. Cannot navigate to chat.");
-      }
+        // Change the status sent to the backend
+        const response = await acceptJob(jobId, { status: 'accept_request_for_quote' }); 
+        toast.success('Job request accepted! Please provide your quote on the In Progress page.'); 
+        fetchDashboardStats();
+        fetchRecentActivity();
+        fetchUnreadNotifications();
+        console.log(response);
+        navigate('/repairer/inprogress'); 
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to accept job. Please try again.');
-      console.error('Accept job error:', error);
-      fetchNearbyJobs();
+        toast.error(error.response?.data?.message || 'Failed to accept job. Please try again.');
+        console.error('Accept job error:', error);
+        fetchNearbyJobs(); 
     }
-  };
+};
 
   const handleLogout = async () => {
     console.log("Logout button clicked. Logging out...");
@@ -210,7 +206,7 @@ const RepairerMainDashboard = () => {
         onProfileClick={handleProfileClick}
         unreadNotificationCount={unreadNotificationCount}
         loadingNotifications={loadingNotifications}
-        onMessagesClick={handleMessagesClick}
+        onMessagesClick={handleMessagesClick} 
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -237,7 +233,6 @@ const RepairerMainDashboard = () => {
             errorActivity={errorActivity}
             onViewAnalyticsClick={handleViewAnalyticsClick}
             onManageProfileClick={handleProfileClick}
-            onMessagesClick={handleMessagesClick}
           />
         )}
       </div>

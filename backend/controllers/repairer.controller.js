@@ -14,7 +14,7 @@ import { sendSignupOTP, serviceAccepted } from "./sendsms.js";
 function generateOTP() {
   return Math.floor(100000 + Math.random() * 900000).toString();
 }
-export const getOtp = async (req, res) => { /* ... */
+export const getOtp = async (req, res) => { 
   const {
     phone
   } = req.body;
@@ -58,7 +58,7 @@ export const getOtp = async (req, res) => { /* ... */
   }
 };
 
-export const verifyOtp = async (req, res) => { /* ... */
+export const verifyOtp = async (req, res) => {
   const {
     phone,
     otp
@@ -93,7 +93,7 @@ export const verifyOtp = async (req, res) => { /* ... */
   }
 };
 
-export const signup = async (req, res) => { /* ... */
+export const signup = async (req, res) => { 
   console.log('Received signup data on backend:', req.body);
   const {
     fullname,
@@ -200,7 +200,7 @@ export const login = async (req, res) => {
 };
 
 
-export const logout = async (req, res) => { /* ... */
+export const logout = async (req, res) => { 
   try {
     const token = req.cookies?.jwt;
     if (!token) return res.status(400).json({
@@ -493,7 +493,6 @@ export const acceptJob = async (req, res) => {
     serviceRequest.status = 'accepted';
     serviceRequest.assignedAt = new Date();
 
-    //usernumber,username,number,name,issue
     const rep  = await Repairer.findById(repairerId)
     const cus = await User.findById(serviceRequest.customer)
     const name = rep.fullname
@@ -513,23 +512,21 @@ export const acceptJob = async (req, res) => {
 
     await serviceRequest.save();
 
-    // Create or update a conversation for this service request
-    const conversation = await Conversation.findOneAndUpdate({
-      serviceRequest: jobId
-    }, // Find by serviceRequest
-    {
-      $addToSet: { // Use $addToSet to prevent duplicate participants
-        participants: [repairerId, serviceRequest.customer],
-        participantModels: ["Repairer", "User"] // Ensure order matches participants
-      }
-    }, {
-      upsert: true,
-      new: true,
-      setDefaultsOnInsert: true
-    } // setDefaultsOnInsert creates missing fields if upserted
+   const conversation = await Conversation.findOneAndUpdate(
+        { serviceRequest: jobId }, 
+        {
+            $addToSet: {
+                participants: [repairerId, serviceRequest.customer],
+                participantModels: ["Repairer", "User"]
+            }
+        },
+        {
+            upsert: true,
+            new: true,
+            setDefaultsOnInsert: true
+        }
     );
 
-    // Create initial message if conversation is new and no messages exist
     const messageCount = await Message.countDocuments({
       conversation: conversation._id
     });
@@ -545,7 +542,7 @@ export const acceptJob = async (req, res) => {
       });
       await initialMessage.save();
       conversation.lastMessage = initialMessage._id;
-      await conversation.save(); // Save conversation to update lastMessage
+      await conversation.save(); 
     }
 
 
@@ -554,18 +551,16 @@ export const acceptJob = async (req, res) => {
       recipientModel: 'User',
       type: 'job_accepted',
       message: `Your service request "${serviceRequest.title}" has been accepted by a repairer! Chat with them now.`,
-      link: `/user/messages/${conversation._id}`, // Link to specific conversation
+      link: `/user/messages/${conversation._id}`, 
       relatedEntity: {
         id: jobId,
         model: 'ServiceRequest'
       }
     });
-
-
-    res.status(200).json({
+      res.status(200).json({
       message: `Service Request ${jobId} accepted successfully!`,
       serviceRequest,
-      conversationId: conversation._id // Return conversation ID for chat initiation
+      conversationId: conversation._id 
     });
   } catch (error) {
     console.error("Error accepting service request:", error);
@@ -600,65 +595,133 @@ export const getRepairerProfile = async (req, res) => {
 };
 
 export const updateRepairerProfile = async (req, res) => {
-  const repairerId = req.repairer?._id;
-  const {
-    fullname,
-    phone,
-    bio,
-    experience,
-    profileImageUrl,
-    services,
-    pincode
-  } = req.body;
+    const repairerId = req.repairer._id; 
+    const { 
+        fullname, 
+        phone, 
+        pincode, 
+        bio, 
+        experience, 
+        profileImageUrl, 
+        services,
+        upiId 
+    } = req.body;
 
-  if (!repairerId) {
-    return res.status(401).json({
-      message: "Unauthorized: Repairer ID not found."
-    });
-  }
+    try {
+        const repairer = await Repairer.findById(repairerId);
 
-  try {
-    const repairer = await Repairer.findById(repairerId);
-    if (!repairer) {
-      return res.status(404).json({
-        message: "Repairer not found."
-      });
+        if (!repairer) {
+            return res.status(404).json({ message: "Repairer not found." });
+        }
+
+        repairer.fullname = fullname !== undefined ? fullname : repairer.fullname;
+        repairer.phone = phone !== undefined ? phone : repairer.phone;
+        repairer.pincode = pincode !== undefined ? pincode : repairer.pincode;
+        repairer.bio = bio !== undefined ? bio : repairer.bio;
+        repairer.experience = experience !== undefined ? experience : repairer.experience;
+        repairer.profileImageUrl = profileImageUrl !== undefined ? profileImageUrl : repairer.profileImageUrl;
+        
+        repairer.upiId = upiId !== undefined ? upiId : repairer.upiId;
+
+
+        if (services && Array.isArray(services)) {
+          
+            const validServices = services.filter(s => s.name && s.name.trim() !== '' && s.visitingCharge !== undefined && s.visitingCharge >= 0);
+            repairer.services = validServices;
+        }
+
+        await repairer.save();
+        const updatedRepairer = await Repairer.findById(repairerId).select('-password -aadharcardNumber'); 
+
+        res.status(200).json({
+            message: "Profile updated successfully!",
+            repairer: updatedRepairer
+        });
+
+    } catch (error) {
+        console.error("Error updating repairer profile:", error);
+        if (error.code === 11000) {
+            let field = Object.keys(error.keyValue)[0];
+            let value = error.keyValue[field];
+            return res.status(400).json({ message: `A repairer with that ${field} '${value}' already exists.` });
+        }
+        res.status(500).json({ message: "Failed to update profile. " + error.message });
     }
-    if (fullname !== undefined) repairer.fullname = fullname;
-    if (phone !== undefined) repairer.phone = phone;
-    if (bio !== undefined) repairer.bio = bio;
-    if (experience !== undefined) repairer.experience = experience;
-    if (profileImageUrl !== undefined) repairer.profileImageUrl = profileImageUrl;
-    if (pincode !== undefined) repairer.pincode = pincode;
-
-    if (services && Array.isArray(services)) {
-      const validServices = services.map(s => ({
-        name: s.name,
-        visitingCharge: typeof s.visitingCharge === 'number' ? s.visitingCharge : 0
-      }));
-      repairer.services = validServices;
-    }
-
-    await repairer.save();
-
-    res.status(200).json({
-      message: "Profile updated successfully!",
-      repairer
-    });
-  } catch (error) {
-    console.error("Error updating repairer profile:", error);
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map(val => val.message);
-      return res.status(400).json({
-        message: `Validation Error: ${messages.join(', ')}`
-      });
-    }
-    res.status(500).json({
-      message: "Failed to update repairer profile."
-    });
-  }
 };
 
+export const createRepairerConversation = async (req, res) => {
+    const { serviceRequestId } = req.body;
+    const repairerId = req.repairer?._id;
+
+    if (!serviceRequestId || !repairerId) {
+        return res.status(400).json({ message: "Service Request ID and Repairer ID are required." });
+    }
+
+    try {
+        const serviceRequest = await ServiceRequest.findById(serviceRequestId).populate('customer').populate('repairer').lean();
+
+        if (!serviceRequest) {
+            return res.status(404).json({ message: "Service Request not found." });
+        }
+
+        if (!serviceRequest.repairer) {
+            return res.status(403).json({ message: "Service request is not yet assigned to a repairer." });
+        }
+
+        if (serviceRequest.repairer._id.toString() !== repairerId.toString()) {
+             return res.status(403).json({ message: "You are not the assigned repairer for this service request." });
+        }
+
+        const customerId = serviceRequest.customer?._id;
+
+        if (!customerId) {
+            return res.status(400).json({ message: "Customer ID not found for this service request." });
+        }
+
+        let conversation = await Conversation.findOne({ serviceRequest: serviceRequestId });
+
+        if (conversation) {
+            return res.status(200).json({
+                message: "Conversation already exists.",
+                conversationId: conversation._id
+            });
+        }
+
+        conversation = new Conversation({
+            participants: [repairerId, customerId],
+            participantModels: ["Repairer", "User"],
+            serviceRequest: serviceRequestId,
+        });
+
+        await conversation.save();
+
+        // --- Start of Automatic Message Logic (UPDATED FIELD NAMES) ---
+        const initialMessage = new Message({
+            conversation: conversation._id,
+            serviceId: serviceRequest._id,
+            senderId: repairerId, // Changed to senderId
+            senderModel: 'Repairer',
+            receiverId: customerId, // Changed to receiverId
+            receiverModel: 'User',
+            text: `Hello from your assigned repairer! I'm ready to discuss your ${serviceRequest.serviceType} service.`,
+        });
+
+        await initialMessage.save();
+
+        conversation.lastMessage = initialMessage._id;
+        await conversation.save();
+        // --- End of Automatic Message Logic ---
+
+        res.status(201).json({
+            message: "Conversation created successfully.",
+            conversationId: conversation._id
+        });
+
+    } catch (error) {
+        console.error("Error creating repairer conversation:", error);
+        res.status(500).json({ message: "Failed to create conversation." });
+    }
+};
 
 export const updateRepairerSettings = async (req, res) => {
   const repairerId = req.repairer?._id;
@@ -801,62 +864,59 @@ export const getRepairerAnalytics = async (req, res) => {
   }
 };
 export const getRepairerConversations = async (req, res) => {
-  const repairerId = req.repairer?._id;
+    const repairerId = req.repairer._id; 
 
-  if (!repairerId) {
-    return res.status(401).json({
-      message: "Unauthorized: Repairer ID not found."
-    });
-  }
+    try {
+        const conversations = await Conversation.find({ participants: repairerId })
+            .populate({
+                path: 'serviceRequest',
+                select: 'title customer status', 
+                populate: {
+                    path: 'customer',
+                    select: 'fullname' 
+                }
+            })
+            .populate({
+                path: 'lastMessage',
+                select: 'text createdAt senderId' 
+            })
+            .sort({ updatedAt: -1 })
+            .lean(); 
+        const activeConversations = conversations.filter(conv => {
+       
+            return conv.serviceRequest &&
+                   conv.serviceRequest.status !== 'completed' &&
+                   conv.serviceRequest.status !== 'cancelled' &&
+                   conv.serviceRequest.status !== 'rejected'; 
+        });
+        const formattedConversations = activeConversations.map(conv => {
+            const customerParticipant = conv.serviceRequest?.customer;
+            const otherParticipantName = customerParticipant?.fullname || `Customer (ID: ${conv.serviceRequest?.customer?._id?.toString().substring(0, 4)})`;
 
-  try {
-    const conversations = await Conversation.find({
-        participants: repairerId
-      })
-      .populate({
-        path: 'lastMessage',
-        select: 'text createdAt senderId'
-      })
-      .populate({
-        path: 'serviceRequest',
-        select: 'title customer status',
-        populate: {
-          path: 'customer',
-          select: 'fullname'
-        }
-      })
-      .sort({
-        updatedAt: -1
-      })
-      .lean();
+            const isChatActive = !['completed', 'cancelled', 'rejected'].includes(conv.serviceRequest?.status);
 
-    const formattedConversations = conversations.map(conv => {
-      const customerParticipant = conv.serviceRequest?.customer;
-      const otherParticipantName = customerParticipant?.fullname || `Customer (ID: ${conv.serviceRequest?.customer?._id?.toString().substring(0, 4)})`;
-      const isChatActive = !['completed', 'cancelled', 'rejected'].includes(conv.serviceRequest?.status);
 
-      return {
-        id: conv._id.toString(),
-        serviceId: conv.serviceRequest?._id.toString(),
-        title: conv.serviceRequest?.title || 'Unknown Service Request',
-        sender: otherParticipantName,
-        lastMessage: conv.lastMessage?.text || 'No messages yet.',
-        time: conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit'
-        }) : '',
-        unread: false,
-        isActive: isChatActive // Indicate if chat is active
-      };
-    });
+            return {
+                id: conv._id.toString(),
+                serviceId: conv.serviceRequest?._id.toString(),
+                title: conv.serviceRequest?.title || 'Unknown Service Request',
+                sender: otherParticipantName, 
+                lastMessage: conv.lastMessage?.text || 'No messages yet.',
+                time: conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                }) : '',
+                unread: false, 
+                isActive: isChatActive 
+            };
+        });
 
-    res.status(200).json(formattedConversations);
-  } catch (error) {
-    console.error("Error fetching repairer conversations:", error);
-    res.status(500).json({
-      message: "Failed to fetch conversations."
-    });
-  }
+        res.status(200).json(formattedConversations);
+
+    } catch (error) {
+        console.error("Error fetching repairer conversations:", error);
+        res.status(500).json({ message: "Failed to retrieve conversations." });
+    }
 };
 
 export const getConversationMessages = async (req, res) => {

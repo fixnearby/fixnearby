@@ -442,7 +442,7 @@ export const rejectQuote = async (req, res) => {
                 userId: serviceRequest.repairer._id,
                 type: 'quote_rejected',
                 message: `Your quote for "${serviceRequest.title}" (₹${serviceRequest.estimatedPrice}) was rejected by the customer. A rejection fee of ₹${REJECTION_FEE_AMOUNT_PAISA / 100} is being processed.`,
-                link: `/repairer/dashboard/jobs`,
+                link: `/repairer/notifications`,
                 relatedEntity: { id: serviceRequest._id, model: 'ServiceRequest' }
             });
         }

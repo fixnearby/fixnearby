@@ -580,7 +580,6 @@ export const getConversationMessages = async (req, res) => {
 };
 
 export const createRazorpayOrder = async (req, res) => {
-    // This line destructures the paymentRecordId from req.body
     const { paymentRecordId } = req.body;
     const userId = req.user?._id;
 
@@ -589,34 +588,18 @@ export const createRazorpayOrder = async (req, res) => {
     }
 
     try {
-        console.log("createRazorpayOrder: Starting process...");
-        console.log("createRazorpayOrder: Raw req.body received:", req.body); // Log the entire body
-        console.log("createRazorpayOrder: paymentRecordId extracted (should be string):", paymentRecordId);
-        console.log("createRazorpayOrder: Type of paymentRecordId:", typeof paymentRecordId); // Log its type
-
-        // Verify if it's an object when it shouldn't be
         if (typeof paymentRecordId === 'object' && paymentRecordId !== null && 'paymentRecordId' in paymentRecordId) {
-            console.error("CRITICAL ERROR: paymentRecordId is still an object despite destructuring!");
-            // This is the problematic value that Mongoose is getting
             const problematicValue = paymentRecordId;
-            // Attempt to get the actual ID string if it's trapped in an object
             const actualPaymentId = problematicValue.paymentRecordId;
-
-            console.error("Attempting to use actualPaymentId:", actualPaymentId)
             return res.status(500).json({ success: false, message: "Internal server error: paymentRecordId format issue detected. Check logs." });
         }
 
-
-        // The line below is causing the CastError if paymentRecordId is an object
-        console.log("Attempting to find Payment record with ID:", paymentRecordId); // This should print a string
-        const paymentRecord = await Payment.findById(paymentRecordId); // This is likely line 600
+        const paymentRecord = await Payment.findById(paymentRecordId); 
 
         if (!paymentRecord) {
             console.error("Payment record not found for ID:", paymentRecordId);
             return res.status(404).json({ success: false, message: "Payment record not found." });
         }
-
-        // Authorization check
         if (paymentRecord.customer.toString() !== userId.toString()) {
             console.error("Unauthorized access attempt: Payment record customer mismatch.");
             return res.status(403).json({ success: false, message: "Unauthorized to create order for this payment record." });

@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../../../store/authStore.js';
-import { axiosInstance } from '../../../lib/axios.js'; 
-import { getInProgressServices,customerRejectQuote } from '../../../services/apiService.js';
+import { axiosInstance } from '../../../lib/axios.js';
+import { getInProgressServices, customerRejectQuote } from '../../../services/apiService.js';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -24,6 +24,14 @@ const Inprogress = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [actionMessage, setActionMessage] = useState(null);
+
+    // Modal States
+    const [showConfirmAcceptModal, setShowConfirmAcceptModal] = useState(false);
+    const [showConfirmRejectModal, setShowConfirmRejectModal] = useState(false);
+    const [showConfirmCompletionModal, setShowConfirmCompletionModal] = useState(false);
+    const [currentRequestId, setCurrentRequestId] = useState(null); // Stores requestId for the modal action
+    const [otpInput, setOtpInput] = useState(''); // State for OTP input in completion modal
+    const [otpError, setOtpError] = useState(null); // State for OTP validation error
 
     const { user } = useAuthStore();
     const navigate = useNavigate();
@@ -53,16 +61,49 @@ const Inprogress = () => {
         fetchInProgressRequests();
     }, [fetchInProgressRequests]);
 
-    const handleAcceptQuote = async (requestId) => {
-        if (!window.confirm("Are you sure you want to accept this quotation?")) {
-            return;
-        }
+    // --- Modal Trigger Functions (called by buttons) ---
+    const showAcceptModal = (requestId) => {
+        setCurrentRequestId(requestId);
+        setShowConfirmAcceptModal(true);
+    };
+
+    const showRejectModal = (requestId) => {
+        setCurrentRequestId(requestId);
+        setShowConfirmRejectModal(true);
+    };
+
+    const showCompletionModal = (requestId) => {
+        setCurrentRequestId(requestId);
+        setShowConfirmCompletionModal(true);
+        setOtpInput(''); // Clear any previous OTP input
+        setOtpError(null); // Clear any previous OTP error
+    };
+
+    // --- Modal Cancellation Function ---
+    const handleCancelModal = () => {
+        setShowConfirmAcceptModal(false);
+        setShowConfirmRejectModal(false);
+        setShowConfirmCompletionModal(false);
+        setCurrentRequestId(null); // Clear stored ID
+        setOtpInput(''); // Clear OTP input
+        setOtpError(null); // Clear OTP error
+    };
+
+    // --- Core Action Handlers (called after modal confirmation) ---
+
+    // Renamed from handleAcceptQuote to avoid confusion with original button handler
+    const handleAcceptQuoteConfirmed = async () => {
+        setShowConfirmAcceptModal(false); // Hide the modal first
+        if (!currentRequestId) return;
+
         setActionMessage(null);
         try {
-            const response = await axiosInstance.put(`/service-requests/user/${requestId}/accept-quote`);
+            // Assuming customerAcceptQuote is an API service function or directly use axiosInstance
+            const response = await axiosInstance.put(`/service-requests/user/${currentRequestId}/accept-quote`);
+            
             if (response.status === 200 || response.data.success) {
                 toast.success('Quotation accepted! Repairer will be notified.');
-                fetchInProgressRequests(); 
+                fetchInProgressRequests(); // Re-fetch requests to update UI
             } else {
                 setActionMessage({ type: 'error', text: response.data?.message || 'Failed to accept quotation.' });
                 toast.error('Failed to accept quotation.');
@@ -71,15 +112,19 @@ const Inprogress = () => {
             console.error('Error accepting quote:', err.response?.data || err.message);
             setActionMessage({ type: 'error', text: err.response?.data?.message || 'An error occurred while accepting the quotation.' });
             toast.error(err.response?.data?.message || 'An error occurred while accepting the quotation.');
+        } finally {
+            setCurrentRequestId(null); // Clear stored ID
         }
     };
-    const handleRejectQuote = async (requestId) => {
-        if (!window.confirm("Are you sure you want to reject this quotation? A rejection fee of ₹150 will be charged.")) {
-            return;
-        }
+
+    // Renamed from handleRejectQuote
+    const handleRejectQuoteConfirmed = async () => {
+        setShowConfirmRejectModal(false); // Hide the modal first
+        if (!currentRequestId) return;
+
         setActionMessage(null);
         try {
-            const response = await customerRejectQuote(requestId); 
+            const response = await customerRejectQuote(currentRequestId); // This is already in apiService
 
             if (response.success && response.paymentId) {
                 toast.success('Quotation rejected. Redirecting to pay rejection fee...');
@@ -92,53 +137,63 @@ const Inprogress = () => {
             console.error('Error rejecting quote:', err.response?.data || err.message);
             setActionMessage({ type: 'error', text: err.response?.data?.message || 'An error occurred while rejecting the quotation.' });
             toast.error(err.response?.data?.message || 'An error occurred while rejecting the quotation.');
+        } finally {
+            setCurrentRequestId(null); // Clear stored ID
         }
     };
-    const confirmCompletion = async (requestId) => {
-        const confirm = window.confirm("Are you sure you want to confirm this service as completed? This will initiate payment.");
-        if (!confirm) return;
 
-        const otp = window.prompt("Enter the 6-digit OTP sent to your phone:");
-        if (!otp || otp.length !== 6 || !/^\d{6}$/.test(otp)) {
-            alert("Invalid OTP. Please enter a valid 6-digit code.");
+   const handleConfirmCompletionConfirmed = async () => {
+        setOtpError(null);
+
+        if (!otpInput || otpInput.length !== 6 || !/^\d{6}$/.test(otpInput)) {
+            setOtpError("Invalid OTP. Please enter a valid 6-digit code.");
             return;
         }
-        console.log(otp)
+        
         try {
             // First verify OTP
-            const otpResponse = await axiosInstance.post("/user/verify-serviceotp/", { requestId, otp });
+            const otpResponse = await axiosInstance.post("/user/verify-serviceotp/", { requestId: currentRequestId, otp: otpInput });
             
             if (otpResponse.status === 200 || otpResponse.status === 201) {
                 toast.success('OTP verified successfully!');
-                
                 setActionMessage(null);
                 
-                // Then update status to completed
-                const response = await axiosInstance.put(`/service-requests/user/${requestId}/status`, {
-                    status: 'pending_payment'
+                // Then update status to pending_payment, and create the Payment record
+                const statusUpdateResponse = await axiosInstance.put(`/service-requests/user/${currentRequestId}/status`, {
+                    status: 'pending_payment' // Send 'pending_payment'
                 });
 
-                if (response.status === 200 || response.data.success) {
-                    fetchInProgressRequests(); // Re-fetch to update the list
-                    setActionMessage({ type: 'success', text: 'Service confirmed as completed! Redirecting to payment...' });
-                    toast.success('Service confirmed as completed!');
-                    toast.success('Redirecting to payment page...');
-                    navigate(`/user/payment/${requestId}`);
+                if (statusUpdateResponse.status === 200 || statusUpdateResponse.data.success) {
+                    const newPaymentId = statusUpdateResponse.data.paymentId; // <--- EXTRACT PAYMENT ID HERE
+
+                    if (newPaymentId) {
+                        toast.success('Service confirmed as completed!');
+                        toast.success('Redirecting to payment page...');
+                        navigate(`/user/payment/${newPaymentId}`); // <--- USE THE NEW PAYMENT ID HERE
+                    } else {
+                        // This case implies no paymentId was returned, which shouldn't happen if estimatedPrice > 0
+                        toast.error('Service updated, but no payment ID received. Please check pending payments.');
+                        navigate('/user/pending-services');
+                    }
+                    
+                    fetchInProgressRequests(); // Re-fetch requests after successful completion
+                    setShowConfirmCompletionModal(false);
+                    setCurrentRequestId(null);
+                    setOtpInput('');
+
                 } else {
-                    setActionMessage({ type: 'error', text: response.data?.message || 'Failed to confirm service completion.' });
+                    setActionMessage({ type: 'error', text: statusUpdateResponse.data?.message || 'Failed to confirm service completion.' });
                     toast.error('Failed to confirm service completion.');
                 }
             } else {
-                toast.error('OTP verification failed.');
+                setOtpError(otpResponse.data?.message || 'OTP verification failed. Please try again.');
+                toast.error(otpResponse.data?.message || 'OTP verification failed.');
             }
         } catch (err) {
             console.error('Error in completion process:', err.response?.data || err.message);
-            if (err.response?.status === 400) {
-                toast.error('Invalid OTP. Please try again.');
-            } else {
-                setActionMessage({ type: 'error', text: err.response?.data?.message || 'An error occurred during verification.' });
-                toast.error(err.response?.data?.message || 'An error occurred during verification.');
-            }
+            const errorMessage = err.response?.data?.message || 'An error occurred during verification.';
+            setOtpError(errorMessage);
+            toast.error(errorMessage);
         }
     };
 
@@ -269,13 +324,13 @@ const Inprogress = () => {
                                                 <p className="text-gray-600 mb-4">Please review the quoted amount by the repairer and decide.</p>
                                                 <div className="flex space-x-3">
                                                     <button
-                                                        onClick={() => handleAcceptQuote(request._id)}
+                                                        onClick={() => showAcceptModal(request._id)}
                                                         className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
                                                     >
                                                         <Check className="w-5 h-5 mr-2" /> Accept Amount
                                                     </button>
                                                     <button
-                                                        onClick={() => handleRejectQuote(request._id)}
+                                                        onClick={() => showRejectModal(request._id)}
                                                         className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
                                                     >
                                                         <XCircle className="w-5 h-5 mr-2" /> Reject Quote
@@ -312,7 +367,7 @@ const Inprogress = () => {
                                             >
                                                 <MessageSquare className="w-5 h-5 mr-1" /> Chat
                                             </button>
-                                            {request.repairer.phone && ( 
+                                            {request.repairer.phone && (
                                                 <a
                                                     href={`tel:${request.repairer.phone}`}
                                                     className="flex items-center text-gray-600 hover:text-gray-800 p-2 rounded-md"
@@ -325,7 +380,7 @@ const Inprogress = () => {
 
                                     {request.status === 'pending_otp' && (
                                         <button
-                                            onClick={() => confirmCompletion(request._id)}
+                                            onClick={() => showCompletionModal(request._id)}
                                             className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
                                         >
                                             <Check className="w-5 h-5 mr-1" /> Confirm Completed & Verify OTP
@@ -335,6 +390,103 @@ const Inprogress = () => {
                             </div>
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* --- Custom Accept Quote Confirmation Modal --- */}
+            {showConfirmAcceptModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-sm text-center">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4">Confirm Acceptance</h3>
+                        <p className="text-gray-700 mb-6">
+                            Are you sure you want to **accept this quotation**? This will mark the service as accepted and notify the repairer.
+                        </p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={handleCancelModal}
+                                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleAcceptQuoteConfirmed}
+                                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
+                            >
+                                Yes, Accept
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- Custom Reject Quote Confirmation Modal --- */}
+            {showConfirmRejectModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-sm text-center">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4">Confirm Rejection</h3>
+                        <p className="text-gray-700 mb-6">
+                            Are you sure you want to **reject this quotation**? A rejection fee of ₹150 will be charged.
+                        </p>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={handleCancelModal}
+                                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleRejectQuoteConfirmed}
+                                className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors shadow-md"
+                            >
+                                Yes, Reject
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* --- Custom Confirm Completion (with OTP) Modal --- */}
+            {showConfirmCompletionModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-md text-center">
+                        <h3 className="text-xl font-bold text-gray-900 mb-4">Confirm Service Completion</h3>
+                        <p className="text-gray-700 mb-4">
+                            Are you sure you want to confirm this service as completed? This will initiate payment.
+                        </p>
+                        <div className="mb-6">
+                            <label htmlFor="otp" className="block text-left text-gray-700 font-medium mb-2">
+                                Enter 6-digit OTP:
+                            </label>
+                            <input
+                                type="text"
+                                id="otp"
+                                value={otpInput}
+                                onChange={(e) => setOtpInput(e.target.value)}
+                                maxLength="6"
+                                className={`w-full p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 ${
+                                    otpError ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-blue-500'
+                                }`}
+                                placeholder="e.g., 123456"
+                            />
+                            {otpError && (
+                                <p className="text-red-500 text-sm mt-2 text-left">{otpError}</p>
+                            )}
+                        </div>
+                        <div className="flex justify-center space-x-4">
+                            <button
+                                onClick={handleCancelModal}
+                                className="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100 transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmCompletionConfirmed}
+                                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
+                            >
+                                Confirm & Verify
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

@@ -1,5 +1,5 @@
 #BUGS
-1) 150 ruppee pending if cancels the quote
+1) 150 ruppee pending if cancels the quote(FIXED) 
 2) sms pending when accepting a service
 3) problem after verifying completion otp
 4) that browser pop up thing we have to make it good

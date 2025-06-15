@@ -7,3 +7,4 @@
 6) if completed or rejects everything will be erased
 7) red flag and yellow flag logic
 8) quotation logic is missing
+9) avatar lagado bubi bhai

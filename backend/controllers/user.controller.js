@@ -868,7 +868,8 @@ export const serviceOtp = async (req,res)=>{
         if (!record) return res.status(400).json({ message: "No OTP found for this service" });
         if (record.otp != otp) return res.status(400).json({ message: "Invalid verification code." });
         if (record.expiresAt < new Date()) return res.status(400).json({ message: "OTP expired. Please request a new one." });
-        await AcceptOtp.deleteOne({ requestId });
+        
+        await AcceptOtp.deleteOne({ serviceId });
         return res.status(200).json({ message: "OTP verified successfully" });
     } catch (err) {
         console.error(err);

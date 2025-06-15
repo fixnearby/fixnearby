@@ -4,7 +4,7 @@ import User from '../models/user.model.js';
 import Repairer from '../models/repairer.model.js';
 import { createUserNotification } from './userNotification.controller.js';
 import AcceptOtp from '../models/acceptOtp.model.js';
-import { serviceCompleteOTP } from './sendsms.js';
+import { serviceAccepted, serviceCompleteOTP } from './sendsms.js';
 import Payment from '../models/payment.model.js';
 
 
@@ -281,7 +281,7 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
         if (status === 'cancelled' && ['requested', 'in_progress', 'quoted', 'pending_quote', 'accepted'].includes(serviceRequest.status)) {
             serviceRequest.status = status;
             serviceRequest.cancelledAt = new Date();
-        } else if (status === 'pending_otp' && ['accepted', 'in_progress'].includes(serviceRequest.status)) {
+        } else if (status === 'pending_payment' && ['accepted', 'in_progress', 'pending_otp'].includes(serviceRequest.status)) {
             serviceRequest.status = 'pending_payment';
             serviceRequest.completedAt = new Date();
         } else {
@@ -319,6 +319,24 @@ export const updateServiceRequestStatusByRepairer = async (req, res) => {
             serviceRequest.repairer = currentUserId;
             serviceRequest.assignedAt = new Date();
             serviceRequest.status = 'pending_quote';
+
+            const rep  = await Repairer.findById(serviceRequest.repairer)
+            const cus = await User.findById(serviceRequest.customer)
+            const name = rep.fullname
+            const number = rep.phone
+            const usernumber = serviceRequest.contactInfo;
+            const username = cus.fullname
+            const issue = serviceRequest.issue
+            
+            const hehe = await serviceAccepted(usernumber,username,number,name,issue);
+            
+            console.log(hehe)
+            if (hehe===false) {
+                return res.status(400).json({
+                    message: "Failed to send Accepted SMS"
+                });
+            }
+            
 
             if (serviceRequest.customer) {
                 console.log('DEBUG: Service Request Customer ID:', serviceRequest.customer._id);
@@ -463,7 +481,7 @@ export const rejectQuote = async (req, res) => {
 
 
 export const submitRepairerQuote = async (req, res) => {
-    console.log('Hey');
+  
     try {
         const { id } = req.params;
         const { quotation } = req.body;

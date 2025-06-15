@@ -173,7 +173,7 @@ const Inprogress = () => {
                     } else {
                         // This case implies no paymentId was returned, which shouldn't happen if estimatedPrice > 0
                         toast.error('Service updated, but no payment ID received. Please check pending payments.');
-                        navigate('/user/pending-services');
+                        navigate('/user/dashboard');
                     }
                     
                     fetchInProgressRequests(); // Re-fetch requests after successful completion

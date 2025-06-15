@@ -489,6 +489,7 @@ export const getAssignedJobs = async (req, res) => {
         if (!repairerId) {
             return res.status(401).json({ success: false, message: 'Repairer not authenticated.' });
         }
+        
 
         const assignedJobs = await ServiceRequest.find({
             repairer: repairerId,
@@ -496,6 +497,7 @@ export const getAssignedJobs = async (req, res) => {
         })
         .populate('customer', 'fullname phone contactInfo')
         .sort({ createdAt: -1 });
+        
 
         res.status(200).json(assignedJobs);
     } catch (error) {

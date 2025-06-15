@@ -476,21 +476,35 @@ export const getUserConversations = async (req, res) => {
                 select: 'title repairer status',
                 populate: {
                     path: 'repairer',
-                    select: 'fullname'
+                    select: 'fullname' // This will be null if the repairer account is deleted
                 }
             })
             .sort({ updatedAt: -1 })
             .lean();
 
         const formattedConversations = conversations.map(conv => {
-            const repairerParticipant = conv.serviceRequest?.repairer;
-            const otherParticipantName = repairerParticipant?.fullname || `Repairer (ID: ${conv.serviceRequest?.repairer?._id?.toString().substring(0, 4)})`;
-            const isChatActive = !['completed', 'cancelled', 'rejected'].includes(conv.serviceRequest?.status);
+            const serviceRequest = conv.serviceRequest;
+            const repairerParticipant = serviceRequest?.repairer; // This can be null if repairer is deleted
+
+            let otherParticipantName;
+            if (repairerParticipant && repairerParticipant.fullname) {
+                otherParticipantName = repairerParticipant.fullname;
+            } else if (repairerParticipant && repairerParticipant._id) {
+                // Fallback if fullname is missing but ID exists (less likely for deleted)
+                otherParticipantName = `Repairer (ID: ${repairerParticipant._id.toString().substring(0, 4)})`;
+            } else {
+                // If repairerParticipant is null/undefined (account deleted), use a generic fallback
+                otherParticipantName = `Repairer (Account Deleted)`;
+                // You could also add the service ID here if you want:
+                // otherParticipantName = `Repairer (Deleted for Job ${serviceRequest?._id?.toString().substring(0, 4)})`;
+            }
+
+            const isChatActive = serviceRequest && !['completed', 'cancelled', 'rejected'].includes(serviceRequest.status);
 
             return {
                 id: conv._id.toString(),
-                serviceId: conv.serviceRequest?._id.toString(),
-                title: conv.serviceRequest?.title || 'Unknown Service Request',
+                serviceId: serviceRequest?._id.toString(),
+                title: serviceRequest?.title || 'Unknown Service Request',
                 sender: otherParticipantName,
                 lastMessage: conv.lastMessage?.text || 'No messages yet.',
                 time: conv.lastMessage?.createdAt ? new Date(conv.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
@@ -541,13 +555,14 @@ export const getConversationMessages = async (req, res) => {
             .lean();
 
         const populatedMessages = await Promise.all(messages.map(async (msg) => {
-            let senderName = "Unknown";
+            let senderName = "Unknown"; 
+
             if (msg.senderModel === "Repairer") {
                 const sender = await Repairer.findById(msg.senderId).select('fullname').lean();
-                senderName = sender?.fullname || "Repairer";
+                senderName = sender?.fullname || "Deleted Repairer"; 
             } else if (msg.senderModel === "User") {
                 const sender = await User.findById(msg.senderId).select('fullname').lean();
-                senderName = sender?.fullname || "Customer";
+                senderName = sender?.fullname || "Deleted User"; 
             }
             return { ...msg, senderName };
         }));

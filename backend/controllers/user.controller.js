@@ -579,90 +579,110 @@ export const getConversationMessages = async (req, res) => {
     }
 };
 
-
-
-
 export const createRazorpayOrder = async (req, res) => {
+    // This line destructures the paymentRecordId from req.body
+    const { paymentRecordId } = req.body;
     const userId = req.user?._id;
-    const { serviceRequestId } = req.body; 
 
-    if (!userId) {
-        return res.status(401).json({ message: "Unauthorized: User ID not found." });
-    }
-    if (!serviceRequestId) {
-        return res.status(400).json({ message: "Service Request ID is required." });
+    if (!paymentRecordId || !userId) {
+        return res.status(400).json({ success: false, message: "Payment record ID and User ID are required." });
     }
 
     try {
-        const serviceRequest = await ServiceRequest.findOne({ _id: serviceRequestId, customer: userId })
-                                                .populate('repairer', 'upiId'); 
+        console.log("createRazorpayOrder: Starting process...");
+        console.log("createRazorpayOrder: Raw req.body received:", req.body); // Log the entire body
+        console.log("createRazorpayOrder: paymentRecordId extracted (should be string):", paymentRecordId);
+        console.log("createRazorpayOrder: Type of paymentRecordId:", typeof paymentRecordId); // Log its type
+
+        // Verify if it's an object when it shouldn't be
+        if (typeof paymentRecordId === 'object' && paymentRecordId !== null && 'paymentRecordId' in paymentRecordId) {
+            console.error("CRITICAL ERROR: paymentRecordId is still an object despite destructuring!");
+            // This is the problematic value that Mongoose is getting
+            const problematicValue = paymentRecordId;
+            // Attempt to get the actual ID string if it's trapped in an object
+            const actualPaymentId = problematicValue.paymentRecordId;
+
+            console.error("Attempting to use actualPaymentId:", actualPaymentId)
+            return res.status(500).json({ success: false, message: "Internal server error: paymentRecordId format issue detected. Check logs." });
+        }
+
+
+        // The line below is causing the CastError if paymentRecordId is an object
+        console.log("Attempting to find Payment record with ID:", paymentRecordId); // This should print a string
+        const paymentRecord = await Payment.findById(paymentRecordId); // This is likely line 600
+
+        if (!paymentRecord) {
+            console.error("Payment record not found for ID:", paymentRecordId);
+            return res.status(404).json({ success: false, message: "Payment record not found." });
+        }
+
+        // Authorization check
+        if (paymentRecord.customer.toString() !== userId.toString()) {
+            console.error("Unauthorized access attempt: Payment record customer mismatch.");
+            return res.status(403).json({ success: false, message: "Unauthorized to create order for this payment record." });
+        }
+
+        const amountInPaisa = paymentRecord.amount;
+        if (amountInPaisa <= 0) {
+            console.error("Invalid payment amount:", amountInPaisa);
+            return res.status(400).json({ success: false, message: "Payment amount must be greater than zero." });
+        }
+
+        if (paymentRecord.status !== 'created') {
+             console.error("Payment record status not 'created':", paymentRecord.status);
+             return res.status(400).json({ success: false, message: "Payment order already created or in invalid state." });
+        }
+
+        const serviceRequestId = paymentRecord.serviceRequest;
+        console.log("Attempting to find ServiceRequest with ID:", serviceRequestId);
+        const serviceRequest = await ServiceRequest.findById(serviceRequestId).populate('customer');
 
         if (!serviceRequest) {
-            return res.status(404).json({ message: "Service Request not found or unauthorized." });
+            console.error("Associated service request not found for ID:", serviceRequestId);
+            return res.status(404).json({ success: false, message: "Associated service request not found." });
         }
 
-        if (serviceRequest.status !== 'pending_payment' || serviceRequest.estimatedPrice <= 0) {
-            return res.status(400).json({ message: "Payment can only be initiated for completed services with a valid estimated price." });
-        }
-
-        if (!serviceRequest.repairer || !serviceRequest.repairer.upiId) {
-            console.error(`Repairer or UPI ID missing for Service Request ${serviceRequestId}`);
-            return res.status(400).json({ message: "Repairer or Repairer's UPI ID missing for this service." });
-        }
-
-        const totalAmountPaisa = Math.round(serviceRequest.estimatedPrice * 100);
-        const platformFeePercentage = 3; 
-        const platformFeeAmountPaisa = Math.round(totalAmountPaisa * (platformFeePercentage / 100));
-        const repairerPayoutAmountPaisa = totalAmountPaisa - platformFeeAmountPaisa;
-
-        const newPayment = new Payment({
-            serviceRequest: serviceRequest._id,
-            customer: userId,
-            repairer: serviceRequest.repairer._id,
-            amount: totalAmountPaisa,
-            platformFeePercentage: platformFeePercentage,
-            platformFeeAmount: platformFeeAmountPaisa,
-            repairerPayoutAmount: repairerPayoutAmountPaisa,
-            status: 'created', 
-            currency: "INR"
+        const instance = new Razorpay({
+            key_id: process.env.RAZORPAY_KEY_ID,
+            key_secret: process.env.RAZORPAY_KEY_SECRET,
         });
-        await newPayment.save();
 
         const options = {
-            amount: totalAmountPaisa, 
-            currency: "INR",
-            receipt: `receipt_payment_${newPayment._id}`, 
-            payment_capture: 1, // Auto capture
+            amount: amountInPaisa,
+            currency: paymentRecord.currency || "INR",
+            receipt: `receipt_${paymentRecord._id.toString()}`,
             notes: {
-                serviceRequestId: serviceRequest._id.toString(),
-                paymentRecordId: newPayment._id.toString(),
-                customerName: req.user.fullname, 
-                repairerId: serviceRequest.repairer._id.toString()
+                payment_id: paymentRecord._id.toString(),
+                service_request_id: serviceRequest._id.toString(),
+                type: paymentRecord.paymentMethod,
+                description: paymentRecord.description || serviceRequest.title
             }
         };
 
-        const order = await razorpayInstance.orders.create(options);
-        newPayment.razorpayOrderId = order.id;
-        newPayment.status = 'pending';
-        await newPayment.save();
+        const order = await instance.orders.create(options);
+
+        paymentRecord.razorpayOrderId = order.id;
+        paymentRecord.status = 'pending';
+        await paymentRecord.save();
 
         res.status(200).json({
+            success: true,
             orderId: order.id,
+            amount: order.amount,
             currency: order.currency,
-            amount: order.amount, // Amount in paisa
-            key_id: process.env.RAZORPAY_KEY_ID, // Send key_id to frontend for checkout
+            razorpayKey: process.env.RAZORPAY_KEY_ID,
+            paymentId: paymentRecord._id,
             serviceTitle: serviceRequest.title,
-            customerName: req.user.fullname, // For Razorpay popup
-            customerPhone: req.user.phone, // For Razorpay popup
-            paymentRecordId: newPayment._id // Send our internal Payment ID to frontend
+            customerName: serviceRequest.customer?.fullname || 'Customer',
+            customerPhone: serviceRequest.customer?.phone || ''
         });
 
     } catch (error) {
-        console.error("Error creating Razorpay order:", error);
-        res.status(500).json({ message: "Failed to create Razorpay order." });
+        console.error('Error creating Razorpay order:', error);
+        console.error('Full Error Object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+        res.status(500).json({ success: false, message: "Failed to create Razorpay order." });
     }
 };
-
 export const verifyAndTransferPayment = async (req, res) => {
     const userId = req.user?._id;
     const {
@@ -804,6 +824,50 @@ export const getServiceRequestById = async (req, res) => {
     } catch (error) {
         console.error("Error fetching single service request:", error);
         res.status(500).json({ message: "Failed to fetch service request details." });
+    }
+};
+
+export const getPaymentDetailsById = async (req, res) => {
+    const { paymentId } = req.params;
+    const userId = req.user?._id;
+
+    if (!paymentId || !userId) {
+        return res.status(400).json({ message: "Payment ID and User ID are required." });
+    }
+
+    try {
+        const payment = await Payment.findById(paymentId)
+            .populate('serviceRequest', 'title description serviceType estimatedPrice')
+            .populate('customer', 'fullname phone')
+            .lean();
+
+        // Debugging logs (keep these for now, remove later)
+        console.log("Fetched Payment:", payment);
+        console.log("Payment Customer ID (from populated document):", payment?.customer?._id?.toString());
+        console.log("Logged In User ID:", userId?.toString());
+
+        // FIX IS HERE: Access payment.customer._id to compare ObjectIds
+        if (!payment || payment.customer._id.toString() !== userId.toString()) {
+            return res.status(404).json({ message: "Payment record not found or unauthorized." });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: {
+                id: payment._id,
+                amount: payment.amount,
+                currency: payment.currency,
+                status: payment.status,
+                paymentMethod: payment.paymentMethod,
+                description: payment.description,
+                serviceRequestTitle: payment.serviceRequest?.title,
+                serviceRequestEstimatedPrice: payment.serviceRequest?.estimatedPrice,
+            }
+        });
+
+    } catch (error) {
+        console.error("Error fetching payment details by ID:", error);
+        res.status(500).json({ message: "Failed to fetch payment details." });
     }
 };
 

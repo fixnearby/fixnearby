@@ -137,7 +137,28 @@ export const createConversation = async (serviceRequestId) => {
 };
 export const getServiceRequestById = async (serviceId) => apiRequest('get', `/user/service-requests/${serviceId}`);
 
-export const createRazorpayOrder = async (serviceRequestId) => apiRequest('post', '/user/create-razorpay-order', { serviceRequestId });
+//export const createRazorpayOrder = async (serviceRequestId) => apiRequest('post', '/user/create-razorpay-order', { serviceRequestId });
 
 export const verifyAndTransferPayment = async (paymentDetails) => apiRequest('post', '/user/verify-and-transfer-payment', paymentDetails);
+
+export const getPaymentDetailsById = async (paymentId) => apiRequest('get', `/user/payments/${paymentId}`);
+export const customerRejectQuote = async (requestId) => {
+    try {
+        const response = await axiosInstance.put(`/service-requests/user/${requestId}/reject-quote`);
+        return response.data; // Or whatever response you expect from the API
+    } catch (error) {
+        console.error(`Error rejecting quote for request ${requestId}:`, error);
+        throw error;
+    }
+};
+
+export const createRazorpayOrder = async (paymentRecordId) => { // Expects a string ID
+    try {
+        const response = await axiosInstance.post('/user/create-razorpay-order', { paymentRecordId }); // Send as an object with key
+        return response.data;
+    } catch (error) {
+        console.error("API Error: POST /user/create-razorpay-order:", error.response?.data?.message || error.message);
+        throw error;
+    }
+};
 

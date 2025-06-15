@@ -6,7 +6,7 @@ const paymentSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ServiceRequest',
         required: true,
-        unique: true 
+       // unique: true 
     },
     customer: {
         type: mongoose.Schema.Types.ObjectId,
@@ -42,7 +42,7 @@ const paymentSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['razorpay', 'cash', 'other'],
+        enum: ['razorpay', 'cash', 'other','rejection_fee'],
         default: 'razorpay'
     },
     status: { 

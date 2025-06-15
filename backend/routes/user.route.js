@@ -17,7 +17,8 @@ import {
   createRazorpayOrder,
   serviceOtp,
   verifyAndTransferPayment,
-  getServiceRequestById
+  getServiceRequestById,
+  getPaymentDetailsById
 } from "../controllers/user.controller.js";
 import {
   userProtectRoute
@@ -65,6 +66,8 @@ router.post("/create-razorpay-order", userProtectRoute, createRazorpayOrder);
 router.post("/verify-and-transfer-payment", userProtectRoute, verifyAndTransferPayment);
 
 router.get("/service-requests/:id", userProtectRoute, getServiceRequestById); 
+
+router.get("/payments/:paymentId", userProtectRoute, getPaymentDetailsById);
 
 
 

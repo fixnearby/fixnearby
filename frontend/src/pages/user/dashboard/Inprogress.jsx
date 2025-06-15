@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../../../store/authStore.js';
 import { axiosInstance } from '../../../lib/axios.js'; 
-import { getInProgressServices } from '../../../services/apiService.js';
+import { getInProgressServices,customerRejectQuote } from '../../../services/apiService.js';
 import toast from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -73,20 +73,19 @@ const Inprogress = () => {
             toast.error(err.response?.data?.message || 'An error occurred while accepting the quotation.');
         }
     };
-
-    // Handler for rejecting a quote
     const handleRejectQuote = async (requestId) => {
-        if (!window.confirm("Are you sure you want to reject this quotation?")) {
+        if (!window.confirm("Are you sure you want to reject this quotation? A rejection fee of ₹150 will be charged.")) {
             return;
         }
         setActionMessage(null);
         try {
-            const response = await axiosInstance.put(`/service-requests/user/${requestId}/reject-quote`);
-            if (response.status === 200 || response.data.success) {
-                toast.success('Quotation rejected.');
-                fetchInProgressRequests();
+            const response = await customerRejectQuote(requestId); 
+
+            if (response.success && response.paymentId) {
+                toast.success('Quotation rejected. Redirecting to pay rejection fee...');
+                navigate(`/rejection-fee/${response.paymentId}`);
             } else {
-                setActionMessage({ type: 'error', text: response.data?.message || 'Failed to reject quotation.' });
+                setActionMessage({ type: 'error', text: response?.message || 'Failed to reject quotation.' });
                 toast.error('Failed to reject quotation.');
             }
         } catch (err) {
@@ -95,8 +94,6 @@ const Inprogress = () => {
             toast.error(err.response?.data?.message || 'An error occurred while rejecting the quotation.');
         }
     };
-
-    // Handler for confirming job completion
     const confirmCompletion = async (requestId) => {
         const confirm = window.confirm("Are you sure you want to confirm this service as completed? This will initiate payment.");
         if (!confirm) return;

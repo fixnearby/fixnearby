@@ -29,6 +29,7 @@ import Showservices from './pages/user/dashboard/Showservices';
 import PaymentPage from "./pages/user/dashboard/PaymentPage";
 import UserMessagesPage from './pages/user/dashboard/UserMessagesPage';
 import UserNotificationsPage from "./pages/user/dashboard/UserNotificationsPage";
+import RejectionPaymentPage from "./pages/user/dashboard/RejectionPaymentPage";
 
 // RepairerDashboard
 import RepairerMainDashboard from './pages/repairer/dashboard/Maindashboard';
@@ -120,7 +121,6 @@ function App() {
   return (
     <div>
       <Routes>
-        {/* Landing page - accessible to all, redirects if already logged in */}
         <Route
           path="/"
           element={
@@ -155,6 +155,7 @@ function App() {
         <Route path="/user/chat/:serviceId" element={user ? <UserMessagesPage /> : <Navigate to="/user/login" />} /> 
         <Route path="/user/payment/:serviceId" element={user ? <PaymentPage /> : <Navigate to="/user/login" />} /> 
         <Route path="/user/notifications" element={<PrivateRoute allowedRoles={['user']}><UserNotificationsPage /></PrivateRoute>}/>
+        <Route path="/rejection-fee/:paymentId" element={<RejectionPaymentPage />} />
 
           
           

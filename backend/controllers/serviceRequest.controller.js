@@ -5,6 +5,7 @@ import Repairer from '../models/repairer.model.js';
 import { createUserNotification } from './userNotification.controller.js';
 import AcceptOtp from '../models/acceptOtp.model.js';
 import { serviceCompleteOTP } from './sendsms.js';
+import Payment from '../models/payment.model.js';
 
 
 const formatLocationData = (location) => {
@@ -406,7 +407,7 @@ export const acceptQuote = async (req, res) => {
 };
 
 export const rejectQuote = async (req, res) => {
-    const { id } = req.params; 
+    const { id } = req.params;
     const userId = req.user._id; 
 
     try {
@@ -415,31 +416,51 @@ export const rejectQuote = async (req, res) => {
         if (!serviceRequest) {
             return res.status(404).json({ success: false, message: 'Service request not found or you are not the customer.' });
         }
-
         if (serviceRequest.status !== 'quoted' || !serviceRequest.estimatedPrice || serviceRequest.estimatedPrice <= 0) {
             return res.status(400).json({ success: false, message: 'Cannot reject quote. Request is not in a quotable state or no valid quote has been provided.' });
         }
 
         serviceRequest.status = 'rejected'; 
         await serviceRequest.save();
+        const REJECTION_FEE_AMOUNT_PAISA = parseInt(process.env.REJECTION_FEE_AMOUNT_PAISA || '15000');
 
+        const rejectionFeePayment = new Payment({
+            serviceRequest: serviceRequest._id,
+            customer: userId,
+            amount: REJECTION_FEE_AMOUNT_PAISA,
+            platformFeePercentage: 100,
+            platformFeeAmount: REJECTION_FEE_AMOUNT_PAISA,
+            repairerPayoutAmount: 0,
+            currency: "INR",
+            paymentMethod: 'rejection_fee', 
+            status: 'created', 
+            description: `Rejection fee for service request: ${serviceRequest.title}`
+        });
+        await rejectionFeePayment.save();
         if (serviceRequest.repairer) {
             await createUserNotification({
                 userId: serviceRequest.repairer._id,
                 type: 'quote_rejected',
-                message: `Your quote for "${serviceRequest.title}" (₹${serviceRequest.estimatedPrice}) was rejected by the customer.`,
+                message: `Your quote for "${serviceRequest.title}" (₹${serviceRequest.estimatedPrice}) was rejected by the customer. A rejection fee of ₹${REJECTION_FEE_AMOUNT_PAISA / 100} is being processed.`,
                 link: `/repairer/dashboard/jobs`,
                 relatedEntity: { id: serviceRequest._id, model: 'ServiceRequest' }
             });
         }
 
-        return res.status(200).json({ success: true, message: 'Quotation rejected successfully!', serviceRequest });
+        return res.status(200).json({
+            success: true,
+            message: 'Quotation rejected successfully! Proceed to pay rejection fee.',
+            serviceRequest,
+            paymentId: rejectionFeePayment._id 
+        });
 
     } catch (error) {
         console.error('Error rejecting quote:', error);
         return res.status(500).json({ success: false, message: 'Server error: Failed to reject quotation.' });
     }
 };
+
+
 
 export const submitRepairerQuote = async (req, res) => {
     console.log('Hey');

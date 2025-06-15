@@ -503,7 +503,8 @@ export const acceptJob = async (req, res) => {
     const issue = serviceRequest.issue
 
     const hehe = await serviceAccepted(usernumber,username,number,name,issue);
-
+    
+    console.log(hehe)
     if (hehe===false) {
       return res.status(400).json({
         message: "Failed to send Accepted SMS"

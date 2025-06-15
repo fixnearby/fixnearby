@@ -35,7 +35,7 @@ export const  serviceAccepted = async (usernumber,username,number,name,issue)=> 
         headers: { 'x-api-key': API_KEY }
       }
     )
-
+    console.log(response)
     return response.data.data.success   // data.sucesss
   } catch (err) {
     console.error('Error sending SMS:', err.response?.data || err.message)

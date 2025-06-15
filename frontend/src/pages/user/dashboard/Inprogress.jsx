@@ -106,7 +106,7 @@ const Inprogress = () => {
             alert("Invalid OTP. Please enter a valid 6-digit code.");
             return;
         }
-
+        console.log(otp)
         try {
             // First verify OTP
             const otpResponse = await axiosInstance.post("/user/verify-serviceotp/", { requestId, otp });
@@ -118,7 +118,7 @@ const Inprogress = () => {
                 
                 // Then update status to completed
                 const response = await axiosInstance.put(`/service-requests/user/${requestId}/status`, {
-                    status: 'completed'
+                    status: 'pending_payment'
                 });
 
                 if (response.status === 200 || response.data.success) {

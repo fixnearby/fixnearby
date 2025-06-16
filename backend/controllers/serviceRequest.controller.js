@@ -266,7 +266,7 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        const customerId = req.user._id;
+        const customerId = req.user._id; // Assuming req.user is populated by your authentication middleware
 
         if (!status) {
             return res.status(400).json({ message: 'Status is required.' });
@@ -278,21 +278,75 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
             return res.status(404).json({ message: 'Service request not found or not owned by this user.' });
         }
 
+        let paymentId = null; // Initialize paymentId to null
+
         if (status === 'cancelled' && ['requested', 'in_progress', 'quoted', 'pending_quote', 'accepted'].includes(serviceRequest.status)) {
             serviceRequest.status = status;
             serviceRequest.cancelledAt = new Date();
+            console.log(`[UpdateStatus] Service request ${id} status changed to 'cancelled'.`);
         } else if (status === 'pending_payment' && ['accepted', 'in_progress', 'pending_otp'].includes(serviceRequest.status)) {
-            serviceRequest.status = 'pending_payment';
+            console.log(`[UpdateStatus] Attempting to transition SR ${id} to 'pending_payment'. Current status: ${serviceRequest.status}`);
+
+            // Ensure estimatedPrice is set before creating payment
+            if (!serviceRequest.estimatedPrice || serviceRequest.estimatedPrice <= 0) {
+                console.error(`[UpdateStatus] ERROR: estimatedPrice is invalid (${serviceRequest.estimatedPrice}) for SR: ${id}`);
+                return res.status(400).json({ success: false, message: "Service request must have a valid estimated price to proceed with payment." });
+            }
+            console.log(`[UpdateStatus] estimatedPrice is valid: ${serviceRequest.estimatedPrice}`);
+
+
+            // --- Payment Creation/Retrieval Logic ---
+            const existingPayment = await Payment.findOne({
+                serviceRequest: serviceRequest._id,
+                paymentMethod: 'service_completion',
+                status: { $in: ['created', 'pending'] } // Look for payments that are created but not yet captured/failed
+            });
+
+            if (existingPayment) {
+                console.log(`[UpdateStatus] Found existing payment record: ${existingPayment._id} for SR ${id}.`);
+                paymentId = existingPayment._id;
+            } else {
+                console.log(`[UpdateStatus] Creating new payment record for SR: ${id}.`);
+                const newPayment = new Payment({
+                    serviceRequest: serviceRequest._id,
+                    customer: customerId,
+                    repairer: serviceRequest.repairer, // Make sure 'repairer' is populated or handled correctly if optional
+                    amount: serviceRequest.estimatedPrice,
+                    currency: "INR", // Or derive from serviceRequest if applicable
+                    paymentMethod: 'service_completion', // This MUST be in your payment.model.js enum
+                    status: 'created', // Initial status for new payment
+                    description: `Payment for completed service: ${serviceRequest.title}`
+                });
+
+                await newPayment.save();
+                console.log(`[UpdateStatus] New payment record saved: ${newPayment._id}.`);
+                paymentId = newPayment._id;
+            }
+            // --- End Payment Logic ---
+
+            serviceRequest.status = 'pending_payment'; // Set the service request status
             serviceRequest.completedAt = new Date();
+            console.log(`[UpdateStatus] Service request ${id} status set to 'pending_payment'.`);
+
         } else {
+            console.warn(`[UpdateStatus] Invalid transition: from '${serviceRequest.status}' to '${status}' for SR ${id}.`);
             return res.status(400).json({ message: `Invalid status transition from '${serviceRequest.status}' to '${status}' for customer.` });
         }
 
-        await serviceRequest.save();
-        res.status(200).json({ success: true, message: `Service request status updated to ${status}.` });
+        await serviceRequest.save(); // Save the updated service request
+        console.log(`[UpdateStatus] Service request ${id} saved successfully. Final Status: ${serviceRequest.status}`);
+
+        // Include paymentId in the response if it was set
+        res.status(200).json({
+            success: true,
+            message: `Service request status updated to ${status}.`,
+            paymentId: paymentId // Send the paymentId to the frontend
+        });
 
     } catch (error) {
-        console.error('Error updating service request status by customer:', error);
+        console.error('[UpdateStatus] Error updating service request status by customer:', error);
+        // Log the full error object for better debugging
+        console.error('[UpdateStatus] Full Error Object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
         res.status(500).json({
             success: false,
             message: 'Internal server error during service request status update by customer.'
@@ -546,18 +600,29 @@ export const getAssignedJobs = async (req, res) => {
 export const getServiceRequestById = async (req, res) => {
     try {
         const { id } = req.params;
+        console.log(`[getServiceRequestById] Authenticated User (req.user):`, req.user ? req.user._id : 'N/A');
+        console.log(`[getServiceRequestById] Authenticated Repairer (req.repairer):`, req.repairer ? req.repairer._id : 'N/A');
+
         const serviceRequest = await ServiceRequest.findById(id)
             .populate('customer', 'fullname phone')
             .populate('repairer', 'fullname phone businessName');
 
         if (!serviceRequest) {
+            // This log will confirm if the service request was NOT found by findById
+            console.warn(`[getServiceRequestById] Service request with ID ${id} not found in DB.`);
             return res.status(404).json({ message: 'Service request not found.' });
         }
 
-        const isUserAuthorized = req.user && serviceRequest.customer && req.user._id.toString() === serviceRequest.customer.toString();
-        const isRepairerAuthorized = req.repairer && serviceRequest.repairer && req.repairer._id.toString() === serviceRequest.repairer.toString();
+        // These logs will show the fetched data and the IDs for comparison
+        console.log(`[getServiceRequestById] Found Service Request: ${serviceRequest._id}`);
+        console.log(`[getServiceRequestById] Service Request Customer ID:`, serviceRequest.customer ? serviceRequest.customer._id.toString() : 'N/A');
+        console.log(`[getServiceRequestById] Service Request Repairer ID:`, serviceRequest.repairer ? serviceRequest.repairer._id.toString() : 'N/A');
+
+        const isUserAuthorized = req.user && serviceRequest.customer && req.user._id.toString() === serviceRequest.customer._id.toString();
+        const isRepairerAuthorized = req.repairer && serviceRequest.repairer && req.repairer._id.toString() === serviceRequest.repairer._id.toString();
 
         if (!isUserAuthorized && !isRepairerAuthorized) {
+            console.warn(`[getServiceRequestById] Unauthorized access attempt for SR ${id}. User: ${req.user?._id}, Repairer: ${req.repairer?._id}`);
             return res.status(403).json({ message: 'You are not authorized to view this service request.' });
         }
 
@@ -581,10 +646,10 @@ export const getServiceRequestById = async (req, res) => {
 
     } catch (error) {
         console.error('Error fetching service request by ID:', error);
+        console.error('Full Error Object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
         res.status(500).json({ success: false, message: 'Internal server error.' });
     }
 };
-
 
 
 function generateOTP() {
@@ -595,8 +660,6 @@ export const PendingOtp = async (req, res) => {
     try {
         const { serviceId } = req.params;
         const repairerId = req.repairer._id;
-
-        // usernumber,otp,issue,estimatedPrice
 
         const serviceRequest = await ServiceRequest.findOne({ _id: serviceId, repairer: repairerId });
 

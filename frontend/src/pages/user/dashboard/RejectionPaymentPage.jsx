@@ -8,12 +8,8 @@ const loadRazorpayScript = (src) => {
     return new Promise((resolve) => {
         const script = document.createElement('script');
         script.src = src;
-        script.onload = () => {
-            resolve(true);
-        };
-        script.onerror = () => {
-            resolve(false);
-        };
+        script.onload = () => resolve(true);
+        script.onerror = () => resolve(false);
         document.body.appendChild(script);
     });
 };
@@ -34,27 +30,36 @@ const RejectionPaymentPage = () => {
             if (!paymentId) {
                 setError("No payment ID provided in the URL.");
                 setLoading(false);
+                toast.error("No payment ID found.");
                 return;
             }
             try {
                 setLoading(true);
                 const responseData = await getPaymentDetailsById(paymentId);
+
+                if (!responseData.success || !responseData.data) {
+                    const msg = responseData.message || 'Failed to load payment details from API.';
+                    setError(msg);
+                    toast.error(msg);
+                    setLoading(false);
+                    return;
+                }
+
                 setPaymentDetails(responseData.data);
+
                 if (['captured', 'payout_initiated', 'payout_completed'].includes(responseData.data.status)) {
                     setPaymentSuccess(true);
                     setPaymentMessage("This rejection fee has already been paid!");
-                    toast.success("Rejection fee already paid.");
-                    setTimeout(() => {
-                        navigate('/user/inprogress');
-                    }, 3000);
+                    toast.success("Rejection fee already paid!");
+                    setTimeout(() => navigate('/user/inprogress'), 3000);
                 } else if (responseData.data.paymentMethod !== 'rejection_fee') {
                     setError("This payment is not a rejection fee. Invalid access.");
+                    toast.error("Invalid payment type.");
                 }
-
             } catch (err) {
-                console.error("Error fetching payment details:", err);
-                setError(err.response?.data?.message || 'Failed to load payment details. Please try again.');
-                toast.error('Failed to load payment details.');
+                const errorMessage = err.response?.data?.message || 'Failed to load payment details. Please try again.';
+                setError(errorMessage);
+                toast.error(errorMessage);
             } finally {
                 setLoading(false);
             }
@@ -64,13 +69,13 @@ const RejectionPaymentPage = () => {
     }, [paymentId, navigate]);
 
     useEffect(() => {
-        if (!loading && !error && paymentDetails) {
+        if (!loading && !error && paymentDetails && window.Razorpay === undefined) {
             loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js');
         }
     }, [loading, error, paymentDetails]);
 
     const handlePayment = async () => {
-        if (!paymentDetails || paymentDetails.amount <= 0 || paymentDetails.status !== 'created') {
+        if (!paymentDetails || paymentDetails.amount <= 0 || (paymentDetails.status !== 'created' && paymentDetails.status !== 'pending')) {
             setError("Cannot initiate payment: Invalid payment details or status.");
             toast.error("Cannot initiate payment: Invalid details or already processed.");
             return;
@@ -82,8 +87,17 @@ const RejectionPaymentPage = () => {
         setError(null);
 
         try {
-            const orderResponse = await createRazorpayOrder( paymentDetails.id );
-            const { orderId, currency, amount, razorpayKey, serviceTitle, customerName, customerPhone } = orderResponse;
+            const orderResponse = await createRazorpayOrder(paymentDetails._id);
+
+            if (!orderResponse.success) {
+                setError(orderResponse.message || "Failed to create Razorpay order.");
+                toast.error(orderResponse.message || "Failed to create Razorpay order.");
+                setPaymentProcessing(false);
+                return;
+            }
+
+            const { orderId, currency, amount, razorpayKey, serviceTitle, customerName, customerPhone } = orderResponse.data;
+
             if (!window.Razorpay) {
                 alert("Razorpay SDK not loaded. Please try again or refresh the page.");
                 setPaymentProcessing(false);
@@ -91,47 +105,51 @@ const RejectionPaymentPage = () => {
             }
 
             const options = {
-                key: razorpayKey, 
-                amount: amount,   
-                currency: currency,
+                key: razorpayKey,
+                amount,
+                currency,
                 name: "FixNearby Rejection Fee",
-                description: serviceTitle || "Rejection Fee", 
-                order_id: orderId, 
+                description: serviceTitle || "Rejection Fee",
+                order_id: orderId,
                 handler: async (response) => {
-                    setPaymentProcessing(true); 
+                    setPaymentProcessing(true);
                     try {
-                        await verifyAndTransferPayment({
+                        const verificationResponse = await verifyAndTransferPayment({
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
-                            paymentRecordId: paymentDetails.id 
+                            paymentRecordId: paymentDetails._id
                         });
+
+                        if (!verificationResponse.success) {
+                            throw new Error(verificationResponse.message || "Verification failed on server.");
+                        }
 
                         setPaymentSuccess(true);
                         setPaymentMessage("Rejection fee paid successfully!");
                         toast.success("Rejection fee paid successfully!");
-                        navigate('/user/dashboard'); 
+                        navigate('/user/dashboard');
                     } catch (verifyErr) {
-                        console.error("Payment verification failed:", verifyErr);
-                        setError("Payment was successful but verification failed. Please contact support.");
+                        const verifyErrorMessage = verifyErr.message || "Payment verification failed. Please contact support.";
+                        setError(verifyErrorMessage);
                         setPaymentSuccess(false);
-                        setPaymentMessage("Payment failed to verify. Please contact support.");
-                        toast.error("Payment verification failed. Contact support.");
+                        setPaymentMessage(verifyErrorMessage);
+                        toast.error(verifyErrorMessage);
                     } finally {
                         setPaymentProcessing(false);
                     }
                 },
                 prefill: {
-                    name: customerName || "", 
-                    email: '', 
-                    contact: customerPhone || "" 
+                    name: customerName || "",
+                    email: '',
+                    contact: customerPhone || ""
                 },
                 notes: {
-                    payment_record_id: paymentDetails.id,
+                    payment_record_id: paymentDetails._id,
                     service_request_id: paymentDetails.serviceRequest
                 },
                 theme: {
-                    color: "#EF4444" 
+                    color: "#EF4444"
                 }
             };
 
@@ -139,18 +157,23 @@ const RejectionPaymentPage = () => {
             rzp.on('payment.failed', (response) => {
                 setPaymentProcessing(false);
                 setPaymentSuccess(false);
-                setError(`Payment failed: ${response.error.description || 'Unknown error'}. Error Code: ${response.error.code}`);
+                const failErrorMessage = response.error.description || 'Unknown error';
+                setError(`Payment failed: ${failErrorMessage}. Error Code: ${response.error.code}`);
                 setPaymentMessage('Payment failed. Please try again.');
-                toast.error(`Payment Failed: ${response.error.description}`);
+                toast.error(`Payment Failed: ${failErrorMessage}`);
             });
             rzp.open();
 
         } catch (err) {
-            console.error("Error initiating Razorpay order:", err);
-            setError(`Failed to initiate payment: ${err.response?.data?.message || err.message}`);
+            const initErrorMessage = err.response?.data?.message || err.message || 'Unknown error.';
+            setError(`Failed to initiate payment: ${initErrorMessage}`);
             setPaymentSuccess(false);
             setPaymentMessage('Failed to initiate payment.');
-            toast.error(`Failed to initiate payment: ${err.response?.data?.message || err.message}`);
+            toast.error(`Failed to initiate payment: ${initErrorMessage}`);
+        } finally {
+            if (!paymentSuccess && !error) {
+                setPaymentProcessing(false);
+            }
         }
     };
 
@@ -203,7 +226,8 @@ const RejectionPaymentPage = () => {
                                     </>
                                 ) : (
                                     <>
-                                        <IndianRupee className="w-6 h-6 mr-2" /> Pay ₹{(paymentDetails.amount / 100)?.toFixed(2) || '0.00'}
+                                        <IndianRupee className="w-6 h-6 mr-2" />
+                                        Pay ₹{(paymentDetails.amount / 100)?.toFixed(2) || '0.00'}
                                     </>
                                 )}
                             </button>
@@ -212,7 +236,6 @@ const RejectionPaymentPage = () => {
                 ) : (
                     <p className="text-md text-gray-600 mb-8">No payment details found to initiate payment.</p>
                 )}
-
 
                 <Link
                     to="/user/inprogress"

@@ -24,7 +24,7 @@ const paymentSchema = new mongoose.Schema({
     },
     platformFeePercentage: { 
         type: Number,
-        default: 3, // Default to 3%
+        default: 3, 
         min: 0,
         max: 100
     },
@@ -42,7 +42,7 @@ const paymentSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['razorpay', 'cash', 'other','rejection_fee'],
+        enum: ['razorpay', 'cash', 'other','rejection_fee', 'service_completion'],
         default: 'razorpay'
     },
     status: { 

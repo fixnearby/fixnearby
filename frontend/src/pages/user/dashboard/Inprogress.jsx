@@ -24,14 +24,12 @@ const Inprogress = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [actionMessage, setActionMessage] = useState(null);
-
-    // Modal States
     const [showConfirmAcceptModal, setShowConfirmAcceptModal] = useState(false);
     const [showConfirmRejectModal, setShowConfirmRejectModal] = useState(false);
     const [showConfirmCompletionModal, setShowConfirmCompletionModal] = useState(false);
-    const [currentRequestId, setCurrentRequestId] = useState(null); // Stores requestId for the modal action
-    const [otpInput, setOtpInput] = useState(''); // State for OTP input in completion modal
-    const [otpError, setOtpError] = useState(null); // State for OTP validation error
+    const [currentRequestId, setCurrentRequestId] = useState(null); 
+    const [otpInput, setOtpInput] = useState('');
+    const [otpError, setOtpError] = useState(null); 
 
     const { user } = useAuthStore();
     const navigate = useNavigate();
@@ -60,8 +58,6 @@ const Inprogress = () => {
     useEffect(() => {
         fetchInProgressRequests();
     }, [fetchInProgressRequests]);
-
-    // --- Modal Trigger Functions (called by buttons) ---
     const showAcceptModal = (requestId) => {
         setCurrentRequestId(requestId);
         setShowConfirmAcceptModal(true);
@@ -75,35 +71,28 @@ const Inprogress = () => {
     const showCompletionModal = (requestId) => {
         setCurrentRequestId(requestId);
         setShowConfirmCompletionModal(true);
-        setOtpInput(''); // Clear any previous OTP input
-        setOtpError(null); // Clear any previous OTP error
+        setOtpInput(''); 
+        setOtpError(null); 
     };
-
-    // --- Modal Cancellation Function ---
     const handleCancelModal = () => {
         setShowConfirmAcceptModal(false);
         setShowConfirmRejectModal(false);
         setShowConfirmCompletionModal(false);
-        setCurrentRequestId(null); // Clear stored ID
-        setOtpInput(''); // Clear OTP input
-        setOtpError(null); // Clear OTP error
+        setCurrentRequestId(null); 
+        setOtpInput(''); 
+        setOtpError(null);
     };
-
-    // --- Core Action Handlers (called after modal confirmation) ---
-
-    // Renamed from handleAcceptQuote to avoid confusion with original button handler
     const handleAcceptQuoteConfirmed = async () => {
-        setShowConfirmAcceptModal(false); // Hide the modal first
+        setShowConfirmAcceptModal(false);
         if (!currentRequestId) return;
 
         setActionMessage(null);
         try {
-            // Assuming customerAcceptQuote is an API service function or directly use axiosInstance
             const response = await axiosInstance.put(`/service-requests/user/${currentRequestId}/accept-quote`);
             
             if (response.status === 200 || response.data.success) {
                 toast.success('Quotation accepted! Repairer will be notified.');
-                fetchInProgressRequests(); // Re-fetch requests to update UI
+                fetchInProgressRequests(); 
             } else {
                 setActionMessage({ type: 'error', text: response.data?.message || 'Failed to accept quotation.' });
                 toast.error('Failed to accept quotation.');
@@ -113,18 +102,16 @@ const Inprogress = () => {
             setActionMessage({ type: 'error', text: err.response?.data?.message || 'An error occurred while accepting the quotation.' });
             toast.error(err.response?.data?.message || 'An error occurred while accepting the quotation.');
         } finally {
-            setCurrentRequestId(null); // Clear stored ID
+            setCurrentRequestId(null); 
         }
     };
-
-    // Renamed from handleRejectQuote
     const handleRejectQuoteConfirmed = async () => {
-        setShowConfirmRejectModal(false); // Hide the modal first
+        setShowConfirmRejectModal(false);
         if (!currentRequestId) return;
 
         setActionMessage(null);
         try {
-            const response = await customerRejectQuote(currentRequestId); // This is already in apiService
+            const response = await customerRejectQuote(currentRequestId); 
 
             if (response.success && response.paymentId) {
                 toast.success('Quotation rejected. Redirecting to pay rejection fee...');
@@ -138,7 +125,7 @@ const Inprogress = () => {
             setActionMessage({ type: 'error', text: err.response?.data?.message || 'An error occurred while rejecting the quotation.' });
             toast.error(err.response?.data?.message || 'An error occurred while rejecting the quotation.');
         } finally {
-            setCurrentRequestId(null); // Clear stored ID
+            setCurrentRequestId(null); 
         }
     };
 
@@ -151,32 +138,28 @@ const Inprogress = () => {
         }
         
         try {
-            // First verify OTP
             const otpResponse = await axiosInstance.post("/user/verify-serviceotp/", { requestId: currentRequestId, otp: otpInput });
             
             if (otpResponse.status === 200 || otpResponse.status === 201) {
                 toast.success('OTP verified successfully!');
                 setActionMessage(null);
-                
-                // Then update status to pending_payment, and create the Payment record
                 const statusUpdateResponse = await axiosInstance.put(`/service-requests/user/${currentRequestId}/status`, {
-                    status: 'pending_payment' // Send 'pending_payment'
+                    status: 'pending_payment' 
                 });
 
                 if (statusUpdateResponse.status === 200 || statusUpdateResponse.data.success) {
-                    const newPaymentId = statusUpdateResponse.data.paymentId; // <--- EXTRACT PAYMENT ID HERE
+                    const newPaymentId = statusUpdateResponse.data.paymentId; 
 
                     if (newPaymentId) {
                         toast.success('Service confirmed as completed!');
                         toast.success('Redirecting to payment page...');
-                        navigate(`/user/payment/${newPaymentId}`); // <--- USE THE NEW PAYMENT ID HERE
+                        navigate(`/user/payment/${newPaymentId}`);
                     } else {
-                        // This case implies no paymentId was returned, which shouldn't happen if estimatedPrice > 0
                         toast.error('Service updated, but no payment ID received. Please check pending payments.');
                         navigate('/user/dashboard');
                     }
                     
-                    fetchInProgressRequests(); // Re-fetch requests after successful completion
+                    fetchInProgressRequests(); 
                     setShowConfirmCompletionModal(false);
                     setCurrentRequestId(null);
                     setOtpInput('');

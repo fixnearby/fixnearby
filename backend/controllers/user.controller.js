@@ -580,49 +580,33 @@ export const getConversationMessages = async (req, res) => {
 };
 
 export const createRazorpayOrder = async (req, res) => {
-    const { paymentRecordId } = req.body;
-    const userId = req.user?._id;
-
-    if (!paymentRecordId || !userId) {
-        return res.status(400).json({ success: false, message: "Payment record ID and User ID are required." });
-    }
-
     try {
-        if (typeof paymentRecordId === 'object' && paymentRecordId !== null && 'paymentRecordId' in paymentRecordId) {
-            const problematicValue = paymentRecordId;
-            const actualPaymentId = problematicValue.paymentRecordId;
-            return res.status(500).json({ success: false, message: "Internal server error: paymentRecordId format issue detected. Check logs." });
+        const { paymentRecordId } = req.body;
+        const userId = req.user._id;
+
+        const payment = await Payment.findOne({ _id: paymentRecordId, customer: userId });
+
+        if (!payment) {
+            console.warn(`[createRazorpayOrder] Payment record ${paymentRecordId} not found or not authorized for user ${userId}.`);
+            return res.status(404).json({ success: false, message: "Payment record not found or not authorized." });
         }
 
-        const paymentRecord = await Payment.findById(paymentRecordId); 
-
-        if (!paymentRecord) {
-            console.error("Payment record not found for ID:", paymentRecordId);
-            return res.status(404).json({ success: false, message: "Payment record not found." });
-        }
-        if (paymentRecord.customer.toString() !== userId.toString()) {
-            console.error("Unauthorized access attempt: Payment record customer mismatch.");
-            return res.status(403).json({ success: false, message: "Unauthorized to create order for this payment record." });
+        if (payment.status !== 'created' && payment.status !== 'pending') {
+            console.warn(`[createRazorpayOrder] Payment record ${paymentRecordId} is in status ${payment.status}, cannot create new order.`);
+            return res.status(400).json({ success: false, message: `Payment already ${payment.status}. Cannot re-initiate.` });
         }
 
-        const amountInPaisa = paymentRecord.amount;
-        if (amountInPaisa <= 0) {
-            console.error("Invalid payment amount:", amountInPaisa);
-            return res.status(400).json({ success: false, message: "Payment amount must be greater than zero." });
+        let amountInPaisa;
+        if (payment.paymentMethod === 'rejection_fee') {
+            amountInPaisa = Math.round(payment.amount);
+            console.log(`[createRazorpayOrder] Rejection fee detected. Amount from DB (paise): ${payment.amount}. Amount to send to Razorpay: ${amountInPaisa}`);
+        } else {
+            amountInPaisa = Math.round(payment.amount * 100);
+            console.log(`[createRazorpayOrder] Normal payment detected. Amount from DB (Rupees): ${payment.amount}. Amount to send to Razorpay: ${amountInPaisa}`);
         }
-
-        if (paymentRecord.status !== 'created') {
-             console.error("Payment record status not 'created':", paymentRecord.status);
-             return res.status(400).json({ success: false, message: "Payment order already created or in invalid state." });
-        }
-
-        const serviceRequestId = paymentRecord.serviceRequest;
-        console.log("Attempting to find ServiceRequest with ID:", serviceRequestId);
-        const serviceRequest = await ServiceRequest.findById(serviceRequestId).populate('customer');
-
-        if (!serviceRequest) {
-            console.error("Associated service request not found for ID:", serviceRequestId);
-            return res.status(404).json({ success: false, message: "Associated service request not found." });
+        if (amountInPaisa <= 0 || amountInPaisa < 100) {
+            console.error(`[createRazorpayOrder] Invalid or too small amount (${amountInPaisa} paise) for payment ${paymentRecordId}.`);
+            return res.status(400).json({ success: false, message: "Invalid payment amount or amount too small. Minimum is ₹1.00." });
         }
 
         const instance = new Razorpay({
@@ -632,38 +616,59 @@ export const createRazorpayOrder = async (req, res) => {
 
         const options = {
             amount: amountInPaisa,
-            currency: paymentRecord.currency || "INR",
-            receipt: `receipt_${paymentRecord._id.toString()}`,
+            currency: payment.currency || "INR",
+            receipt: paymentRecordId.toString(),
             notes: {
-                payment_id: paymentRecord._id.toString(),
-                service_request_id: serviceRequest._id.toString(),
-                type: paymentRecord.paymentMethod,
-                description: paymentRecord.description || serviceRequest.title
+                payment_record_id: paymentRecordId.toString(),
+                service_request_id: payment.serviceRequest.toString()
             }
         };
 
         const order = await instance.orders.create(options);
+        console.log("[createRazorpayOrder] Razorpay order created:", order);
 
-        paymentRecord.razorpayOrderId = order.id;
-        paymentRecord.status = 'pending';
-        await paymentRecord.save();
+        payment.razorpayOrderId = order.id;
+        payment.status = 'pending';
+        await payment.save();
+        console.log(`[createRazorpayOrder] Payment record ${paymentRecordId} updated with Razorpay order ID ${order.id}.`);
+
+        const serviceRequest = await ServiceRequest.findById(payment.serviceRequest)
+            .populate('customer', 'fullname email phone');
+
+        if (!serviceRequest || !serviceRequest.customer) {
+            console.warn(`[createRazorpayOrder] Service request ${payment.serviceRequest} or customer not found for payment ${paymentRecordId}.`);
+        }
 
         res.status(200).json({
             success: true,
-            orderId: order.id,
-            amount: order.amount,
-            currency: order.currency,
-            razorpayKey: process.env.RAZORPAY_KEY_ID,
-            paymentId: paymentRecord._id,
-            serviceTitle: serviceRequest.title,
-            customerName: serviceRequest.customer?.fullname || 'Customer',
-            customerPhone: serviceRequest.customer?.phone || ''
+            message: "Razorpay order created successfully.",
+            data: {
+                orderId: order.id,
+                currency: order.currency,
+                amount: order.amount, 
+                razorpayKey: process.env.RAZORPAY_KEY_ID,
+                serviceTitle: serviceRequest?.title || "Service Payment",
+                customerName: serviceRequest?.customer?.fullname || "",
+                customerPhone: serviceRequest?.customer?.phone || ""
+            }
         });
 
     } catch (error) {
-        console.error('Error creating Razorpay order:', error);
-        console.error('Full Error Object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
-        res.status(500).json({ success: false, message: "Failed to create Razorpay order." });
+        console.error('[createRazorpayOrder] Error creating Razorpay order:', error);
+        console.error('[createRazorpayOrder] Full Error Object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+
+        if (error.statusCode && error.error && error.error.description) {
+            res.status(error.statusCode).json({
+                success: false,
+                message: `Razorpay Error: ${error.error.description}`,
+                razorpayErrorCode: error.error.code
+            });
+        } else {
+            res.status(500).json({
+                success: false,
+                message: 'Failed to create Razorpay order. Internal server error.'
+            });
+        }
     }
 };
 export const verifyAndTransferPayment = async (req, res) => {
@@ -723,7 +728,7 @@ export const verifyAndTransferPayment = async (req, res) => {
                 
                 const transfer = await razorpayInstance.payouts.create({
                     account_number: '2323230006767575', 
-                    fund_account_id: 'fund_account_upi_test_id', 
+                    fund_account_id: 'bhuvansharma971@okaxis', 
                     amount: paymentRecord.repairerPayoutAmount,
                     currency: "INR",
                     mode: 'UPI',
@@ -811,46 +816,34 @@ export const getServiceRequestById = async (req, res) => {
 };
 
 export const getPaymentDetailsById = async (req, res) => {
-    const { paymentId } = req.params;
-    const userId = req.user?._id;
-
-    if (!paymentId || !userId) {
-        return res.status(400).json({ message: "Payment ID and User ID are required." });
-    }
-
     try {
-        const payment = await Payment.findById(paymentId)
-            .populate('serviceRequest', 'title description serviceType estimatedPrice')
-            .populate('customer', 'fullname phone')
-            .lean();
+        const { paymentId } = req.params;
+        const userId = req.user._id;
 
-        // Debugging logs (keep these for now, remove later)
-        console.log("Fetched Payment:", payment);
-        console.log("Payment Customer ID (from populated document):", payment?.customer?._id?.toString());
-        console.log("Logged In User ID:", userId?.toString());
+        console.log(`[getPaymentDetailsById] Fetching payment ${paymentId} for user ${userId}`);
 
-        // FIX IS HERE: Access payment.customer._id to compare ObjectIds
-        if (!payment || payment.customer._id.toString() !== userId.toString()) {
-            return res.status(404).json({ message: "Payment record not found or unauthorized." });
+        const payment = await Payment.findOne({ _id: paymentId, customer: userId })
+                                     .populate('serviceRequest'); 
+
+        console.log(`[getPaymentDetailsById] Query result for payment ${paymentId}:`, payment);
+        if (payment && payment.serviceRequest) {
+            console.log(`[getPaymentDetailsById] Payment ${paymentId} has serviceRequest populated:`, payment.serviceRequest._id || payment.serviceRequest);
+        } else {
+            console.warn(`[getPaymentDetailsById] Payment ${paymentId} does NOT have serviceRequest populated or linked.`);
         }
 
-        res.status(200).json({
-            success: true,
-            data: {
-                id: payment._id,
-                amount: payment.amount,
-                currency: payment.currency,
-                status: payment.status,
-                paymentMethod: payment.paymentMethod,
-                description: payment.description,
-                serviceRequestTitle: payment.serviceRequest?.title,
-                serviceRequestEstimatedPrice: payment.serviceRequest?.estimatedPrice,
-            }
-        });
+
+        if (!payment) {
+            console.warn(`[getPaymentDetailsById] Payment ${paymentId} not found or not authorized for user ${userId}.`);
+            return res.status(404).json({ success: false, message: "Payment record not found or not authorized." });
+        }
+
+        res.status(200).json({ success: true, data: payment });
 
     } catch (error) {
-        console.error("Error fetching payment details by ID:", error);
-        res.status(500).json({ message: "Failed to fetch payment details." });
+        console.error('[getPaymentDetailsById] Error fetching payment details:', error);
+        console.error('[getPaymentDetailsById] Full Error Object:', JSON.stringify(error, Object.getOwnPropertyNames(error), 2));
+        res.status(500).json({ success: false, message: 'Server error: Failed to fetch payment details.' });
     }
 };
 

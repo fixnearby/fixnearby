@@ -153,7 +153,7 @@ function App() {
         <Route path="/user/show-services" element={user ?  <Showservices /> :  <Navigate to="/user/login" />} />
         <Route path="/user/messages/:conversationId?" element={user ?  <UserMessagesPage /> :  <Navigate to="/user/login" />} />
         <Route path="/user/chat/:serviceId" element={user ? <UserMessagesPage /> : <Navigate to="/user/login" />} /> 
-        <Route path="/user/payment/:serviceId" element={user ? <PaymentPage /> : <Navigate to="/user/login" />} /> 
+        <Route path="/user/payment/:paymentId" element={user ? <PaymentPage /> : <Navigate to="/user/login" />} /> 
         <Route path="/user/notifications" element={<PrivateRoute allowedRoles={['user']}><UserNotificationsPage /></PrivateRoute>}/>
         <Route path="/rejection-fee/:paymentId" element={<RejectionPaymentPage />} />
 

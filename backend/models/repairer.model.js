@@ -58,6 +58,16 @@ const repairerSchema = new mongoose.Schema(
         default: 0,
       },
     },
+
+    redflag:{
+      type:Number,
+      default:0,
+    },
+
+   isbanned:{
+    type:Boolean,
+    default:false,
+   },
    
     bio: {
       type: String,

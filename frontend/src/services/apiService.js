@@ -16,7 +16,6 @@ const apiRequest = async (method, url, data = {}, headers = {}) => {
     } catch (error) {
         const errorMessage = error.response?.data?.message || error.message || 'An unexpected error occurred.';
         console.error(`API Error: ${method.toUpperCase()} ${url}:`, errorMessage);
-        toast.error(errorMessage);
         throw error; 
     }
 };
@@ -76,7 +75,7 @@ export const getRepairerAssignedJobs = async () => {
 };
 export const submitRepairerQuote = async (serviceId, quotation) => {
     try {
-        const response = await apiRequest('put', `/service-requests/repairer/${serviceId}/quote`, { quotation });
+        const response = await apiRequest('put', `/service-requests/repairer/${serviceId}/quote`, { estimatedPrice : quotation });
         return response; 
     } catch (error) {
         console.error('API Error: Failed to submit repairer quote', error);

@@ -239,7 +239,7 @@ export const getUserServiceRequests = async (req, res) => {
         });
     }
 };
-export const completeJob = async (serviceId,repairerId) => {
+export const completeJob = async (serviceId, repairerId) => {
     try {
 
         const serviceRequest = await ServiceRequest.findOne({ _id: serviceId, repairer: repairerId });
@@ -374,23 +374,23 @@ export const updateServiceRequestStatusByRepairer = async (req, res) => {
             serviceRequest.assignedAt = new Date();
             serviceRequest.status = 'pending_quote';
 
-            const rep  = await Repairer.findById(serviceRequest.repairer)
+            const rep = await Repairer.findById(serviceRequest.repairer)
             const cus = await User.findById(serviceRequest.customer)
             const name = rep.fullname
             const number = rep.phone
             const usernumber = serviceRequest.contactInfo;
             const username = cus.fullname
             const issue = serviceRequest.issue
-            
-            const hehe = await serviceAccepted(usernumber,username,number,name,issue);
-            
+
+            const hehe = await serviceAccepted(usernumber, username, number, name, issue);
+
             console.log(hehe)
-            if (hehe===false) {
+            if (hehe === false) {
                 return res.status(400).json({
                     message: "Failed to send Accepted SMS"
                 });
             }
-            
+
 
             if (serviceRequest.customer) {
                 console.log('DEBUG: Service Request Customer ID:', serviceRequest.customer._id);
@@ -458,7 +458,7 @@ export const acceptQuote = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Cannot accept quote. Request is not in a quotable state or no valid quote has been provided.' });
         }
         serviceRequest.status = 'accepted';
-        serviceRequest.acceptedAt = new Date(); 
+        serviceRequest.acceptedAt = new Date();
         await serviceRequest.save();
 
         if (serviceRequest.repairer) {
@@ -480,7 +480,7 @@ export const acceptQuote = async (req, res) => {
 
 export const rejectQuote = async (req, res) => {
     const { id } = req.params;
-    const userId = req.user._id; 
+    const userId = req.user._id;
 
     try {
         const serviceRequest = await ServiceRequest.findOne({ _id: id, customer: userId }).populate('repairer');
@@ -492,7 +492,23 @@ export const rejectQuote = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Cannot reject quote. Request is not in a quotable state or no valid quote has been provided.' });
         }
 
-        serviceRequest.status = 'rejected'; 
+
+        // reject kari agar toh flag +1 hoga wala logic and agar flag +1 hua and 3 se jyada hua toh ma chod denge
+        const rep = await Repairer.findById(serviceRequest.repairer);
+
+
+        // Increment redflag count
+        rep.redflag += 1;
+
+        // Check if redflag exceeds threshold
+        if (rep.redflag > 3) {
+            rep.isbanned = true;
+        }
+
+        await rep.save();
+
+
+        serviceRequest.status = 'rejected';
         await serviceRequest.save();
         const REJECTION_FEE_AMOUNT_PAISA = parseInt(process.env.REJECTION_FEE_AMOUNT_PAISA || '15000');
 
@@ -504,8 +520,8 @@ export const rejectQuote = async (req, res) => {
             platformFeeAmount: REJECTION_FEE_AMOUNT_PAISA,
             repairerPayoutAmount: 0,
             currency: "INR",
-            paymentMethod: 'rejection_fee', 
-            status: 'created', 
+            paymentMethod: 'rejection_fee',
+            status: 'created',
             description: `Rejection fee for service request: ${serviceRequest.title}`
         });
         await rejectionFeePayment.save();
@@ -523,7 +539,7 @@ export const rejectQuote = async (req, res) => {
             success: true,
             message: 'Quotation rejected successfully! Proceed to pay rejection fee.',
             serviceRequest,
-            paymentId: rejectionFeePayment._id 
+            paymentId: rejectionFeePayment._id
         });
 
     } catch (error) {
@@ -535,44 +551,97 @@ export const rejectQuote = async (req, res) => {
 
 
 export const submitRepairerQuote = async (req, res) => {
-  
     try {
         const { id } = req.params;
-        const { quotation } = req.body;
+        const { estimatedPrice } = req.body;
         const repairerId = req.repairer._id;
 
-        if (!quotation || typeof quotation !== 'number' || parseFloat(quotation) <= 0) {
-            return res.status(400).json({ success: false, message: 'Please provide a valid numeric quote amount greater than zero.' });
+        if (!estimatedPrice || typeof estimatedPrice !== 'number' || parseFloat(estimatedPrice) <= 0) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide a valid numeric quote amount greater than zero.',
+            });
         }
 
         const serviceRequest = await ServiceRequest.findOne({ _id: id, repairer: repairerId });
 
         if (!serviceRequest) {
-            return res.status(404).json({ success: false, message: 'Service request not found or not assigned to you.' });
+            return res.status(404).json({
+                success: false,
+                message: 'Service request not found or not assigned to you.',
+            });
         }
 
-        if (serviceRequest.status !== 'pending_quote' && serviceRequest.status !== 'quoted') {
-            return res.status(400).json({ success: false, message: 'Cannot submit or edit quote for a job in its current status.' });
-        }
-        
-        if (serviceRequest.status === 'accepted' || serviceRequest.status === 'in_progress' || serviceRequest.status === 'completed') {
-            return res.status(400).json({ success: false, message: 'Cannot edit quote for an accepted or in-progress/completed job.' });
+        const quotationRange = serviceRequest.quotation; // e.g., "2,000 - 3,500"
+
+        if (!quotationRange || !/^\d{1,3}(,\d{3})?\s*-\s*\d{1,3}(,\d{3})?$/.test(quotationRange)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Quotation range is invalid or missing for this request.',
+            });
         }
 
-        serviceRequest.estimatedPrice = quotation;
+        const [min, max] = quotationRange
+            .split('-')
+            .map(part => Number(part.replace(/,/g, '').trim()));
+
+        if (isNaN(min) || isNaN(max)) {
+            return res.status(400).json({
+                success: false,
+                message: 'Failed to parse the quotation range properly.',
+            });
+        }
+
+        if (estimatedPrice < min || estimatedPrice > max) {
+            return res.status(400).json({
+                success: false,
+                message: `Your estimated price must lie within the AI-suggested range: ₹${min.toLocaleString()} - ₹${max.toLocaleString()}`,
+            });
+        }
+
+        if (
+            serviceRequest.status !== 'pending_quote' &&
+            serviceRequest.status !== 'quoted'
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot submit or edit quote for a job in its current status.',
+            });
+        }
+
+        if (
+            serviceRequest.status === 'accepted' ||
+            serviceRequest.status === 'in_progress' ||
+            serviceRequest.status === 'completed'
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'Cannot edit quote for an accepted or in-progress/completed job.',
+            });
+        }
+
+        serviceRequest.estimatedPrice = estimatedPrice;
+
         if (serviceRequest.status === 'pending_quote') {
             serviceRequest.status = 'quoted';
         }
-        
+
         await serviceRequest.save();
 
-        res.status(200).json({ success: true, message: 'Quote submitted/updated successfully!', serviceRequest });
-
+        res.status(200).json({
+            success: true,
+            message: 'Quote submitted/updated successfully!',
+            serviceRequest,
+        });
     } catch (error) {
         console.error('Error submitting/editing repairer quote:', error);
-        res.status(500).json({ success: false, message: 'Server error: Failed to submit/edit quote.' });
+        res.status(500).json({
+            success: false,
+            message: 'Server error: Failed to submit/edit quote.',
+        });
     }
 };
+
 
 export const getAssignedJobs = async (req, res) => {
     try {
@@ -581,15 +650,15 @@ export const getAssignedJobs = async (req, res) => {
         if (!repairerId) {
             return res.status(401).json({ success: false, message: 'Repairer not authenticated.' });
         }
-        
+
 
         const assignedJobs = await ServiceRequest.find({
             repairer: repairerId,
-            status: { $in: ['pending_quote', 'quoted', 'accepted', 'in_progress', 'completed','pending_otp'] }
+            status: { $in: ['pending_quote', 'quoted', 'accepted', 'in_progress', 'completed', 'pending_otp'] }
         })
-        .populate('customer', 'fullname phone contactInfo')
-        .sort({ createdAt: -1 });
-        
+            .populate('customer', 'fullname phone contactInfo')
+            .sort({ createdAt: -1 });
+
 
         res.status(200).json(assignedJobs);
     } catch (error) {
@@ -597,6 +666,7 @@ export const getAssignedJobs = async (req, res) => {
         res.status(500).json({ success: false, message: 'Server error: Failed to fetch assigned jobs.' });
     }
 };
+
 export const getServiceRequestById = async (req, res) => {
     try {
         const { id } = req.params;
@@ -653,7 +723,7 @@ export const getServiceRequestById = async (req, res) => {
 
 
 function generateOTP() {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+    return Math.floor(100000 + Math.random() * 900000).toString();
 }
 
 export const PendingOtp = async (req, res) => {
@@ -671,29 +741,29 @@ export const PendingOtp = async (req, res) => {
 
         await AcceptOtp.findOneAndUpdate({
             serviceId
-            }, {
+        }, {
             serviceId,
             otp,
             expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-            }, {
+        }, {
             upsert: true,
             new: true
-            });
+        });
 
 
 
-            const status = await serviceCompleteOTP(usernumber,otp,issue,estimatedPrice);
-            console.log("otp sent status:", status);
-            if (!status) {
+        const status = await serviceCompleteOTP(usernumber, otp, issue, estimatedPrice);
+        console.log("otp sent status:", status);
+        if (!status) {
             return res.status(400).json({
                 message: "Failed to send complete OTP"
             });
-            }
+        }
 
         if (!serviceRequest) {
             return res.status(404).json({ success: false, message: 'Service request not found or not assigned to you.' });
         }
-        if (serviceRequest.status !== 'accepted' && serviceRequest.status !== 'in_progress') {
+        if (serviceRequest.status !== 'accepted' && serviceRequest.status !== 'in_progress', serviceRequest.status !== 'pending_otp') {
             return res.status(400).json({ success: false, message: 'Job cannot be completed in its current status.' });
         }
         serviceRequest.status = 'pending_otp';

@@ -1,95 +1,97 @@
 // frontend/src/pages/Landing.jsx
 import React, { useState } from 'react';
-
+import { Link } from 'react-router-dom';
 
 import Header from '../components/LandingPage/Header.jsx';
 import HeroSection from '../components/LandingPage/HeroSection.jsx';
 import ServicesSection from '../components/LandingPage/ServicesSection.jsx';
-import HowItWorksSection from '../components/LandingPage/HowItWorksSection.jsx';
-import StatsSection from '../components/LandingPage/StatsSection.jsx';
-import TestimonialsSection from '../components/LandingPage/TestimonialsSection.jsx';
-import CtaSection from '../components/LandingPage/CtaSection.jsx';
+import PopularServicesSection from '../components/LandingPage/PopularServicesSection.jsx';
+import TestimonialsSection from '../components/LandingPage/TestimonialsSection.jsx'; // New import
+import CtaSection from '../components/LandingPage/CtaSection.jsx'; // New import
 import Footer from '../components/LandingPage/Footer.jsx';
+
+import { Zap, Wrench, Paintbrush, Pipette, Home, Sprout } from 'lucide-react';
+
 
 const Landing = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const services = [
+    { icon: Zap, title: "Electrician" },
+    { icon: Wrench, title: "Handyman" },
+    { icon: Paintbrush, title: "Painting" },
+    { icon: Pipette, title: "Plumbing" },
+    { icon: Home, title: "Cleaning" },
+    { icon: Sprout, title: "Gardening" }
+  ];
+
+  const popularServices = [
     {
-      icon: null, 
-      title: "Electrical Services",
-      description: "Professional electrical repairs, installations, and maintenance",
-      color: "from-yellow-400 to-orange-500"
-    },
-    {
-      icon: null,
+      image: '/images/pb.png', 
       title: "Plumbing",
-      description: "Complete plumbing solutions for all your water-related needs",
-      color: "from-blue-400 to-cyan-500"
+      description: "Fix leaky faucets, blocked drains, and more.",
+      price: 499
     },
     {
-      icon: null,
-      title: "Carpentry",
-      description: "Custom woodwork, furniture repair, and construction services",
-      color: "from-amber-400 to-yellow-600"
+      image: '/images/ac.png', 
+      title: "AC Service",
+      description: "Service and repair of all AC systems.",
+      price: 599
     },
     {
-      icon: null,
-      title: "Painting",
-      description: "Interior and exterior painting with premium quality finishes",
-      color: "from-purple-400 to-pink-500"
-    },
-    {
-      icon: null,
-      title: "HVAC Services",
-      description: "Heating, ventilation, and air conditioning repair & installation",
-      color: "from-green-400 to-emerald-500"
-    },
-    {
-      icon: null,
-      title: "Home Security",
-      description: "Security system installation and smart home automation",
-      color: "from-red-400 to-rose-500"
+      image: '/images/dc.png',
+      title: "Deep Cleaning",
+      description: "Thorough cleaning of homes and offices.",
+      price: 599
     }
   ];
 
   const testimonials = [
     {
-      name: "Sarah Johnson",
-      location: "Downtown",
+      name: "Jatin Agrawal",
       rating: 5,
-      comment: "Incredible service! Fixed my electrical issue in no time. Highly professional and affordable."
+      review: "Ramesh was incredibly professional and efficient. But his colour was dark and it was hard to see him."
     },
     {
-      name: "Mike Chen",
-      location: "Suburbs",
+      name: "Swarnim Agrawal",
       rating: 5,
-      comment: "The plumber arrived quickly and solved a complex leak problem. Will definitely use again!"
+      review: "The service was excellent, but he stole a bicycle from my house, which was captured on camera."
     },
     {
-      name: "Emma Davis",
-      location: "City Center",
-      rating: 5,
-      comment: "Amazing carpentry work on my kitchen cabinets. Exceeded all expectations!"
+      name: "Bhuvan Sharma",
+      rating: 4,
+      review: "I had an electrical emergency, and he provided urgent help."
+    },
+    {
+      name: "Divyaksh",
+      rating: 4,
+      review: "I had an plumbing emergency, and he provided urgent help"
     }
   ];
 
-  const stats = [
-    { number: "50K+", label: "Happy Customers" },
-    { number: "500+", label: "Expert Technicians" },
-    { number: "24/7", label: "Support Available" },
-    { number: "99%", label: "Success Rate" }
-  ];
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50 font-sans text-gray-800">
       <Header isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
       <main>
-        <HeroSection services={services} stats={stats} />
+        <HeroSection />
         <ServicesSection services={services} />
-        <HowItWorksSection /> {/* This component has its own internal data */}
-        <StatsSection stats={stats} />
+
+        <PopularServicesSection popularServices={popularServices} />
+        <section className="py-16 text-center bg-gray-50"> 
+          <div className="container mx-auto px-4">
+            <Link
+              to="/user/login" 
+              className="inline-flex items-center justify-center px-10 py-4
+                         bg-green-500 text-white text-xl font-semibold rounded-full
+                         shadow-lg hover:bg-green-600 transform hover:scale-105
+                         transition-all duration-300 ease-in-out"
+            >
+              View All Services
+            </Link>
+          </div>
+        </section>
         <TestimonialsSection testimonials={testimonials} />
+
         <CtaSection />
       </main>
       <Footer />

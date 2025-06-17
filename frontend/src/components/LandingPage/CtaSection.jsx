@@ -4,25 +4,20 @@ import { Link } from 'react-router-dom';
 
 const CtaSection = () => {
   return (
-    <section className="py-20 bg-gradient-to-r from-blue-600 to-purple-600">
-      <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8">
-        <h2 className="text-4xl font-bold text-white mb-6">
-          Ready to Fix Your Home?
+    <section className="py-16 md:py-24 bg-gray-50 text-center"> {/* Background is light gray */}
+      <div className="container mx-auto px-4">
+        <h2 className="text-4xl font-extrabold text-gray-900 mb-8 animate-fade-in-up">
+          Ready to Get Started?
         </h2>
-        <p className="text-xl text-blue-100 mb-8">
-          Join thousands of satisfied customers who trust fixNearby for their home repairs
-        </p>
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Link
-            to="/user/getotp"
-            className="bg-white text-blue-600 px-8 py-4 rounded-full font-semibold text-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-          >
-            Get Started Today
-          </Link>
-          <button className="border-2 border-white text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white hover:text-blue-600 transition-colors">
-            Call Now: 1-800-FIX-HOME
-          </button>
-        </div>
+        <Link
+          to="/user/login" 
+          className="inline-flex items-center justify-center px-12 py-4
+                     bg-green-500 text-white text-xl font-semibold rounded-full
+                     shadow-lg hover:bg-green-600 transform hover:scale-105
+                     transition-all duration-300 ease-in-out"
+        >
+          Book Now
+        </Link>
       </div>
     </section>
   );

@@ -66,6 +66,23 @@ export const repairerProtectRoute = async (req, res, next) => {
       return res.status(401).json({ message: "repairer not found" });
     }
 
+    // if isbanned true hua toh usko ane hi nahi denge wahahhaha ;
+
+    if (repairer.isbanned) {
+      return res.status(403).json({ message: "Your account has been banned. Please contact support." });
+    }
+
+    // Redflag reset logic here
+    const now = new Date();
+    const createdAt = new Date(repairer.createdAt);
+    const oneMonthAfterCreation = new Date(createdAt);
+    oneMonthAfterCreation.setMonth(oneMonthAfterCreation.getMonth() + 1);
+
+    if (now >= oneMonthAfterCreation && repairer.redflag !== 0) {
+      repairer.redflag = 0;
+      await repairer.save();
+    }
+
     req.repairer = repairer;
 
     next();

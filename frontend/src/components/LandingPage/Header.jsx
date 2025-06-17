@@ -20,10 +20,10 @@ const Header = ({ isMenuOpen, setIsMenuOpen }) => {
           <Link to="/" className="text-gray-700 hover:text-gray-900 transition-colors duration-200 font-medium">
             Home
           </Link>
-          <Link to="/user/signup" className="text-gray-700 hover:text-gray-900 transition-colors duration-200 font-medium">
+          <Link to="/user/getotp" className="text-gray-700 hover:text-gray-900 transition-colors duration-200 font-medium">
             Services
           </Link>
-          <Link to="/contact" className="text-gray-700 hover:text-gray-900 transition-colors duration-200 font-medium">
+          <Link to="/contact-us" className="text-gray-700 hover:text-gray-900 transition-colors duration-200 font-medium">
             Contact
           </Link>
         </div>

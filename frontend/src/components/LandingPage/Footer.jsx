@@ -12,15 +12,15 @@ const Footer = () => {
         </Link>
 
         <div className="flex flex-wrap justify-center space-x-6 md:space-x-12 mb-4 text-lg">
-          <Link to="/privacy-policy" className="hover:text-green-600 transition-colors duration-200">
+          <a href="/privacy-policy" className="hover:text-green-600 transition-colors duration-200">
             Privacy Policy
-          </Link>
-          <Link to="/terms-of-service" className="hover:text-green-600 transition-colors duration-200">
-            Terms of Service
-          </Link>
-          <Link to="/contact" className="hover:text-green-600 transition-colors duration-200">
-            Contact Us
-          </Link>
+          </a>
+          <a href="/terms-and-conditions" className="hover:text-green-600 transition-colors duration-200">
+            Terms & Conditions
+          </a>
+          <a href="/contact-us" className="hover:text-green-600 transition-colors duration-200">
+            Contact Us & FAQ's
+          </a>
         </div>
         <p className="text-sm">&copy; 2025 FixNearby. All rights reserved.</p>
       </div>

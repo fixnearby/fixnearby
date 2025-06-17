@@ -39,6 +39,9 @@ import RepairerProfilePage from './pages/repairer/dashboard/RepairerProfilePage'
 import RepairerAnalyticsPage from './pages/repairer/dashboard/RepairerAnalyticsPage';
 import RepairerMessagesPage from './pages/repairer/dashboard/RepairerMessagesPage'; 
 import RepairerNotificationsPage from './pages/repairer/dashboard/RepairerNotificationsPage';
+import Privacy from "./pages/Privacy";
+import TermsCondition from "./pages/TermsCondition";
+import ContactUs from "./pages/ContactUs";
 
 function App() {
   const {
@@ -121,20 +124,16 @@ function App() {
   return (
     <div>
       <Routes>
-        <Route
-          path="/"
-          element={
-            user ? (
-              <Navigate to="/user/dashboard" />
-            ) : repairer ? (
-              <Navigate to="/repairer/dashboard" />
-            ) : admin ? (
-              <Navigate to="/admin/dashboard" />
-            ) : (
-              <Landing />
-            )
-          }
-        />
+
+        <Route path="/" element={<Landing />}/>
+
+        <Route path="/privacy-policy" element={<Privacy />}/>
+
+        <Route path="/terms-and-conditions" element={<TermsCondition />}/>
+
+        <Route path="/contact-us" element={<ContactUs />}/>
+
+
 
         <Route path="/user/getotp" element={user ? <Navigate to="/user/dashboard" /> : <UserGetotp />} />
         <Route path="/user/verify-otp" element={user ? <Navigate to="/user/dashboard" /> : <UserVerifyotp />} />

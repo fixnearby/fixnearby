@@ -1,10 +1,10 @@
 // frontend/src/components/Chat/ChatWindow.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Loader, MessageCircle } from 'lucide-react';
+import { Send, MessageCircle } from 'lucide-react';
 import { getSocket, joinChatRoom, sendMessage, onEvent, offEvent } from '../../services/socketService';
 import { useAuthStore } from '../../store/authStore';
 import toast from 'react-hot-toast';
-
+import LoadingSpinner from '../LoadingSpinner';
 const ChatWindow = ({ conversationId, participantRole }) => {
   const { user, repairer } = useAuthStore();
   const [messages, setMessages] = useState([]);
@@ -80,7 +80,7 @@ const ChatWindow = ({ conversationId, participantRole }) => {
       offEvent('chatEnded', handleChatEnded);
       offEvent('chatError', handleChatError);
     };
-  }, [conversationId, currentUserId, participantRole]);
+  }, [conversationId, currentUserId, participantRole, setLoadingMessages]); 
 
   useEffect(() => {
     scrollToBottom();
@@ -105,8 +105,8 @@ const ChatWindow = ({ conversationId, participantRole }) => {
 
   if (chatError && !loadingMessages && messages.length === 0 && !chatEnded) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-red-600 bg-red-50 p-6 rounded-lg text-center">
-        <MessageCircle className="w-10 h-10 mb-4" />
+      <div className="flex flex-col items-center justify-center h-full text-red-600 bg-red-50 p-6 rounded-lg text-center shadow-md border border-red-200">
+        <MessageCircle className="w-10 h-10 mb-4 text-red-500" />
         <p className="font-semibold text-lg">Chat Error</p>
         <p>{chatError}</p>
       </div>
@@ -114,11 +114,11 @@ const ChatWindow = ({ conversationId, participantRole }) => {
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-lg">
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar">
+    <div className="flex flex-col h-full bg-white rounded-lg shadow-md border border-gray-100"> {/* Main chat window background */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar-light"> {/* Using light scrollbar (conceptual) */}
         {loadingMessages ? (
-          <div className="flex flex-col items-center justify-center h-full text-gray-500">
-            <Loader className="w-8 h-8 animate-spin mb-4" />
+          <div className="flex flex-col items-center justify-center h-full text-green-600"> {/* Green for loading */}
+            <LoadingSpinner className="w-8 h-8 animate-spin mb-4" />
             <p>Loading messages...</p>
           </div>
         ) : messages.length === 0 && !chatEnded ? (
@@ -132,17 +132,17 @@ const ChatWindow = ({ conversationId, participantRole }) => {
               className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`p-3 rounded-lg max-w-[80%] break-words ${
+                className={`p-3 rounded-lg max-w-[80%] break-words shadow-sm ${
                   msg.senderId === currentUserId
-                    ? 'bg-blue-600 text-white rounded-br-none'
-                    : 'bg-gray-200 text-gray-800 rounded-bl-none'
+                    ? 'bg-green-500 text-white rounded-br-none' 
+                    : 'bg-gray-100 text-gray-800 rounded-bl-none' 
                 }`}
               >
-                <p className="font-semibold text-xs mb-1">
+                <p className={`font-semibold text-xs mb-1 ${msg.senderId === currentUserId ? 'text-green-100' : 'text-gray-600'}`}>
                   {msg.senderId === currentUserId ? 'You' : msg.senderName || 'Participant'}
                 </p>
                 <p className="text-sm">{msg.message || msg.text}</p>
-                <span className="text-xs opacity-75 mt-1 block text-right">
+                <span className={`text-xs opacity-75 mt-1 block text-right ${msg.senderId === currentUserId ? 'text-green-200' : 'text-gray-500'}`}>
                   {new Date(msg.timestamp || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -152,7 +152,7 @@ const ChatWindow = ({ conversationId, participantRole }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 bg-white">
         {chatEnded ? (
           <p className="text-red-600 text-center font-semibold">
             Chat is closed. {chatEndedReason ? `(${chatEndedReason})` : ''}
@@ -161,7 +161,7 @@ const ChatWindow = ({ conversationId, participantRole }) => {
           <div className="flex space-x-3">
             <input
               type="text"
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-400"
               placeholder="Type your message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
@@ -172,7 +172,7 @@ const ChatWindow = ({ conversationId, participantRole }) => {
             />
             <button
               onClick={handleSendMessage}
-              className="bg-blue-600 text-white p-3 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md" 
               disabled={!newMessage.trim() || loadingMessages || chatEnded}
             >
               <Send className="w-5 h-5" />

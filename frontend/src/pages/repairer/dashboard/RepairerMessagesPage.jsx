@@ -1,11 +1,12 @@
 // frontend/src/pages/RepairerMessagesPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Loader, User2 } from 'lucide-react';
+import { ArrowLeft, MessageCircle, User2 } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
-import { getRepairerConversations, getRepairerConversationMessages } from '../../../services/apiService';
+import { getRepairerConversations } from '../../../services/apiService';
 import ChatWindow from '../../../components/Chat/ChatWindow';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const RepairerMessagesPage = () => {
   const { repairer } = useAuthStore();
@@ -14,7 +15,6 @@ const RepairerMessagesPage = () => {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [error, setError] = useState(null);
   const [selectedConversation, setSelectedConversation] = useState(null);
-  console.log(getRepairerConversationMessages);
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -56,6 +56,7 @@ const RepairerMessagesPage = () => {
     setSelectedConversation(conversationSummary);
   };
 
+
   if (!repairer) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
@@ -74,7 +75,7 @@ const RepairerMessagesPage = () => {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
         <div className="text-center">
-          <Loader className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <LoadingSpinner className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-lg text-gray-700">Loading conversations...</p>
         </div>
       </div>
@@ -97,8 +98,9 @@ const RepairerMessagesPage = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 flex flex-col md:flex-row h-[70vh]">
-        <div className="w-full md:w-1/3 border-r border-gray-200 pr-4 md:pr-8 overflow-y-auto flex-none custom-scrollbar">
+      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-8 flex flex-col md:flex-row h-[80vh] md:h-[70vh] lg:h-[75vh]"> 
+        {/* Left Pane: Conversation List */}
+        <div className="w-full md:w-1/3 border-r border-gray-200 pr-4 md:pr-8 overflow-y-auto flex-none custom-scrollbar pb-4 md:pb-0">
           <div className="flex items-center space-x-4 mb-8">
             <Link to="/repairer/dashboard" className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
               <ArrowLeft className="w-6 h-6 text-gray-700" />
@@ -117,9 +119,12 @@ const RepairerMessagesPage = () => {
                 <li
                   key={conv.id}
                   onClick={() => handleChatSelect(conv)}
-                  className={`flex items-center p-4 rounded-xl cursor-pointer transition-colors
-                    ${selectedConversation?.id === conv.id ? 'bg-blue-100 shadow-md' : 'bg-gray-50 hover:bg-gray-100'}
-                    ${conv.unread ? 'border-l-4 border-blue-500 font-semibold' : ''}`}
+                  className={`flex items-center p-4 rounded-xl cursor-pointer transition-colors border ${
+                    selectedConversation?.id === conv.id
+                      ? 'bg-green-50 border-green-200 shadow-sm' 
+                      : 'bg-gray-50 border-transparent hover:bg-gray-100'
+                  }
+                  ${conv.unread ? 'border-l-4 border-blue-500 font-semibold' : ''}`}
                 >
                   <div className="flex-shrink-0 w-10 h-10 bg-blue-200 rounded-full flex items-center justify-center mr-3">
                     <User2 className="w-5 h-5 text-blue-700" />
@@ -128,10 +133,14 @@ const RepairerMessagesPage = () => {
                     <div className="text-gray-900 font-medium">{conv.sender}</div>
                     <div className="text-gray-600 text-sm truncate">{conv.lastMessage}</div>
                   </div>
-                  <div className="text-xs text-gray-500 ml-auto flex-shrink-0">{conv.time}</div>
-                  {conv.unread && <span className="w-2 h-2 bg-blue-500 rounded-full ml-2"></span>}
+                  {/* Time and Unread dot moved slightly to align better */}
+                  <div className="text-xs text-gray-500 ml-2 flex-shrink-0 text-right">
+                    {conv.time}
+                    {conv.unread && <span className="w-2 h-2 bg-blue-500 rounded-full ml-1 inline-block"></span>}
+                  </div>
+                  {/* Display (Closed) tag more clearly */}
                   {!conv.isActive && (
-                    <span className="text-xs text-red-500 ml-2">(Closed)</span>
+                    <span className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full ml-2 flex-shrink-0">Closed</span>
                   )}
                 </li>
               ))

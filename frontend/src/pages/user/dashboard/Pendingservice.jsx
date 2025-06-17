@@ -9,6 +9,7 @@ import {
   CheckCircle,
   Loader
 } from 'lucide-react';
+import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const statusIcons = {
   requested: <Clock className="w-5 h-5 text-yellow-500" />,
@@ -91,8 +92,8 @@ const Pendingservice = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Loader className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
-        <p className="ml-3 text-lg text-gray-700">Loading pending requests...</p>
+        <LoadingSpinner className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
+     
       </div>
     );
   }
@@ -192,7 +193,7 @@ const Pendingservice = () => {
                           className="text-red-600 hover:text-red-900 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isCancelling && requestIdToCancel === (request.id || request._id) ? (
-                            <Loader className="w-4 h-4 mr-1 animate-spin" />
+                            <LoadingSpinner className="w-4 h-4 mr-1 animate-spin" />
                           ) : (
                             <XCircle className="w-4 h-4 mr-1" />
                           )}
@@ -236,7 +237,7 @@ const Pendingservice = () => {
                 disabled={isCancelling}
               >
                 {isCancelling ? (
-                  <Loader className="w-5 h-5 animate-spin" />
+                  <LoadingSpinner className="w-5 h-5 animate-spin" />
                 ) : (
                   'Yes, Cancel'
                 )}

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Loader, Send, AlertCircle, CheckCircle } from 'lucide-react';
+import {  Send, AlertCircle, CheckCircle } from 'lucide-react';
+import LoadingSpinner from '../LoadingSpinner';
 
 const ServiceRequestModal = ({
   showModal,
@@ -10,7 +11,7 @@ const ServiceRequestModal = ({
   isSubmitting,
   submitError,
   submitSuccessMessage,
-  selectedRepairer, // This will be the full repairer object now
+  selectedRepairer, 
   serviceCategory,
   userLocation
 }) => {
@@ -76,7 +77,7 @@ const ServiceRequestModal = ({
             >
               {isSubmitting ? (
                 <>
-                  <Loader size={16} className="animate-spin" />
+                  <LoadingSpinner size={16} className="animate-spin" />
                   <span>Submitting...</span>
                 </>
               ) : (

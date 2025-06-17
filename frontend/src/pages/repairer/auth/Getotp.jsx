@@ -50,6 +50,7 @@ const Getotp = () => {
         toast.error(response.data.message);
       }
     } catch (error) {
+      console.log(error)
       toast.error('Failed to send OTP. Please try again.');
     } finally {
       setIsLoading(false);

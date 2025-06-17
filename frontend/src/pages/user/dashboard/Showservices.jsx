@@ -5,9 +5,25 @@ import { axiosInstance } from '../../../lib/axios.js';
 
 import RepairerCard from '../../../components/ShowServices/RepairerCard.jsx';
 import ServiceRequestModal from '../../../components/ShowServices/ServiceRequestModal.jsx';
-import LoadingSpinner from '../../../components/LoadingSpinner.jsx';
-import ErrorMessage from '../../../components/ErrorMessage.jsx';
-import StatusMessage from '../../../components/StatusMessage.jsx';
+import LoadingSpinner from '../../../components/LoadingSpinner.jsx'; 
+import ErrorMessage from '../../../components/ErrorMessage.jsx'; 
+import StatusMessage from '../../../components/StatusMessage.jsx'; 
+
+import {
+  Wrench,
+  MessageSquare,
+  Phone,
+  Check,
+  Clock,
+  MapPin,
+  AlertCircle,
+  User,
+  XCircle,
+  CheckCircle,
+  IndianRupee,
+  Info 
+} from "lucide-react";
+
 
 const Showservices = () => {
   const navigate = useNavigate();
@@ -20,7 +36,7 @@ const Showservices = () => {
   const [error, setError] = useState(null);
 
   const [showServiceRequestForm, setShowServiceRequestForm] = useState(false);
-  const [selectedRepairerForRequest, setSelectedRepairerForRequest] = useState(null); // Now stores the full repairer object
+  const [selectedRepairerForRequest, setSelectedRepairerForRequest] = useState(null);
   const [descriptionInput, setDescriptionInput] = useState('');
   const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
   const [submitSuccessMessage, setSubmitSuccessMessage] = useState(null);
@@ -82,7 +98,7 @@ const Showservices = () => {
     } catch (err) {
       console.error('Error during auto-submission:', err.response?.data || err.message);
       setAutoSubmitError(err.response?.data?.message || 'An unexpected error occurred during auto-submission.');
-      autoSubmitRequestSentRef.current = false;
+      autoSubmitRequestSentRef.current = false; 
     } finally {
       setAutoSubmitting(false);
       setHasAttemptedAutoSubmit(true);
@@ -101,7 +117,7 @@ const Showservices = () => {
 
     setLoading(true);
     setError(null);
-    setRepairers([]);
+    setRepairers([]); 
 
     try {
       const response = await axiosInstance.get(`/user/dashboard?postalCode=${userLocation.pincode}&serviceType=${serviceCategory}`);
@@ -134,12 +150,11 @@ const Showservices = () => {
       console.log('Initial useEffect: Missing userLocation or serviceCategory, redirecting.');
       navigate('/user/dashboard', { replace: true });
     }
-    return () => {};
   }, [fetchRepairers, userLocation, serviceCategory, navigate]);
 
   const openServiceRequestForm = (repairerId) => {
     const repairer = repairers.find(r => r._id === repairerId);
-    setSelectedRepairerForRequest(repairer); // Store the full repairer object
+    setSelectedRepairerForRequest(repairer); 
     setDescriptionInput('');
     setSubmitSuccessMessage(null);
     setShowServiceRequestForm(true);
@@ -166,7 +181,7 @@ const Showservices = () => {
     try {
       console.log('handleSubmitServiceRequest: Sending request...');
       const response = await axiosInstance.post('/service-requests', {
-        repairerId: selectedRepairerForRequest._id, // Use _id from the stored object
+        repairerId: selectedRepairerForRequest._id,
         title: `${serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)} Service Request`,
         serviceType: serviceCategory,
         description: descriptionInput,
@@ -193,19 +208,27 @@ const Showservices = () => {
 
   if (loading || autoSubmitting) {
     return (
-      <LoadingSpinner
-        message={loading ? `Finding repairers for ${serviceCategory || 'your service'}...` : 'Saving your service request...'}
-        subMessage={loading ? 'Please wait a moment.' : 'We are saving your request and will notify you when a repairer is available.'}
-      />
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 text-gray-700">
+        <LoadingSpinner />
+        <p className="mt-8 text-xl font-medium text-gray-800">
+          {loading ? `Finding repairers for ${serviceCategory || 'your service'}...` : 'Saving your service request...'}
+        </p>
+        <p className="mt-2 text-md text-gray-600">
+          {loading ? 'Please wait a moment.' : 'We are saving your request and will notify you when a repairer is available.'}
+        </p>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <ErrorMessage message={error} />
+      </div>
     );
   }
 
-  if (error) {
-    return <ErrorMessage message={error} />;
-  }
-
   return (
-    <div className="max-w-7xl mx-auto px-4 py-8 min-h-[80vh]">
+    <div className="max-w-7xl mx-auto px-4 py-8 min-h-[80vh] bg-white rounded-xl shadow-lg my-8"> 
       <h1 className="text-3xl font-bold text-gray-900 mb-4">
         Available Repairers for {serviceCategory ? serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1) : 'Your Service'}
       </h1>
@@ -250,15 +273,14 @@ const Showservices = () => {
           />
         </>
       ) : (
-        <div className="text-center md:col-span-3 py-12 bg-white rounded-xl shadow-lg">
-          <StatusMessage type="info" message="No immediate repairers found" className="mx-auto mb-4" />
+        <div className="text-center md:col-span-3 py-12 bg-white rounded-xl shadow-lg border border-gray-100">
+          <Info className="w-16 h-16 text-gray-400 mx-auto mb-4" /> {/* Neutral info icon */}
           <h3 className="text-xl font-medium text-gray-900 mb-2">No immediate repairers found</h3>
           <p className="text-gray-600 mb-4">
             We couldn't find any repairers available for your selected service ({serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)}) in pincode {userLocation.pincode} right now.
           </p>
-
           {autoSubmitting && (
-            <StatusMessage type="loading" message="Saving your request..." className="inline-flex" />
+            <StatusMessage type="loading" message="Saving your request automatically..." className="inline-flex mt-4" />
           )}
           {autoSubmitSuccess && (
             <StatusMessage type="success" message="Your request has been saved! We'll notify you when a repairer is available." className="inline-flex mt-4" />
@@ -266,14 +288,15 @@ const Showservices = () => {
           {autoSubmitError && (
             <StatusMessage type="error" message={`Error saving request: ${autoSubmitError}. Please try again later.`} className="inline-flex mt-4" />
           )}
-
           {!autoSubmitting && !autoSubmitSuccess && !autoSubmitError && hasAttemptedAutoSubmit && (
-            <StatusMessage type="info" message="We've attempted to save your request. If no confirmation, please retry." className="inline-flex mt-4" />
+            <p className="text-gray-600 mt-4">
+              Your request has been recorded. We will notify you via email when a repairer accepts.
+            </p>
           )}
 
           <button
             onClick={() => navigate('/user/dashboard', { replace: true })}
-            className="mt-6 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="mt-6 px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-md"
           >
             Go Back to Dashboard
           </button>

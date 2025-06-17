@@ -6,6 +6,7 @@ import {
   customerRejectQuote,
 } from "../../../services/apiService.js";
 import toast from "react-hot-toast";
+import LoadingSpinner from "../../../components/LoadingSpinner.jsx";
 import { useNavigate } from "react-router-dom";
 import {
   Wrench,
@@ -15,7 +16,6 @@ import {
   Clock,
   MapPin,
   AlertCircle,
-  Loader,
   User,
   XCircle,
   CheckCircle,
@@ -68,6 +68,7 @@ const Inprogress = () => {
   useEffect(() => {
     fetchInProgressRequests();
   }, [fetchInProgressRequests]);
+
   const showAcceptModal = (requestId) => {
     setCurrentRequestId(requestId);
     setShowConfirmAcceptModal(true);
@@ -84,6 +85,7 @@ const Inprogress = () => {
     setOtpInput("");
     setOtpError(null);
   };
+
   const handleCancelModal = () => {
     setShowConfirmAcceptModal(false);
     setShowConfirmRejectModal(false);
@@ -92,6 +94,7 @@ const Inprogress = () => {
     setOtpInput("");
     setOtpError(null);
   };
+
   const handleAcceptQuoteConfirmed = async () => {
     setShowConfirmAcceptModal(false);
     if (!currentRequestId) return;
@@ -131,6 +134,7 @@ const Inprogress = () => {
       setCurrentRequestId(null);
     }
   };
+
   const handleRejectQuoteConfirmed = async () => {
     setShowConfirmRejectModal(false);
     if (!currentRequestId) return;
@@ -250,11 +254,9 @@ const Inprogress = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Loader className="w-12 h-12 text-blue-500 animate-spin" />
-        <p className="ml-3 text-lg text-gray-700">
-          Loading your active services...
-        </p>
+      // Full screen loader with white background
+      <div className="flex justify-center items-center h-screen bg-white">
+        <LoadingSpinner message="Loading your in-progress services..." />
       </div>
     );
   }
@@ -328,17 +330,17 @@ const Inprogress = () => {
                   </div>
                   <span
                     className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
-                                        ${
-                                          request.status === "accepted"
-                                            ? "bg-green-100 text-green-800"
-                                            : request.status === "quoted"
-                                            ? "bg-yellow-100 text-yellow-800"
-                                            : request.status === "in_progress"
-                                            ? "bg-blue-100 text-blue-800"
-                                            : request.status === "rejected"
-                                            ? "bg-red-100 text-red-800"
-                                            : "bg-gray-100 text-gray-800"
-                                        }`}
+                                    ${
+                                      request.status === "accepted"
+                                        ? "bg-green-100 text-green-800"
+                                        : request.status === "quoted"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : request.status === "in_progress"
+                                        ? "bg-blue-100 text-blue-800"
+                                        : request.status === "rejected"
+                                        ? "bg-red-100 text-red-800"
+                                        : "bg-gray-100 text-gray-800"
+                                    }`}
                   >
                     {request.status === "accepted"
                       ? "Accepted"
@@ -502,7 +504,6 @@ const Inprogress = () => {
         </div>
       )}
 
-      {/* --- Custom Accept Quote Confirmation Modal --- */}
       {showConfirmAcceptModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-sm text-center">
@@ -531,7 +532,6 @@ const Inprogress = () => {
         </div>
       )}
 
-      {/* --- Custom Reject Quote Confirmation Modal --- */}
       {showConfirmRejectModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-sm text-center">
@@ -559,8 +559,6 @@ const Inprogress = () => {
           </div>
         </div>
       )}
-
-      {/* --- Custom Confirm Completion (with OTP) Modal --- */}
       {showConfirmCompletionModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-xl shadow-2xl p-6 md:p-8 w-full max-w-md text-center">

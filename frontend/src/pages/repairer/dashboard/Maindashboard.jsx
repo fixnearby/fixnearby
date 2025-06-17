@@ -51,9 +51,9 @@ const RepairerMainDashboard = () => {
 
   const fetchNearbyJobs = useCallback(async () => {
     if (!isOnline) {
-        setJobs([]);
-        setLoadingJobs(false);
-        return;
+      setJobs([]);
+      setLoadingJobs(false);
+      return;
     }
     setLoadingJobs(true);
     setErrorJobs(null);
@@ -68,6 +68,7 @@ const RepairerMainDashboard = () => {
       setLoadingJobs(false);
     }
   }, [isOnline]);
+  console.log(loadingNotifications);
 
   const fetchDashboardStats = useCallback(async () => {
     setLoadingStats(true);
@@ -131,27 +132,26 @@ const RepairerMainDashboard = () => {
     fetchUnreadNotifications();
   }, [fetchDashboardStats, fetchRecentActivity, fetchUnreadNotifications]);
 
- const handleAcceptJob = async (jobId) => {
+  const handleAcceptJob = async (jobId) => {
     console.log(`Attempting to accept job: ${jobId}`);
     if (!repairerId) {
-        toast.error("Repairer ID not available. Please log in again.");
-        return;
+      toast.error("Repairer ID not available. Please log in again.");
+      return;
     }
     try {
-        // Change the status sent to the backend
-        const response = await acceptJob(jobId, { status: 'accept_request_for_quote' }); 
-        toast.success('Job request accepted! Please provide your quote on the In Progress page.'); 
-        fetchDashboardStats();
-        fetchRecentActivity();
-        fetchUnreadNotifications();
-        console.log(response);
-        navigate('/repairer/inprogress'); 
+      const response = await acceptJob(jobId, { status: 'accept_request_for_quote' });
+      toast.success('Job request accepted! Please provide your quote on the In Progress page.');
+      fetchDashboardStats();
+      fetchRecentActivity();
+      fetchUnreadNotifications();
+      console.log(response);
+      navigate('/repairer/inprogress');
     } catch (error) {
-        toast.error(error.response?.data?.message || 'Failed to accept job. Please try again.');
-        console.error('Accept job error:', error);
-        fetchNearbyJobs(); 
+      toast.error(error.response?.data?.message || 'Failed to accept job. Please try again.');
+      console.error('Accept job error:', error);
+      fetchNearbyJobs();
     }
-};
+  };
 
   const handleLogout = async () => {
     console.log("Logout button clicked. Logging out...");
@@ -195,7 +195,7 @@ const RepairerMainDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
+    <div className="min-h-screen bg-gray-50 font-sans">
       <Header
         displayName={displayName}
         isOnline={isOnline}
@@ -205,13 +205,13 @@ const RepairerMainDashboard = () => {
         onNotificationsClick={handleNotificationsClick}
         onProfileClick={handleProfileClick}
         unreadNotificationCount={unreadNotificationCount}
-        loadingNotifications={loadingNotifications}
-        onMessagesClick={handleMessagesClick} 
+        onMessagesClick={handleMessagesClick}
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isOnline ? (
           <OnlineDashboardContent
+            key="online-dashboard"
             jobs={jobs}
             loadingJobs={loadingJobs}
             errorJobs={errorJobs}
@@ -224,6 +224,7 @@ const RepairerMainDashboard = () => {
           />
         ) : (
           <OfflineDashboardContent
+            key="offline-dashboard"
             displayName={displayName}
             stats={stats}
             loadingStats={loadingStats}

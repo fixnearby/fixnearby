@@ -6,8 +6,8 @@ import Header from '../components/LandingPage/Header.jsx';
 import HeroSection from '../components/LandingPage/HeroSection.jsx';
 import ServicesSection from '../components/LandingPage/ServicesSection.jsx';
 import PopularServicesSection from '../components/LandingPage/PopularServicesSection.jsx';
-import TestimonialsSection from '../components/LandingPage/TestimonialsSection.jsx'; // New import
-import CtaSection from '../components/LandingPage/CtaSection.jsx'; // New import
+import TestimonialsSection from '../components/LandingPage/TestimonialsSection.jsx'; 
+import CtaSection from '../components/LandingPage/CtaSection.jsx'; 
 import Footer from '../components/LandingPage/Footer.jsx';
 
 import { Zap, Wrench, Paintbrush, Pipette, Home, Sprout } from 'lucide-react';

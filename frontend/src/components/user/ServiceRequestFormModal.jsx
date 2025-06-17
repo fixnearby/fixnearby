@@ -602,7 +602,7 @@ const ServiceRequestFormModal = ({
                     type="button"
                     onClick={handleLocationNext}
                     disabled={loading || !locationData.captureMethod || (locationData.captureMethod === 'manual' && (!locationData.fullAddress.trim() || !locationData.pincode.trim()))}
-                    className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-semibold py-3 px-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all text-lg"
+                    className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-semibold py-3 px-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all text-lg cursor-pointer"
                   >
                     Next <ArrowRight className="ml-3 w-5 h-5" strokeWidth={2.5} />
                   </button>
@@ -687,7 +687,7 @@ const ServiceRequestFormModal = ({
 
                   <div>
                     <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="issue">
-                      Select The Issue You Are Facing <span className="text-red-500">*</span>
+                      Select An Issue <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
                         <select
@@ -716,7 +716,7 @@ const ServiceRequestFormModal = ({
                     type="button"
                     onClick={handleAIEstimation}
                     disabled={!selectedCategory || !selectedIssue}
-                    className="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-all duration-200 cursor-pointer font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-all duration-200 cursor-pointer font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed "
                   >
                     Get AI-Based Estimation
                   </button>
@@ -756,7 +756,7 @@ const ServiceRequestFormModal = ({
                       </div>
                       <button
                         onClick={() => setShowEstimationPopup(false)}
-                        className="mt-6 px-8 py-3 bg-green-600 text-white rounded-xl cursor:pointer hover:bg-green-700 transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        className="mt-6 px-8 py-3 bg-green-600 text-white rounded-xl cursor:pointer hover:bg-green-700 transition-all duration-200 font-semibold shadow-md hover:shadow-lg transform hover:-translate-y-0.5 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 cursor-pointer"
                       >
                         Got It!
                       </button>
@@ -806,7 +806,7 @@ const ServiceRequestFormModal = ({
                           name="preferredTimeSlot"
                           value={serviceDetails.preferredTimeSlot.time}
                           onChange={handleServiceDetailsChange}
-                          className="shadow-inner appearance-none border border-gray-300 rounded-lg w-full py-2.5 px-4 text-gray-800 bg-white leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-white focus:border-green-500 transition-all duration-200 appearance-none pr-8"
+                          className="shadow-inner appearance-none border border-gray-300 rounded-lg w-full py-2.5 px-4 text-gray-800 bg-white leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-white focus:border-green-500 transition-all duration-200  pr-8"
                           required
                       >
                           <option value="">Select a time slot</option>
@@ -848,7 +848,7 @@ const ServiceRequestFormModal = ({
                           name="urgency"
                           value={serviceDetails.urgency}
                           onChange={handleServiceDetailsChange}
-                          className="shadow-inner appearance-none border border-gray-300 rounded-lg w-full py-2.5 px-4 text-gray-800 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-white focus:border-green-500 transition-all duration-200 appearance-none pr-8"
+                          className="shadow-inner appearance-none border border-gray-300 rounded-lg w-full py-2.5 px-4 text-gray-800 leading-tight focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:ring-offset-white focus:border-green-500 transition-all duration-200  pr-8"
                       >
                           <option value="low">Low</option>
                           <option value="medium">Medium</option>
@@ -871,7 +871,7 @@ const ServiceRequestFormModal = ({
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-semibold py-3 px-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all text-lg"
+                    className="bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 text-white font-semibold py-3 px-8 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center disabled:opacity-60 disabled:cursor-not-allowed shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all text-lg cursor-pointer"
                   >
                     {isSubmitting ? <Loader className="animate-spin mr-2" size={20} /> : <CheckCircle className="mr-3 w-5 h-5" strokeWidth={2.5} />}
                     Submit Request

@@ -247,7 +247,7 @@ export const completeJob = async (serviceId, repairerId) => {
         if (!serviceRequest) {
             return res.status(404).json({ success: false, message: 'Service request not found or not assigned to you.' });
         }
-        if (serviceRequest.status !== 'accepted' && serviceRequest.status !== 'in_progress') {
+        if (serviceRequest.status !== 'accepted' && serviceRequest.status !== 'in_progress' && serviceRequest.status !== 'quoted') {
             return res.status(400).json({ success: false, message: 'Job cannot be completed in its current status.' });
         }
         serviceRequest.status = 'completed';
@@ -763,7 +763,7 @@ export const PendingOtp = async (req, res) => {
         if (!serviceRequest) {
             return res.status(404).json({ success: false, message: 'Service request not found or not assigned to you.' });
         }
-        if (serviceRequest.status !== 'accepted' && serviceRequest.status !== 'in_progress', serviceRequest.status !== 'pending_otp') {
+        if (serviceRequest.status !== 'accepted' && serviceRequest.status !== 'pending_otp') {
             return res.status(400).json({ success: false, message: 'Job cannot be completed in its current status.' });
         }
         serviceRequest.status = 'pending_otp';

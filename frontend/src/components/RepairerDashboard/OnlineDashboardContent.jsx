@@ -170,7 +170,7 @@ const OnlineDashboardContent = ({
               </button>
               <button
                 onClick={() => handleAcceptJob(job.id)}
-                className="px-8 py-3 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl hover:shadow-xl hover:shadow-blue-500/25 transform hover:-translate-y-1 transition-all duration-300 font-semibold"
+                className="px-8 py-3 bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 text-white rounded-xl hover:shadow-xl hover:shadow-blue-500/25 transform hover:-translate-y-1 transition-all duration-300 font-semibold cursor-pointer"
               >
                 Accept Job
               </button>

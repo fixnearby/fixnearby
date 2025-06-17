@@ -424,13 +424,13 @@ const Inprogress = () => {
                         <div className="flex space-x-3">
                           <button
                             onClick={() => showAcceptModal(request._id)}
-                            className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+                            className="flex items-center bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors cursor-pointer"
                           >
                             <Check className="w-5 h-5 mr-2" /> Accept Amount
                           </button>
                           <button
                             onClick={() => showRejectModal(request._id)}
-                            className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                            className="flex items-center bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors cursor-pointer"
                           >
                             <XCircle className="w-5 h-5 mr-2" /> Reject Quote
                           </button>
@@ -489,7 +489,7 @@ const Inprogress = () => {
                   {request.status === "pending_otp" && (
                     <button
                       onClick={() => showCompletionModal(request._id)}
-                      className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors"
+                      className="flex items-center bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors cursor-pointer"
                     >
                       <Check className="w-5 h-5 mr-1" /> Confirm Completed &
                       Verify OTP

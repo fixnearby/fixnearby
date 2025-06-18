@@ -1,12 +1,12 @@
 {
-  "version": 2,
-  "builds": [
+  "version" : 2,
+  "builds" : [
     {
       "src": "frontend/package.json",
       "use": "@vercel/static-build"
     }
   ],
-  "routes": [
+  "routes" : [
     {
       "handle": "filesystem"
     },

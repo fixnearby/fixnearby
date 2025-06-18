@@ -1,9 +1,9 @@
 // frontend/src/components/user/DashboardHeader.jsx
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../../store/authStore.js'; 
+import { useAuthStore } from '../../store/authStore.js';
 import toast from 'react-hot-toast';
-import { logoutUser } from '../../services/apiService.js'; 
+import { logoutUser } from '../../services/apiService.js';
 
 import {
   UserCircle,
@@ -16,7 +16,7 @@ import {
 
 const DashboardHeader = ({ user, handleMessagesClick, handleNotificationsClick }) => {
   const navigate = useNavigate();
-  const { clearUser, clearRepairer, clearAdmin } = useAuthStore(); 
+  const { clearUser, clearRepairer, clearAdmin } = useAuthStore();
 
   const handleLogout = async () => {
     try {
@@ -33,7 +33,7 @@ const DashboardHeader = ({ user, handleMessagesClick, handleNotificationsClick }
   };
 
   return (
-    <header className="bg-white shadow-xl sticky top-0 z-50 animate-slideInDown">
+    <header className="bg-white shadow-md sticky top-0 z-50 animate-slideInDown font-lexend"> {/* Adjusted shadow and added font */}
       <div className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-10">
         <div className="flex justify-between items-center py-4 sm:py-5">
           {/* Logo */}
@@ -46,18 +46,18 @@ const DashboardHeader = ({ user, handleMessagesClick, handleNotificationsClick }
           </Link>
 
           <div className="flex items-center space-x-4 sm:space-x-6">
-            <div className="hidden md:flex items-center space-x-3 text-gray-700">
+            <div className="hidden md:flex items-center space-x-3 text-[#2C2C2C]"> 
               {user?.profilePicture ? (
-                <img src={user.profilePicture} alt="User Avatar" className="w-9 h-9 rounded-full object-cover border-2 border-green-400 shadow-md" />
+                <img src={user.profilePicture} alt="User Avatar" className="w-9 h-9 rounded-xl object-cover border-2 border-[#8CC76E] shadow-sm" />
               ) : (
-                <UserCircle className="w-9 h-9 text-green-600" strokeWidth={1.5} />
+                <UserCircle className="w-9 h-9 text-[#8CC76E]" strokeWidth={1.5} />
               )}
               <span className="font-semibold text-lg">{user?.fullname || 'Guest'}</span>
             </div>
 
             <button
               onClick={handleMessagesClick}
-              className="p-2.5 rounded-full text-gray-600 hover:bg-green-50 hover:text-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-110 shadow-sm"
+              className="p-2.5 rounded-xl text-[#2C2C2C] hover:bg-[#F9F6F1] hover:text-[#8CC76E] focus:outline-none focus:ring-2 focus:ring-[#8CC76E] transition-all duration-200 transform hover:scale-110 shadow-sm" // Rounded-xl, colors adjusted
               aria-label="Messages"
             >
               <MessageCircle className="w-6 h-6" strokeWidth={2} />
@@ -65,25 +65,25 @@ const DashboardHeader = ({ user, handleMessagesClick, handleNotificationsClick }
 
             <button
               onClick={handleNotificationsClick}
-              className="p-2.5 rounded-full text-gray-600 hover:bg-green-50 hover:text-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 transition-all duration-200 transform hover:scale-110 shadow-sm"
+              className="p-2.5 rounded-xl text-[#2C2C2C] hover:bg-[#F9F6F1] hover:text-[#8CC76E] focus:outline-none focus:ring-2 focus:ring-[#8CC76E] transition-all duration-200 transform hover:scale-110 shadow-sm" // Rounded-xl, colors adjusted
               aria-label="Notifications"
             >
               <Bell className="w-6 h-6" strokeWidth={2} />
             </button>
 
-            <Link to="/user/inprogress" className="hidden sm:flex items-center space-x-2 bg-green-500 text-white px-5 py-2.5 rounded-full text-base font-bold hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+            <Link to="/user/inprogress" className="hidden sm:flex items-center space-x-2 bg-[#8CC76E] text-white px-5 py-2.5 rounded-xl text-base font-bold hover:bg-[#72A658] transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"> {/* Button color, rounded-xl, shadow adjusted */}
               <Clock className="w-5 h-5" strokeWidth={2} />
               <span>In Progress</span>
             </Link>
 
-            <Link to="/user/pending-service" className="hidden sm:flex items-center space-x-2 bg-green-500 text-white px-5 py-2.5 rounded-full text-base font-bold hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+            <Link to="/user/pending-service" className="hidden sm:flex items-center space-x-2 bg-[#8CC76E] text-white px-5 py-2.5 rounded-xl text-base font-bold hover:bg-[#72A658] transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"> {/* Button color, rounded-xl, shadow adjusted */}
               <ClipboardList className="w-5 h-5" strokeWidth={2} />
               <span>Pending</span>
             </Link>
 
             <button
               onClick={handleLogout}
-              className="flex items-center space-x-2 bg-red-600 text-white px-5 py-2.5 rounded-full text-base font-bold hover:bg-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+              className="flex items-center space-x-2 bg-red-600 text-white px-5 py-2.5 rounded-xl text-base font-bold hover:bg-red-700 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5" // Rounded-xl, shadow adjusted
             >
               <LogOut className="w-5 h-5" strokeWidth={2} />
               <span>Logout</span>

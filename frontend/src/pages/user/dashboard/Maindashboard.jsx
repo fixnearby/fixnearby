@@ -504,22 +504,18 @@ const UserMainDashboard = () => {
         .delay-600 { animation-delay: 0.6s; }
         .delay-700 { animation-delay: 0.7s; }
 
-        /* Custom focus styles for inputs and buttons for better accessibility and visual feedback */
         input:focus, textarea:focus, select:focus, button:focus {
           outline: none;
-          box-shadow: 0 0 0 4px rgba(140, 199, 110, 0.5), 0 0 0 2px white; /* Green focus ring using the new color */
-          border-color: #8CC76E; /* Ensure border also changes to the new green */
+          box-shadow: 0 0 0 4px rgba(140, 199, 110, 0.5), 0 0 0 2px white; 
+          border-color: #8CC76E;
         }
 
-        /* Custom style to hide default dropdown arrow and use Lucide icon */
         select {
             -webkit-appearance: none;
             -moz-appearance: none;
             appearance: none;
             background-image: none;
         }
-
-        /* Set Lexend font globally within this component's scope if not already done in index.css/tailwind.config.js */
         .font-lexend {
             font-family: 'Lexend', sans-serif;
         }

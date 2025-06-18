@@ -14,7 +14,7 @@ import {
   Clock,
   X,
   Info,
-  Sparkles, 
+  Sparkles,
   Droplets,
   Hammer,
   Paintbrush,
@@ -27,8 +27,8 @@ import {
   Wrench,
   MessageCircle,
   Bell,
-  Home, 
-  ClipboardList, 
+  Home,
+  ClipboardList,
   Edit,
   Users,
   ThumbsUp,
@@ -45,7 +45,7 @@ import {
 
 const UserMainDashboard = () => {
   const navigate = useNavigate();
-  const { user } = useAuthStore(); 
+  const { user } = useAuthStore();
 
   const isAuthenticated = !!user;
 
@@ -75,7 +75,7 @@ const UserMainDashboard = () => {
     "Interior Design": Ruler,
     "General Repairs": Wrench,
     "Specialized Services": Sparkles,
-    "Service Requested": FileText, 
+    "Service Requested": FileText,
     "Service In Progress": Briefcase,
     "Service Completed": ClipboardCheck,
     "Service Cancelled": X,
@@ -92,7 +92,7 @@ const UserMainDashboard = () => {
     if (type.toLowerCase().includes("cancelled")) return serviceIcons["Service Cancelled"];
     if (type.toLowerCase().includes("message")) return serviceIcons["Message"];
     if (type.toLowerCase().includes("account")) return serviceIcons["Account Update"];
-    return Home; 
+    return Home;
   };
 
 
@@ -248,11 +248,11 @@ const UserMainDashboard = () => {
 
   if (!user && !loadingDashboardData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="text-center p-10 bg-white rounded-3xl shadow-2xl border border-gray-200 animate-fadeInUp">
-          <h2 className="text-4xl font-extrabold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-8 text-xl leading-relaxed">Please log in as a user to unlock your personalized dashboard and services.</p>
-          <Link to="/user/login" className="px-10 py-4 bg-green-600 text-white font-bold rounded-full hover:bg-green-700 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1">
+      <div className="min-h-screen bg-[#F9F6F1] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend text-[#2C2C2C]">
+        <div className="text-center p-10 bg-white rounded-xl shadow-lg border border-gray-200 animate-fadeInUp">
+          <h2 className="text-4xl font-extrabold text-[#2C2C2C] mb-4">Access Denied</h2>
+          <p className="text-[#2C2C2C] mb-8 text-xl leading-relaxed">Please log in as a user to unlock your personalized dashboard and services.</p>
+          <Link to="/user/login" className="px-10 py-4 bg-[#8CC76E] text-white font-bold rounded-xl hover:bg-[#72A658] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1">
             Go to Login
           </Link>
         </div>
@@ -261,8 +261,8 @@ const UserMainDashboard = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 font-sans antialiased overflow-hidden">
-  
+    <div className="min-h-screen bg-[#F9F6F1] font-lexend antialiased overflow-hidden text-[#2C2C2C]">
+
       <DashboardHeader
         user={user}
         handleMessagesClick={handleMessagesClick}
@@ -273,62 +273,62 @@ const UserMainDashboard = () => {
       <main className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-10 py-16">
 
         <div className="mb-20 text-center animate-fadeInUp">
-          <h1 className="text-5xl sm:text-6xl font-extrabold text-gray-900 mb-4 leading-tight">
-            Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-green-700">{user?.fullname?.split(' ')[0] || 'User'}</span>!
+          <h1 className="text-5xl sm:text-6xl font-extrabold text-[#2C2C2C] mb-4 leading-tight">
+            Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8CC76E] to-[#72A658]">{user?.fullname?.split(' ')[0] || 'User'}</span>!
           </h1>
-          <p className="text-xl sm:text-2xl text-gray-600 max-w-3xl mx-auto font-light">
+          <p className="text-[#2C2C2C] max-w-3xl mx-auto font-light">
             Your one-stop solution for all home services. Let's make your life easier.
           </p>
         </div>
 
         <section className="mb-20 animate-fadeInUp delay-100">
-          <h2 className="text-4xl font-bold text-gray-900 mb-10 text-center">Quick Actions</h2>
+          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-10 text-center">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <Link
               to="#"
               onClick={handleQuickActionNewService}
-              className="group bg-gradient-to-br from-green-500 to-green-600 text-white rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-green-400 focus:ring-offset-2"
+              className="group bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-[#8CC76E] focus:ring-offset-2"
             >
-              <Rocket className="w-16 h-16 mb-4 text-green-100 transition-transform group-hover:rotate-6 group-hover:scale-110" strokeWidth={1.5} />
+              <Rocket className="w-16 h-16 mb-4 text-white transition-transform group-hover:rotate-6 group-hover:scale-110" strokeWidth={1.5} />
               <h3 className="text-3xl font-bold mb-2">Request New Service</h3>
-              <p className="text-green-100 text-base leading-relaxed opacity-90">Quickly book any home repair or maintenance.</p>
+              <p className="text-white text-base leading-relaxed opacity-90">Quickly book any home repair or maintenance.</p>
             </Link>
             <Link
               to="/user/inprogress"
-              className="group bg-white rounded-3xl p-8 flex flex-col items-center justify-center text-center shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-gray-300 focus:ring-offset-2"
+              className="group bg-white rounded-xl p-8 flex flex-col items-center justify-center text-center border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-gray-300 focus:ring-offset-2"
             >
-              <LayoutDashboard className="w-16 h-16 mb-4 text-gray-600 transition-transform group-hover:-rotate-6 group-hover:scale-110" strokeWidth={1.5} />
-              <h3 className="text-3xl font-bold text-gray-900 mb-2">View Active Requests</h3>
-              <p className="text-gray-600 text-base leading-relaxed">Track the status of your ongoing and pending services.</p>
+              <LayoutDashboard className="w-16 h-16 mb-4 text-[#2C2C2C] transition-transform group-hover:-rotate-6 group-hover:scale-110" strokeWidth={1.5} />
+              <h3 className="text-3xl font-bold text-[#2C2C2C] mb-2">View Active Requests</h3>
+              <p className="text-[#2C2C2C] text-base leading-relaxed">Track the status of your ongoing and pending services.</p>
             </Link>
           </div>
         </section>
 
 
         <section className="mb-20 animate-fadeInUp delay-200">
-          <h2 className="text-4xl font-bold text-gray-900 mb-10 text-center">Explore Our Home Services</h2>
+          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-10 text-center">Explore Our Home Services</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-stretch">
             {services.map((service, index) => (
               <div
                 key={index}
-                className="service-card bg-white rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 border border-gray-100 cursor-pointer overflow-hidden group relative p-8 flex flex-col items-center text-center"
+                className="service-card bg-white rounded-xl border border-gray-100 cursor-pointer overflow-hidden group relative p-8 flex flex-col items-center text-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2"
               >
-                <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-green-50 to-white rounded-t-3xl -z-10 opacity-70"></div>
-                <div className={`bg-gradient-to-br from-green-500 to-green-700 text-white w-20 h-20 sm:w-24 sm:h-24 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-lg group-hover:shadow-xl`}>
+                <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-[#F9F6F1] to-white rounded-t-xl -z-10 opacity-70"></div>
+                <div className={`bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white w-20 h-20 sm:w-24 sm:h-24 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-md group-hover:shadow-lg`}>
                   {React.createElement(service.icon, { className: "w-10 h-10 sm:w-12 sm:h-12" })}
                 </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-3">{service.title}</h3>
-                <p className="text-gray-600 text-sm mb-6 line-clamp-3 leading-relaxed">{service.description}</p>
+                <h3 className="text-2xl font-bold text-[#2C2C2C] mb-3">{service.title}</h3>
+                <p className="text-[#2C2C2C] text-sm mb-6 line-clamp-3 leading-relaxed">{service.description}</p>
 
                 <div className="mt-auto w-full">
                   <button
                     onClick={() => handleServiceClick(service)}
-                    className="w-full bg-green-500 text-white py-3 rounded-full font-bold text-lg hover:bg-green-600 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                    className="w-full bg-[#8CC76E] text-white py-3 rounded-xl font-bold text-lg hover:bg-[#72A658] transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#8CC76E] focus:ring-offset-2"
                   >
-                    Book Visit <span className="ml-2 px-2 py-0.5 bg-white text-green-600 rounded-full text-xs font-bold">FREE</span>
+                    Book Visit <span className="ml-2 px-2 py-0.5 bg-white text-[#8CC76E] rounded-full text-xs font-bold">FREE</span>
                     <ArrowRight className="ml-2 w-5 h-5 text-white transition-transform group-hover:translate-x-1" strokeWidth={2.5} />
                   </button>
-                  <div className="text-xs text-gray-500 leading-snug mt-3 px-2 py-1 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="text-xs text-[#2C2C2C] leading-snug mt-3 px-2 py-1 bg-green-50 border border-[#8CC76E] rounded-lg">
                     <strong className="text-red-600">Note:</strong> ₹150 cancellation fee applies after technician visit.
                   </div>
                 </div>
@@ -337,45 +337,45 @@ const UserMainDashboard = () => {
           </div>
         </section>
 
-        <section className="mb-20 bg-white rounded-3xl shadow-2xl p-10 lg:p-14 border border-gray-100 animate-fadeInUp delay-300">
-          <h2 className="text-4xl font-bold text-gray-900 mb-12 text-center">Our Simple Process</h2>
+        <section className="mb-20 bg-white rounded-xl shadow-md p-10 lg:p-14 border border-gray-100 animate-fadeInUp delay-300">
+          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-12 text-center">Our Simple Process</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-y-10 lg:gap-x-8 relative">
- 
+
             <div className="absolute hidden lg:block inset-x-0 top-[25%] transform -translate-y-1/2 z-0">
               <div className="flex justify-between items-center px-16">
-                <div className="w-full border-t-2 border-dashed border-green-300"></div>
-                <div className="w-full border-t-2 border-dashed border-green-300"></div>
-                <div className="w-full border-t-2 border-dashed border-green-300"></div>
+                <div className="w-full border-t-2 border-dashed border-[#8CC76E]"></div>
+                <div className="w-full border-t-2 border-dashed border-[#8CC76E]"></div>
+                <div className="w-full border-t-2 border-dashed border-[#8CC76E]"></div>
               </div>
             </div>
 
             <div className="flex flex-col items-center text-center p-4 relative z-10 animate-fadeInUp delay-400">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-full mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-6 rounded-xl mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
                 <ClipboardList className="w-12 h-12" strokeWidth={2} />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">1. Choose Service</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">Browse our categories and select the perfect service for your needs.</p>
+              <h3 className="text-xl font-semibold text-[#2C2C2C] mb-2">1. Choose Service</h3>
+              <p className="text-[#2C2C2C] text-sm leading-relaxed">Browse our categories and select the perfect service for your needs.</p>
             </div>
             <div className="flex flex-col items-center text-center p-4 relative z-10 animate-fadeInUp delay-500">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-full mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-6 rounded-xl mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
                 <Edit className="w-12 h-12" strokeWidth={2} />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">2. Describe Job</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">Tell us what you need done, when, and where. It's quick & easy.</p>
+              <h3 className="text-xl font-semibold text-[#2C2C2C] mb-2">2. Describe Job</h3>
+              <p className="text-[#2C2C2C] text-sm leading-relaxed">Tell us what you need done, when, and where. It's quick & easy.</p>
             </div>
             <div className="flex flex-col items-center text-center p-4 relative z-10 animate-fadeInUp delay-600">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-full mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-6 rounded-xl mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
                 <Users className="w-12 h-12" strokeWidth={2} />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">3. Get Matched</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">We connect you with highly-rated, local service professionals.</p>
+              <h3 className="text-xl font-semibold text-[#2C2C2C] mb-2">3. Get Matched</h3>
+              <p className="text-[#2C2C2C] text-sm leading-relaxed">We connect you with highly-rated, local service professionals.</p>
             </div>
             <div className="flex flex-col items-center text-center p-4 relative z-10 animate-fadeInUp delay-700">
-              <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-full mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-6 rounded-xl mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
                 <ThumbsUp className="w-12 h-12" strokeWidth={2} />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">4. Service Done!</h3>
-              <p className="text-gray-600 text-sm leading-relaxed">Enjoy your restored home. Pay securely after the job is complete.</p>
+              <h3 className="text-xl font-semibold text-[#2C2C2C] mb-2">4. Service Done!</h3>
+              <p className="text-[#2C2C2C] text-sm leading-relaxed">Enjoy your restored home. Pay securely after the job is complete.</p>
             </div>
           </div>
         </section>
@@ -383,37 +383,37 @@ const UserMainDashboard = () => {
 
         {/* Quick Stats */}
         <section className="mb-20 animate-fadeInUp delay-400">
-          <h2 className="text-4xl font-bold text-gray-900 mb-10 text-center">Your Dashboard At a Glance</h2>
+          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-10 text-center">Your Dashboard At a Glance</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {loadingDashboardData ? (
               <>
-                <div className="bg-gray-200 rounded-3xl p-10 animate-pulse h-48 shadow-xl"></div>
-                <div className="bg-gray-200 rounded-3xl p-10 animate-pulse h-48 shadow-xl"></div>
-                <div className="bg-gray-200 rounded-3xl p-10 animate-pulse h-48 shadow-xl"></div>
+                <div className="bg-gray-200 rounded-xl p-10 animate-pulse h-48 shadow-md"></div>
+                <div className="bg-gray-200 rounded-xl p-10 animate-pulse h-48 shadow-md"></div>
+                <div className="bg-gray-200 rounded-xl p-10 animate-pulse h-48 shadow-md"></div>
               </>
             ) : errorDashboardData ? (
-              <div className="md:col-span-3 bg-red-100 text-red-700 p-6 rounded-xl text-center font-medium border border-red-200 shadow-md">
+              <div className="md:col-span-3 bg-red-100 text-red-700 p-6 rounded-xl border border-red-200 text-center font-medium shadow-md">
                 <Info className="inline-block w-5 h-5 mr-2" /> Error: {errorDashboardData}
               </div>
             ) : (
               <>
-                <div className="bg-white rounded-3xl p-8 text-gray-800 flex flex-col items-center justify-center shadow-xl border border-gray-100 hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                  <Home className="w-14 h-14 text-gray-500 mb-4" strokeWidth={1.5} />
-                  <p className="text-gray-600 text-lg font-medium">Total Services</p>
-                  <p className="text-5xl font-extrabold text-gray-900 mt-2">
+                <div className="bg-white rounded-xl p-8 text-[#2C2C2C] flex flex-col items-center justify-center border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                  <Home className="w-14 h-14 text-[#2C2C2C] mb-4" strokeWidth={1.5} />
+                  <p className="text-[#2C2C2C] text-lg font-medium">Total Services</p>
+                  <p className="text-5xl font-extrabold text-[#2C2C2C] mt-2">
                     <AnimatedNumber value={dashboardStats.totalServices} />
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-3xl p-8 text-white flex flex-col items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
-                  <CheckCircle className="w-14 h-14 text-green-200 mb-4" strokeWidth={1.5} />
-                  <p className="text-green-100 text-lg font-medium">Completed Services</p>
+                <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] rounded-xl p-8 text-white flex flex-col items-center justify-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                  <CheckCircle className="w-14 h-14 text-white mb-4" strokeWidth={1.5} />
+                  <p className="text-white text-lg font-medium">Completed Services</p>
                   <p className="text-5xl font-extrabold text-white mt-2">
                     <AnimatedNumber value={dashboardStats.completedServices} />
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-3xl p-8 text-white flex flex-col items-center justify-center shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1">
+                <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl p-8 text-white flex flex-col items-center justify-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
                   <Clock className="w-14 h-14 text-orange-200 mb-4" strokeWidth={1.5} />
                   <p className="text-orange-100 text-lg font-medium">In Progress</p>
                   <p className="text-5xl font-extrabold text-white mt-2">
@@ -427,9 +427,9 @@ const UserMainDashboard = () => {
 
         {/* Recent Activity */}
         <section className="mb-16 animate-fadeInUp delay-500">
-          <h2 className="text-4xl font-bold text-gray-900 mb-10 text-center">Your Recent Activity</h2>
+          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-10 text-center">Your Recent Activity</h2>
           {loadingDashboardData ? (
-            <div className="bg-white p-10 rounded-3xl shadow-xl animate-pulse border border-gray-100">
+            <div className="bg-white p-10 rounded-xl shadow-md animate-pulse border border-gray-100">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="h-14 bg-gray-200 rounded-lg mb-4 last:mb-0"></div>
               ))}
@@ -439,24 +439,24 @@ const UserMainDashboard = () => {
               <Info className="inline-block w-5 h-5 mr-2" /> Error: {errorDashboardData}
             </div>
           ) : recentUserActivity.length === 0 ? (
-            <div className="bg-white p-10 rounded-3xl shadow-xl text-center text-gray-500 text-xl border border-gray-100">
-              <ClipboardList className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+            <div className="bg-white p-10 rounded-xl shadow-md text-center text-[#2C2C2C] text-xl border border-gray-100">
+              <ClipboardList className="w-12 h-12 mx-auto mb-4 text-[#2C2C2C]" />
               <p>No recent activity to display yet. Let's get some services booked!</p>
             </div>
           ) : (
-            <div className="bg-white p-10 rounded-3xl shadow-xl border border-gray-100">
+            <div className="bg-white p-10 rounded-xl shadow-md border border-gray-100">
               <ul className="divide-y divide-gray-200">
                 {recentUserActivity.map((activity, index) => {
                   const ActivityIcon = getIconForType(activity.message);
                   return (
                     <li key={index} className="flex flex-col sm:flex-row items-start sm:items-center py-4 first:pt-0 last:pb-0 group hover:bg-gray-50 transition-colors duration-200 rounded-lg px-3 -mx-3">
                       <div className="flex items-center mb-2 sm:mb-0 sm:mr-6 w-full sm:w-auto">
-                        <div className="p-2 bg-green-100 rounded-full mr-4 shadow-sm group-hover:bg-green-200 transition-colors">
-                          <ActivityIcon className="w-6 h-6 text-green-700" strokeWidth={2} />
+                        <div className="p-2 bg-[#F9F6F1] rounded-full mr-4 shadow-sm group-hover:bg-gray-200 transition-colors">
+                          <ActivityIcon className="w-6 h-6 text-[#8CC76E]" strokeWidth={2} />
                         </div>
-                        <span className="text-gray-800 font-medium text-lg leading-snug">{activity.message}</span>
+                        <span className="text-[#2C2C2C] font-medium text-lg leading-snug">{activity.message}</span>
                       </div>
-                      <span className="ml-auto text-sm text-gray-500 mt-1 sm:mt-0 whitespace-nowrap">{activity.time}</span>
+                      <span className="ml-auto text-sm text-[#2C2C2C] mt-1 sm:mt-0 whitespace-nowrap">{activity.time}</span>
                     </li>
                   );
                 })}
@@ -507,8 +507,8 @@ const UserMainDashboard = () => {
         /* Custom focus styles for inputs and buttons for better accessibility and visual feedback */
         input:focus, textarea:focus, select:focus, button:focus {
           outline: none;
-          box-shadow: 0 0 0 4px rgba(74, 222, 128, 0.5), 0 0 0 2px white; /* Green focus ring */
-          border-color: #4CAF50; /* Ensure border also changes to green */
+          box-shadow: 0 0 0 4px rgba(140, 199, 110, 0.5), 0 0 0 2px white; /* Green focus ring using the new color */
+          border-color: #8CC76E; /* Ensure border also changes to the new green */
         }
 
         /* Custom style to hide default dropdown arrow and use Lucide icon */
@@ -519,8 +519,10 @@ const UserMainDashboard = () => {
             background-image: none;
         }
 
-        /* Note: Confetti and modal specific animations are now in ServiceRequestFormModal.jsx */
-        /* Note: spin-slow animation is now in ServiceRequestFormModal.jsx */
+        /* Set Lexend font globally within this component's scope if not already done in index.css/tailwind.config.js */
+        .font-lexend {
+            font-family: 'Lexend', sans-serif;
+        }
         `}
       </style>
     </div>

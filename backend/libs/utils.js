@@ -10,12 +10,14 @@ export const generateToken = (userId, role, res) => {
     expiresIn: "30d",
   });
 
-  res.cookie("jwt", token, {
-    maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-    httpOnly: true, // Protect from XSS
-    sameSite: "Lax", // Use "Lax" for dev; "None" + secure in production if cross-origin
-    secure: false,   // Set to true in production with HTTPS
-  });
+ const isProduction = process.env.NODE_ENV === "production";
+
+res.cookie("jwt", token, {
+  maxAge: 30 * 24 * 60 * 60 * 1000,
+  httpOnly: true,
+  sameSite: isProduction ? "None" : "Lax",
+  secure: isProduction,
+});
 
   return token;
 };

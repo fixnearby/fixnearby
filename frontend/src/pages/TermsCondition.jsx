@@ -465,29 +465,6 @@ export default function TermsCondition() {
           ))}
         </div>
 
-        {/* Terms Acceptance */}
-        <div className="mt-10 p-6 bg-green-50 rounded-xl shadow-md border border-green-200 flex items-center justify-between flex-wrap gap-4">
-            <label htmlFor="acceptTerms" className="flex items-center cursor-pointer text-lg text-green-900 font-semibold">
-                <input
-                    type="checkbox"
-                    id="acceptTerms"
-                    checked={acceptedTerms}
-                    onChange={handleAcceptTerms}
-                    className="h-6 w-6 text-green-600 rounded border-gray-300 focus:ring-green-500 mr-3 transition-colors duration-200"
-                />
-                I have read and agree to the Terms & Conditions
-            </label>
-            <button
-                onClick={() => alert(acceptedTerms ? 'Terms Accepted!' : 'Please accept the terms to proceed.')} // Replace with actual action
-                className={`px-8 py-3 rounded-full font-bold text-lg transition-all duration-300 shadow-md ${
-                    acceptedTerms ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-gray-300 text-gray-700 cursor-not-allowed'
-                }`}
-                disabled={!acceptedTerms}
-            >
-                Proceed
-            </button>
-        </div>
-
 
         {/* Contact & Support */}
         <div className="mt-12 bg-gray-50 rounded-xl p-8 shadow-md border border-gray-100">

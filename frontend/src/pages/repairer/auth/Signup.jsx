@@ -204,13 +204,15 @@ const Signup = () => {
       <header className="bg-white/90 backdrop-blur-md shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center">
-              <img 
-                src="/images/logooo.png" 
-                alt="fixNearby Logo" 
-                className="h-10 w-auto rounded-lg shadow-md" 
+            <div className="flex items-center justify-center mb-6 cursor-pointer">
+            <a href="/">
+              <img
+                src="/images/logooo.png"
+                alt="fixNearby Logo"
+                className="h-10 w-auto rounded-lg shadow-md cursor-pointer"
               />
-            </div>
+            </a>
+          </div>
             <div className="flex items-center space-x-4">
               <Link to="/repairer/login" className="text-gray-700 hover:text-emerald-600 font-medium transition-colors">
                 Already have an account?
@@ -400,9 +402,7 @@ const Signup = () => {
                     Service Offered
                   </label>
                   <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Briefcase className="h-5 w-5 text-gray-400" />
-                    </div>
+                    
                     
                     <select
                       id="services" 
@@ -463,15 +463,16 @@ const Signup = () => {
                   onChange={handleInputChange}
                   className="mt-1 h-4 w-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
                 />
+                
                 <label htmlFor="agreeToTerms" className="text-sm text-gray-700">
                   I agree to the{' '}
-                  <a href="#" className="text-emerald-600 hover:text-lime-600 font-medium">
+                  <Link to="/terms-and-conditions" className="text-emerald-600 hover:text-lime-600 font-medium" target="_blank">
                     Terms of Service
-                  </a>{' '}
+                  </Link>{' '}
                   and{' '}
-                  <a href="#" className="text-emerald-600 hover:text-lime-600 font-medium">
+                  <Link to="/privacy-policy" className="text-emerald-600 hover:text-lime-600 font-medium" target="_blank">
                     Privacy Policy
-                  </a>
+                  </Link>
                 </label>
               </div>
               {errors.agreeToTerms && (
@@ -481,7 +482,7 @@ const Signup = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none cursor-pointer"
               >
                 {isLoading ? (
                   <>
@@ -584,28 +585,28 @@ const Signup = () => {
             <div>
               <h3 className="font-semibold mb-4">For Professionals</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Join as Professional</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Professional Login</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">How it Works</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Success Stories</a></li>
+                <li><Link to="#" className="hover:text-white transition-colors">Join as Professional</Link></li>
+                <li><Link to="/repairer/login" className="hover:text-white transition-colors">Professional Login</Link></li>
+                <li><Link to="#" className="hover:text-white transition-colors">How it Works</Link></li>
+                <li><Link to="#" className="hover:text-white transition-colors">Success Stories</Link></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">For Customers</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Find Professionals</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Book Services</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Customer Support</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Safety & Trust</a></li>
+                <li><Link to="/user/getotp" className="hover:text-white transition-colors">Find Professionals</Link></li>
+                <li><Link to="/user/getotp" className="hover:text-white transition-colors">Book Services</Link></li>
+                <li><Link to="/contact-us" className="hover:text-white transition-colors">Customer Support</Link></li>
+                <li><Link to="/contact-us" className="hover:text-white transition-colors">Safety & Trust</Link></li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Support</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Terms of Service</a></li>
+                <li><Link to="/contact-us" className="hover:text-white transition-colors">Help Center</Link></li>
+                <li><Link to="contact-us" className="hover:text-white transition-colors">Contact Us</Link></li>
+                <li><Link to="/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms-and-conditions" className="hover:text-white transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
           </div>

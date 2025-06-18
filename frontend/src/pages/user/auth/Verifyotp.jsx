@@ -2,7 +2,7 @@ import React, { useState , useEffect} from 'react';
 import { Mail, ArrowRight, Wrench, User, CheckCircle } from 'lucide-react';
 import { axiosInstance } from '../../../lib/axios';
 import toast from "react-hot-toast";
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate , Link } from 'react-router-dom';
 
 const Verifyotp = () => {
   const location = useLocation();
@@ -52,13 +52,14 @@ const Verifyotp = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-6"> {/* Removed space-x-2 */}
-            {/* Logo */}
-            <img 
-              src="/images/logooo.png"
-              alt="fixNearby Logo" 
-              className="h-10 w-auto rounded-lg shadow-md" 
-            />
+          <div className="flex items-center justify-center mb-6 cursor-pointer">
+            <a href="/">
+              <img
+                src="/images/logooo.png"
+                alt="fixNearby Logo"
+                className="h-10 w-auto rounded-lg shadow-md cursor-pointer"
+              />
+            </a>
           </div>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Verify OTP</h1>
@@ -120,9 +121,9 @@ const Verifyotp = () => {
             </a>
           </p>
           <div className="flex justify-center space-x-6 text-xs text-gray-500">
-            <a href="/privacy-policy" className="hover:text-gray-700 transition-colors">Privacy Policy</a>
-            <a href="/terms-and-conditions" className="hover:text-gray-700 transition-colors">Terms of Service</a>
-            <a href="/contact-us" className="hover:text-gray-700 transition-colors">Help</a>
+            <Link to="/privacy-policy" className="hover:text-gray-700 transition-colors">Privacy Policy</Link>
+            <Link to="/terms-and-conditions" className="hover:text-gray-700 transition-colors">Terms of Service</Link>
+            <Link to="/contact-us" className="hover:text-gray-700 transition-colors">Help</Link>
           </div>
         </div>
 

@@ -57,13 +57,14 @@ const Getotp = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-6"> 
-            {/* Logo */}
-            <img 
-              src="/images/logooo.png" 
-              alt="fixNearby Logo" 
-              className="h-10 w-auto rounded-lg shadow-md" 
-            />
+          <div className="flex items-center justify-center mb-6 cursor-pointer">
+            <a href="/">
+              <img
+                src="/images/logooo.png"
+                alt="fixNearby Logo"
+                className="h-10 w-auto rounded-lg shadow-md cursor-pointer"
+              />
+            </a>
           </div>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Get Started (Repairer)</h1> 

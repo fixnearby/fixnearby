@@ -36,7 +36,7 @@ const Header = ({ isMenuOpen, setIsMenuOpen }) => {
             Login
           </Link>
           <Link
-            to="/user/signup"
+            to="/user/getotp"
             className="px-6 py-2 bg-green-500 text-white rounded-md
                        hover:bg-green-600 transition-colors duration-200 shadow-md font-medium"
           >

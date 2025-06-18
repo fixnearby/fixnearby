@@ -49,13 +49,13 @@ const Landing = () => {
   const testimonials = [
     {
       name: "Jatin Agrawal",
-      rating: 5,
-      review: "Ramesh was incredibly professional and efficient. But his colour was dark and it was hard to see him."
+      rating: 4,
+      review: "Ramesh did a great job and handled everything smoothly. Just a little more attention to detail would have made it perfect."
     },
     {
       name: "Swarnim Agrawal",
       rating: 5,
-      review: "The service was excellent, but he stole a bicycle from my house, which was captured on camera."
+      review: "Absolutely satisfied with the service! Quick, professional, and friendly throughout the entire process."
     },
     {
       name: "Bhuvan Sharma",
@@ -64,7 +64,7 @@ const Landing = () => {
     },
     {
       name: "Divyaksh",
-      rating: 4,
+      rating: 5,
       review: "I had an plumbing emergency, and he provided urgent help"
     }
   ];

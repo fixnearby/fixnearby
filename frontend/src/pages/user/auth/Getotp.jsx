@@ -1,25 +1,44 @@
-import React, { useState } from 'react';
-import { Phone, ArrowRight, Wrench } from 'lucide-react';
-import { axiosInstance } from '../../../lib/axios';
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import {
+  Mail,
+  ArrowRight,
+  Wrench,
+  User,
+  CheckCircle,
+  Phone,
+} from "lucide-react";
+import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
-import { useNavigate } from 'react-router-dom';
+
+const phoneSchema = {
+  validate: (phone) => {
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phone) {
+      return { success: false, error: "Phone number is required" };
+    }
+    if (!phoneRegex.test(phone)) {
+      return {
+        success: false,
+        error: "Please enter a valid 10-digit phone number",
+      };
+    }
+    return { success: true };
+  },
+};
 
 const Getotp = () => {
-  const navigate = useNavigate();
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-
-  const phoneRegex = /^[6-9]\d{9}$/;
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!phone) {
-      toast.error('Phone number is required');
-      return;
-    }
-    if (!phoneRegex.test(phone)) {
-      toast.error('Please enter a valid 10-digit phone number');
+    const validation = phoneSchema.validate(phone);
+
+    if (!validation.success) {
+      toast.error(validation.error);
       return;
     }
 
@@ -28,13 +47,18 @@ const Getotp = () => {
     try {
       const response = await axiosInstance.post("/user/getotp", { phone });
       if (response.status === 200 || response.status === 201) {
-        toast.success('OTP sent successfully!');
+        toast.success("OTP sent successfully!");
+        setPhone("");
         navigate("/user/verify-otp", { state: { phone } });
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to send OTP. Please try again.';
+      console.log(error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to send OTP. Please try again.";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -46,25 +70,30 @@ const Getotp = () => {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center mb-6">
-            {/* Logo */}
-            <img 
-              src="/images/logooo.png" 
-              alt="fixNearby Logo" 
-              className="h-10 w-auto rounded-lg shadow-md" 
-            />
+          <div className="flex items-center justify-center mb-6 cursor-pointer">
+            <a href="/">
+              <img
+                src="/images/logooo.png"
+                alt="fixNearby Logo"
+                className="h-10 w-auto rounded-lg shadow-md cursor-pointer"
+              />
+            </a>
           </div>
-          
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Get OTP</h1>
-          <p className="text-gray-600">Enter your phone number to get started</p>
+
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Get Started</h1>
+          <p className="text-gray-600">
+            Enter your phone to receive an OTP code
+          </p>
         </div>
 
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="space-y-6">
-            {/* Phone Input */}
             <div className="space-y-2">
-              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700">
+              <label
+                htmlFor="phone"
+                className="block text-sm font-semibold text-gray-700"
+              >
                 Phone Number
               </label>
               <div className="relative">
@@ -73,16 +102,18 @@ const Getotp = () => {
                 </div>
                 <input
                   id="phone"
-                  name="phone"
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
-                  placeholder="Enter your 10-digit phone number"
+                  placeholder="Enter your phone Number"
                   maxLength="10"
                 />
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                We'll send a 6-digit OTP code to this phone number
+              </p>
             </div>
 
             {/* Submit Button */}
@@ -98,29 +129,95 @@ const Getotp = () => {
                 </>
               ) : (
                 <>
-                  <span>Get OTP</span>
+                  <span>Send Verification Code</span>
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </button>
           </div>
+
+          {/* Divider */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-300"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500 font-medium">
+                or
+              </span>
+            </div>
+          </div>
+
+          {/* User Registration */}
+          <div className="text-center space-y-4">
+            <p className="text-gray-600 text-sm">
+              Want to provide for services?
+            </p>
+            <Link
+              to="/repairer/getotp"
+              className="w-full border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:border-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200 flex items-center justify-center space-x-2"
+            >
+              <User className="w-5 h-5" />
+              <span>Register as a Repairer</span>
+            </Link>
+          </div>
         </div>
 
-        {/* Footer Links */}
         <div className="text-center mt-8 space-y-2">
           <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <a href="/user/login" className="text-emerald-600 hover:text-lime-600 font-semibold transition-colors">
+            Already have an account?{" "}
+            <Link
+              to="/user/login"
+              className="text-emerald-600 hover:text-lime-600 font-semibold transition-colors"
+            >
               Sign in
-            </a>
+            </Link>
           </p>
           <div className="flex justify-center space-x-6 text-xs text-gray-500">
-            <a href="/privacy-policy" className="hover:text-gray-700 transition-colors">Privacy Policy</a>
-            <a href="/terms-and-conditions" className="hover:text-gray-700 transition-colors">Terms of Service</a>
-            <a href="/contact-us" className="hover:text-gray-700 transition-colors">Help</a>
+            <a
+              href="/privacy-policy"
+              className="hover:text-gray-700 transition-colors"
+            >
+              Privacy Policy
+            </a>
+            <a
+              href="/terms-and-conditions"
+              className="hover:text-gray-700 transition-colors"
+            >
+              Terms of Service
+            </a>
+            <a
+              href="/contact-us"
+              className="hover:text-gray-700 transition-colors"
+            >
+              Help
+            </a>
+          </div>
+        </div>
+
+        {/* Security Note */}
+        <div className="mt-6 bg-emerald-50 border border-emerald-200 rounded-xl p-4">
+          <div className="flex items-start space-x-3">
+            <div className="flex-shrink-0">
+              <div className="bg-emerald-100 rounded-full p-1">
+                <CheckCircle className="w-4 h-4 text-emerald-600" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-emerald-900 mb-1">
+                Secure & Private
+              </h3>
+              <p className="text-xs text-emerald-700">
+                {" "}
+                {/* Theme change */}
+                Your phone number is encrypted and will only be used for account
+                verification and service updates.
+              </p>
+            </div>
           </div>
         </div>
       </div>
+
       <style>{`
         @keyframes slide-in {
           from { transform: translateX(100%); opacity: 0; }

@@ -42,6 +42,7 @@ import RepairerNotificationsPage from './pages/repairer/dashboard/RepairerNotifi
 import Privacy from "./pages/Privacy";
 import TermsCondition from "./pages/TermsCondition";
 import ContactUs from "./pages/ContactUs";
+import LoadingSpinner from "./components/LoadingSpinner";
 
 function App() {
   const {
@@ -101,7 +102,7 @@ function App() {
   if (isLoading)
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader className="size-10 animate-spin" />
+        <LoadingSpinner className="size-10 animate-spin" />
       </div>
     );
   const PrivateRoute = ({ children, allowedRoles }) => {

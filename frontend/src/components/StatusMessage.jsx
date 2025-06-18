@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
+import LoadingSpinner from './LoadingSpinner';
 
 const StatusMessage = ({ type, message, className = '' }) => {
   let icon, bgColor, textColor;
@@ -21,7 +22,7 @@ const StatusMessage = ({ type, message, className = '' }) => {
       textColor = 'text-blue-700';
       break;
     case 'loading':
-      icon = <Loader size={20} className="animate-spin" />;
+      icon = <LoadingSpinner size={20} className="animate-spin" />;
       bgColor = 'bg-gray-100';
       textColor = 'text-gray-700';
       break;

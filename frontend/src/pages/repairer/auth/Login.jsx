@@ -1,24 +1,21 @@
 import React, { useState } from 'react';
+import { Link , useNavigate } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, ArrowRight, Wrench, User, AlertCircle, Phone } from 'lucide-react';
 import { axiosInstance } from '../../../lib/axios';
-axiosInstance
 import toast from "react-hot-toast";
-import { useNavigate } from 'react-router-dom';
 
-// Zod-like validation schema (simulated)
+
 const loginSchema = {
   validate: (data) => {
     const errors = {};
     
-    // Email validation
+    
     const phoneRegex = /^[6-9]\d{9}$/;
     if (!data.phone) {
-      errors.phone = 'phone number is required';
+      errors.phone = 'Phone number is required'; 
     } else if (!phoneRegex.test(data.phone)) {
-      errors.phone = 'Please enter a valid phone number';
+      errors.phone = 'Please enter a valid 10-digit phone number'; 
     }
-    
-    // Password validation
     if (!data.password) {
       errors.password = 'Password is required';
     } else if (data.password.length < 8) {
@@ -32,9 +29,6 @@ const loginSchema = {
   }
 };
 
-
-
-
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -45,7 +39,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
 
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -53,7 +46,6 @@ const Login = () => {
       [name]: value
     }));
     
-    // Clear field error when user starts typing
     if (fieldErrors[name]) {
       setFieldErrors(prev => ({
         ...prev,
@@ -63,7 +55,6 @@ const Login = () => {
   };
 
   const handleSubmit = async () => {
-    // Validate form data using Zod-like schema
     const validation = loginSchema.validate(formData);
     
     if (!validation.success) {
@@ -77,12 +68,11 @@ const Login = () => {
     setFieldErrors({});
 
     try {
-      // Make API call using axios
       const response = await axiosInstance.post('/repairer/login', formData);
       
       if (response.status ===200 || response.status === 201) {
         toast.success('Login successful! Redirecting...');
-        navigate("/repairer/dashboard")
+        navigate("/repairer/dashboard") 
         window.location.reload();
         
       }
@@ -95,17 +85,17 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100 flex items-center justify-center p-4"> 
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-2 mb-6">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-xl">
-              <Wrench className="w-8 h-8 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              fixNearby
-            </span>
+          <div className="flex items-center justify-center mb-6"> 
+            {/* Logo */}
+            <img 
+              src="/images/logooo.png" 
+              alt="fixNearby Logo" 
+              className="h-10 w-auto rounded-lg shadow-md" 
+            />
           </div>
           
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
@@ -115,7 +105,7 @@ const Login = () => {
         {/* Main Card */}
         <div className="bg-white rounded-2xl shadow-xl border border-gray-100 p-8">
           <div className="space-y-6">
-            {/* Email Input */}
+            {/* Phone Input */}
             <div className="space-y-2">
               <label htmlFor="phone" className="block text-sm font-semibold text-gray-700">
                 Phone Number
@@ -127,13 +117,14 @@ const Login = () => {
                 <input
                   id="phone"
                   name="phone"
-                  type="phone"
+                  type="tel" // Changed to tel
                   value={formData.phone}
                   onChange={handleInputChange}
-                  className={`block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
-                    fieldErrors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  className={`block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${ /* Theme change */
+                    fieldErrors.phone ? 'border-red-500 bg-red-50' : 'border-gray-300' 
                   }`}
                   placeholder="Enter your Phone Number"
+                  maxLength="10" 
                 />
               </div>
               {fieldErrors.phone && (
@@ -159,8 +150,8 @@ const Login = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
                   onChange={handleInputChange}
-                  className={`block w-full pl-10 pr-12 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
-                    fieldErrors.password ? 'border-red-500 bg-red-50' : 'border-gray-300'
+                  className={`block w-full pl-10 pr-12 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${ /* Theme change */
+                    fieldErrors.password ? 'border-red-500 bg-red-50' : 'border-gray-300' 
                   }`}
                   placeholder="Enter your password"
                 />
@@ -182,7 +173,7 @@ const Login = () => {
 
             {/* Forgot Password */}
             <div className="flex justify-end">
-              <a href="/user/forgot-password" className="text-sm text-blue-600 hover:text-purple-600 font-medium transition-colors">
+              <a href="/repairer/forgot-password" className="text-sm text-emerald-600 hover:text-lime-600 font-medium transition-colors"> {/* Theme change, corrected path */}
                 Forgot your password?
               </a>
             </div>
@@ -191,7 +182,7 @@ const Login = () => {
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
+              className="w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white py-3 px-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
             >
               {isLoading ? (
                 <>
@@ -217,17 +208,17 @@ const Login = () => {
             </div>
           </div>
 
-          {/* Repairer Login */}
+          {/* User Login */}
           <div className="text-center space-y-4">
             <p className="text-gray-600 text-sm">
               Looking for any services?
             </p>
-            <a href="/user/login"
-              className="w-full border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center space-x-2"
+            <Link to="/user/login" 
+              className="w-full border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:border-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200 flex items-center justify-center space-x-2" 
             >
               <User className="w-5 h-5" />
               <span>Login as User</span>
-            </a>
+            </Link>
           </div>
         </div>
 
@@ -235,53 +226,26 @@ const Login = () => {
         <div className="text-center mt-8 space-y-2">
           <p className="text-sm text-gray-600">
             Don't have an account?{' '}
-            <a href="/repairer/getotp" className="text-blue-600 hover:text-purple-600 font-semibold transition-colors">
+            <Link to="/repairer/getotp" className="text-emerald-600 hover:text-lime-600 font-semibold transition-colors"> {/* Theme change, corrected path */}
               Sign up
-            </a>
+            </Link>
           </p>
           <div className="flex justify-center space-x-6 text-xs text-gray-500">
-            <a href="/privacy" className="hover:text-gray-700 transition-colors">Privacy Policy</a>
-            <a href="/terms" className="hover:text-gray-700 transition-colors">Terms of Service</a>
-            <a href="/help" className="hover:text-gray-700 transition-colors">Help</a>
+            <a href="/privacy-policy" className="hover:text-gray-700 transition-colors">Privacy Policy</a>
+            <a href="/terms-and-conditions" className="hover:text-gray-700 transition-colors">Terms of Service</a>
+            <a href="/contact-us" className="hover:text-gray-700 transition-colors">Help</a>
           </div>
         </div>
 
-        {/* Demo Credentials */}
-        <div className="mt-6 bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <div className="flex items-start space-x-3">
-            <div className="flex-shrink-0">
-              <div className="bg-amber-100 rounded-full p-1">
-                <AlertCircle className="w-4 h-4 text-amber-600" />
-              </div>
-            </div>
-            <div>
-              <h3 className="text-sm font-semibold text-amber-900 mb-1">Demo Credentials</h3>
-              <p className="text-xs text-amber-700 mb-2">
-                For testing purposes, you can use:
-              </p>
-              <div className="text-xs text-amber-700 space-y-1">
-                <div><strong>Phone:</strong> 91666****0</div>
-                <div><strong>Password:</strong> password123</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        
       </div>
 
       <style>{`
         @keyframes slide-in {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out;
-        }
+        .animate-slide-in { animation: slide-in 0.3s ease-out; }
       `}</style>
     </div>
   );

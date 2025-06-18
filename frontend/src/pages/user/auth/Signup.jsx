@@ -50,23 +50,24 @@ const Signup = () => {
       }
     } catch (error) {
       console.error("Signup failed:", error);
-      toast.error('Failed to Signup . Please try again.');
+      const errorMessage = error.response?.data?.message || error.message || 'Failed to Signup. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="flex items-center justify-center space-x-2 mb-6">
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-xl">
-              <Wrench className="w-8 h-8 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-              fixNearby
-            </span>
+          <div className="flex items-center justify-center mb-6"> {/* Removed space-x-2 */}
+            {/* Logo */}
+            <img 
+              src="/images/logooo.png" 
+              alt="fixNearby Logo" 
+              className="h-10 w-auto rounded-lg shadow-md" 
+            />
           </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create an Account</h1>
           <p className="text-gray-600">Register your {phone}</p>
@@ -88,7 +89,7 @@ const Signup = () => {
                   type="text"
                   value={fullname}
                   onChange={(e) => setFullname(e.target.value)}
-                  className="block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
+                  className="block w-full pl-10 pr-3 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your Full Name as on Aadhar Card"
                 />
               </div>
@@ -108,7 +109,7 @@ const Signup = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full pl-10 pr-12 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
+                  className="block w-full pl-10 pr-12 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your password"
                 />
                 <button
@@ -124,7 +125,7 @@ const Signup = () => {
             <button
               onClick={handleSubmit}
               disabled={isLoading}
-              className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-3 px-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
+              className="w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white py-3 px-4 rounded-xl font-semibold text-lg hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center space-x-2"
             >
               {isLoading ? (
                 <>
@@ -155,7 +156,7 @@ const Signup = () => {
             </p>
             <a
               href="/repairer/login"
-              className="w-full border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:border-blue-600 hover:text-blue-600 hover:bg-blue-50 transition-all duration-200 flex items-center justify-center space-x-2"
+              className="w-full border-2 border-gray-300 text-gray-700 py-3 px-4 rounded-xl font-semibold hover:border-emerald-600 hover:text-emerald-600 hover:bg-emerald-50 transition-all duration-200 flex items-center justify-center space-x-2"
             >
               <User className="w-5 h-5" />
               <span>Login as Repairer</span>
@@ -166,32 +167,24 @@ const Signup = () => {
         <div className="text-center mt-8 space-y-2">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
-            <a href="/user/login" className="text-blue-600 hover:text-purple-600 font-semibold transition-colors">
+            <a href="/user/login" className="text-emerald-600 hover:text-lime-600 font-semibold transition-colors">
               Login
             </a>
           </p>
           <div className="flex justify-center space-x-6 text-xs text-gray-500">
-            <a href="/privacy" className="hover:text-gray-700 transition-colors">Privacy Policy</a>
-            <a href="/terms" className="hover:text-gray-700 transition-colors">Terms of Service</a>
-            <a href="/help" className="hover:text-gray-700 transition-colors">Help</a>
+            <a href="/privacy-policy" className="hover:text-gray-700 transition-colors">Privacy Policy</a>
+            <a href="/terms-and-conditions" className="hover:text-gray-700 transition-colors">Terms of Service</a>
+            <a href="/contact-us" className="hover:text-gray-700 transition-colors">Help</a>
           </div>
         </div>
       </div>
 
       <style>{`
         @keyframes slide-in {
-          from {
-            transform: translateX(100%);
-            opacity: 0;
-          }
-          to {
-            transform: translateX(0);
-            opacity: 1;
-          }
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
         }
-        .animate-slide-in {
-          animation: slide-in 0.3s ease-out;
-        }
+        .animate-slide-in { animation: slide-in 0.3s ease-out; }
       `}</style>
     </div>
   );

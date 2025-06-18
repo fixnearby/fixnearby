@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import servicefromjson from '../../../services.json'; // Assuming you have a JSON file with services
+import { useLocation, useNavigate, Link } from 'react-router-dom';
+import servicefromjson from '../../../services.json';
 import {
   Wrench,
   Phone,
@@ -18,30 +18,32 @@ import {
   Star,
   Award,
   Loader,
-  CreditCard, // Import CreditCard icon for Aadhar field
+  CreditCard,
   IdCard
 } from 'lucide-react';
 import { axiosInstance } from '../../../lib/axios';
+import toast from "react-hot-toast";
+import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const Signup = () => {
   const location = useLocation();
   const navigate = useNavigate();
-    const phone = location.state?.phone;
+  const phone = location.state?.phone;
   
-    useEffect(() => {
-      if (!phone) {
-        navigate("/repairer/getotp");
-      }
-    }, [phone, navigate]);
+  useEffect(() => {
+    if (!phone) {
+      navigate("/repairer/getotp");
+    }
+  }, [phone, navigate]);
 
   const [formData, setFormData] = useState({
-    fullname: '',         // CHANGED: fullName -> fullname (matches backend)
+    fullname: '',
     password: '',
     upiId: '',
     confirmPassword: '',
-    services: '',         // CHANGED: profession -> services (matches backend)
-    pincode: '',             // Keeping 'city' in state if frontend UI still uses it, but it won't be sent to backend in payload below.
-    aadharcardNumber: '', // ADDED: New field for Aadhar card number (matches backend)
+    services: '',
+    pincode: '',
+    aadharcardNumber: '',
     agreeToTerms: false
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -50,11 +52,7 @@ const Signup = () => {
   const [errors, setErrors] = useState({});
   const [signupSuccess, setSignupSuccess] = useState(false);
 
-  // Renamed 'professions' to 'servicesOffered' for clarity and alignment with 'services' field
-
-  const servicesOffered = servicefromjson.home_services.map(item =>
-  item.main_category
-  );
+  const servicesOffered = servicefromjson.home_services.map(item => item.main_category);
 
   const benefits = [
     {
@@ -78,26 +76,17 @@ const Signup = () => {
     const { name, value, type, checked } = e.target;
     const newValue = type === 'checkbox' ? checked : value;
 
-    // console.log(`Input changed: name=${name}, value=${newValue}`); // Uncomment for debugging
-    
-    setFormData(prev => {
-      const updatedFormData = {
-        ...prev,
-        [name]: newValue
-      };
-      // console.log("Previous formData:", prev); // Uncomment for debugging
-      // console.log("Updated formData (after setFormData call):", updatedFormData); // Uncomment for debugging
-      return updatedFormData;
-    });
+    setFormData(prev => ({
+      ...prev,
+      [name]: newValue
+    }));
 
-    // Clear specific field error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
         [name]: ''
       }));
     }
-    // Clear general error if any field is changed
     if (errors.general) {
       setErrors(prev => ({
         ...prev,
@@ -109,21 +98,20 @@ const Signup = () => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.fullname.trim()) { // CHANGED: formData.fullName -> formData.fullname
-      newErrors.fullname = 'Full name is required'; // CHANGED: newErrors.fullName -> newErrors.fullname
+    if (!formData.fullname.trim()) {
+      newErrors.fullname = 'Full name is required';
     }
 
-    // ADDED: Aadhar card validation
     if (!formData.aadharcardNumber.trim()) {
       newErrors.aadharcardNumber = 'Aadhar Card Number is required';
-    } else if (!/^\d{12}$/.test(formData.aadharcardNumber.trim())) { // Simple 12-digit check
+    } else if (!/^\d{12}$/.test(formData.aadharcardNumber.trim())) {
       newErrors.aadharcardNumber = 'Aadhar Card Number must be 12 digits';
     }
 
     if (!formData.upiId.trim()) {
       newErrors.upiId = 'UPI ID is required';
     } else if (!/^[\w.-]{2,256}@[a-zA-Z]{3,64}$/.test(formData.upiId.trim())) { 
-      newErrors.upiId = 'Please enter a correct UPI ID';
+      newErrors.upiId = 'Please enter a correct UPI ID (e.g., yourname@bank)';
     }
     
     if (!formData.password) {
@@ -138,18 +126,15 @@ const Signup = () => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
     
-    if (!formData.services) { // CHANGED: formData.profession -> formData.services
-      newErrors.services = 'Please select your service'; // CHANGED: newErrors.profession -> newErrors.services
+    if (!formData.services) {
+      newErrors.services = 'Please select your service';
     }
     
-    // Keeping city validation on frontend if it's still a UI field, but remember it won't be sent to backend
     if (!formData.pincode.trim()) {
       newErrors.pincode = 'Pincode is required';
+    } else if (formData.pincode.length !== 6) {
+      newErrors.pincode = 'Pincode must be exactly 6 digits';
     }
-
-    if(formData.pincode.length !== 6) {
-      newErrors.pincode = 'Pincode must be exactly 6 digits';}
-
     
     if (!formData.agreeToTerms) {
       newErrors.agreeToTerms = 'You must agree to the terms and conditions';
@@ -160,94 +145,79 @@ const Signup = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault(); // Prevent default form submission behavior
+    e.preventDefault();
     if (!validateForm()) return;
 
-    // console.log("FormData being sent:", formData); // Uncomment for debugging
-    
     setIsLoading(true);
-    setErrors({}); // Clear previous errors
+    setErrors({});
 
     try {
-      // Make sure the URL matches your backend API endpoint
       const response = await axiosInstance.post('/repairer/signup', {
-        fullname: formData.fullname,             // CHANGED: fullName -> fullname (matches backend)
+        fullname: formData.fullname,
         phone,
         upiId: formData.upiId,
         password: formData.password,
-        services: formData.services,             // CHANGED: profession -> services (matches backend)
+        services: formData.services,
         aadharcardNumber: formData.aadharcardNumber,
-        pincode : formData.pincode // ADDED: aadharcardNumber (matches backend)
-        // Removed 'city' from payload as backend doesn't expect it in the provided controller.
-        // If your backend *does* store 'city' in the Repairer model, but it wasn't part of the
-        // provided controller's validation destructuring, you can add it back here:
-        // city: formData.city,
+        pincode : formData.pincode
       });
 
-      if (response.status === 201) { // Assuming your backend returns 201 for creation success
+      if (response.status === 201) {
         setSignupSuccess(true);
+        toast.success('Signup successful!');
         console.log('Signup successful:', response.data);
-        // If your backend sends a JWT token in the response, you might store it like this:
-        // localStorage.setItem('token', response.data.token); 
 
-        // Redirect to dashboard after a short delay
         setTimeout(() => {
-          navigate('/repairer/dashboard'); // **Change this to your actual dashboard route if different**
+          navigate('/repairer/dashboard');
+          // window.location.reload(); 
         }, 2000); 
-        window.location.reload();
       }
     } catch (error) {
       console.error('Signup error:', error);
-      // Handle different types of errors (e.g., email already exists, validation failures)
-      if (error.response && error.response.data && error.response.data.message) {
-        setErrors({ general: error.response.data.message });
-      } else {
-        setErrors({ general: 'An unexpected error occurred. Please try again.' });
-      }
+      const errorMessage = error.response?.data?.message || 'An unexpected error occurred. Please try again.';
+      toast.error(errorMessage);
+      setErrors({ general: errorMessage });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Conditional rendering for success message
   if (signupSuccess) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100 flex items-center justify-center">
         <div className="bg-white rounded-3xl shadow-2xl p-12 text-center max-w-md mx-4">
-          <div className="bg-green-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-            <CheckCircle className="w-10 h-10 text-green-600" />
+          <div className="bg-emerald-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle className="w-10 h-10 text-emerald-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Account Created!</h1>
           <p className="text-gray-600 mb-6">
             You've successfully joined fixNearby. Redirecting to your dashboard...
           </p>
-          <div className="w-8 h-8 border-2 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div className="w-8 h-8 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
-      {/* Header */}
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100">
       <header className="bg-white/90 backdrop-blur-md shadow-lg">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-4">
-            <div className="flex items-center space-x-2">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-xl">
-                <Wrench className="w-8 h-8 text-white" />
-              </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                fixNearby
-              </span>
+            <div className="flex items-center">
+              <img 
+                src="/images/logooo.png" 
+                alt="fixNearby Logo" 
+                className="h-10 w-auto rounded-lg shadow-md" 
+              />
             </div>
             <div className="flex items-center space-x-4">
-              <a href="/repairer/login" className="text-gray-700 hover:text-blue-600 font-medium transition-colors">
+              <Link to="/repairer/login" className="text-gray-700 hover:text-emerald-600 font-medium transition-colors">
                 Already have an account?
-              </a>
-              <a href="/user/getotp" className="text-blue-600 hover:text-purple-600 font-medium transition-colors">
+              </Link>
+              <Link to="/user/getotp" className="text-emerald-600 hover:text-lime-600 font-medium transition-colors">
                 Looking for repairs?
-              </a>
+              </Link>
             </div>
           </div>
         </div>
@@ -255,10 +225,9 @@ const Signup = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid lg:grid-cols-2 gap-12 items-start">
-          {/* Left Side - Form */}
           <div className="bg-white rounded-3xl shadow-2xl p-8 lg:p-12">
             <div className="text-center mb-8">
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <div className="bg-gradient-to-r from-emerald-600 to-green-700 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <User className="w-8 h-8 text-white" />
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Register Your {phone}</h1>
@@ -285,29 +254,28 @@ const Signup = () => {
                   </div>
                   <input
                     type="text"
-                    id="fullname" // CHANGED: id to fullname
-                    name="fullname" // CHANGED: name to fullname
-                    value={formData.fullname} // CHANGED: value to formData.fullname
+                    id="fullname"
+                    name="fullname"
+                    value={formData.fullname}
                     onChange={handleInputChange}
                     placeholder="John Doe"
-                    className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-                      errors.fullname ? 'border-red-300' : 'border-gray-200' // CHANGED: errors.fullName -> errors.fullname
+                    className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors ${
+                      errors.fullname ? 'border-red-300' : 'border-gray-200'
                     }`}
                   />
                 </div>
-                {errors.fullname && ( // CHANGED: errors.fullName -> errors.fullname
-                  <p className="mt-2 text-sm text-red-600">{errors.fullname}</p> // CHANGED: errors.fullName -> errors.fullname
+                {errors.fullname && (
+                  <p className="mt-2 text-sm text-red-600">{errors.fullname}</p>
                 )}
               </div>
 
-              {/* NEW FIELD: Aadhar Card Number */}
               <div>
                 <label htmlFor="aadharcardNumber" className="block text-sm font-semibold text-gray-700 mb-2">
                   Aadhar Card Number
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <IdCard className="h-5 w-5 text-gray-400" /> {/* Using CreditCard icon */}
+                    <IdCard className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     type="text"
@@ -316,7 +284,8 @@ const Signup = () => {
                     value={formData.aadharcardNumber}
                     onChange={handleInputChange}
                     placeholder="Enter 12-digit Aadhar Number"
-                    className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    maxLength="12"
+                    className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors ${
                       errors.aadharcardNumber ? 'border-red-300' : 'border-gray-200'
                     }`}
                   />
@@ -332,7 +301,7 @@ const Signup = () => {
                 </label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <CreditCard className="h-5 w-5 text-gray-400" /> {/* Using CreditCard icon */}
+                    <CreditCard className="h-5 w-5 text-gray-400" />
                   </div>
                   <input
                     type="text"
@@ -340,8 +309,8 @@ const Signup = () => {
                     name="upiId"
                     value={formData.upiId}
                     onChange={handleInputChange}
-                    placeholder="Enter your UPI ID"
-                    className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                    placeholder="Enter your UPI ID (e.g., yourname@bank)"
+                    className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors ${
                       errors.upiId ? 'border-red-300' : 'border-gray-200'
                     }`}
                   />
@@ -367,7 +336,7 @@ const Signup = () => {
                       value={formData.password}
                       onChange={handleInputChange}
                       placeholder="Enter password"
-                      className={`block w-full pl-10 pr-10 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                      className={`block w-full pl-10 pr-10 py-4 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors ${
                         errors.password ? 'border-red-300' : 'border-gray-200'
                       }`}
                     />
@@ -403,7 +372,7 @@ const Signup = () => {
                       value={formData.confirmPassword}
                       onChange={handleInputChange}
                       placeholder="Confirm password"
-                      className={`block w-full pl-10 pr-10 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                      className={`block w-full pl-10 pr-10 py-4 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors ${
                         errors.confirmPassword ? 'border-red-300' : 'border-gray-200'
                       }`}
                     />
@@ -427,8 +396,8 @@ const Signup = () => {
 
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
-                  <label htmlFor="services" className="block text-sm font-semibold text-gray-700 mb-2"> {/* CHANGED: profession -> services */}
-                    Service Offered {/* CHANGED: Profession -> Service Offered */}
+                  <label htmlFor="services" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Service Offered
                   </label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -440,12 +409,12 @@ const Signup = () => {
                       name="services" 
                       value={formData.services} 
                       onChange={handleInputChange}
-                      className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                      className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors ${
                         errors.services ? 'border-red-300' : 'border-gray-200' 
                       }`}
                     >
-                      <option value="">Select your service</option> {/* CHANGED: profession -> service */}
-                      {servicesOffered.map((service) => ( // CHANGED: professions.map -> servicesOffered.map
+                      <option value="">Select your service</option>
+                      {servicesOffered.map((service) => (
                         <option key={service} value={service}>
                           {service}
                         </option>
@@ -453,13 +422,13 @@ const Signup = () => {
                     </select>
                     <center className='text-red-600 text-sm'>*You can add more services from profile section</center>
                   </div>
-                  {errors.services && ( // CHANGED: errors.profession -> errors.services
-                    <p className="mt-2 text-sm text-red-600">{errors.services}</p> // CHANGED: errors.profession -> errors.services
+                  {errors.services && (
+                    <p className="mt-2 text-sm text-red-600">{errors.services}</p>
                   )}
                 </div>
 
                 <div>
-                  <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="pincode" className="block text-sm font-semibold text-gray-700 mb-2">
                     Pincode
                   </label>
                   <div className="relative">
@@ -473,7 +442,8 @@ const Signup = () => {
                       value={formData.pincode}
                       onChange={handleInputChange}
                       placeholder="302019"
-                      className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                      maxLength="6"
+                      className={`block w-full pl-10 pr-3 py-4 border-2 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-colors ${
                         errors.pincode ? 'border-red-300' : 'border-gray-200'
                       }`}
                     />
@@ -491,15 +461,15 @@ const Signup = () => {
                   name="agreeToTerms"
                   checked={formData.agreeToTerms}
                   onChange={handleInputChange}
-                  className="mt-1 h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  className="mt-1 h-4 w-4 text-emerald-600 rounded border-gray-300 focus:ring-emerald-500"
                 />
                 <label htmlFor="agreeToTerms" className="text-sm text-gray-700">
                   I agree to the{' '}
-                  <a href="#" className="text-blue-600 hover:text-purple-600 font-medium">
+                  <a href="#" className="text-emerald-600 hover:text-lime-600 font-medium">
                     Terms of Service
                   </a>{' '}
                   and{' '}
-                  <a href="#" className="text-blue-600 hover:text-purple-600 font-medium">
+                  <a href="#" className="text-emerald-600 hover:text-lime-600 font-medium">
                     Privacy Policy
                   </a>
                 </label>
@@ -511,11 +481,11 @@ const Signup = () => {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                className="w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white py-4 px-6 rounded-xl font-semibold text-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isLoading ? (
                   <>
-                    <Loader className="w-5 h-5 animate-spin" />
+                    <LoadingSpinner className="w-5 h-5 animate-spin" />
                     <span>Creating Account...</span>
                   </>
                 ) : (
@@ -532,7 +502,7 @@ const Signup = () => {
             <div>
               <h2 className="text-4xl font-bold text-gray-900 mb-6">
                 Start Your{' '}
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                <span className="bg-gradient-to-r from-emerald-600 to-green-700 bg-clip-text text-transparent">
                   Success Story
                 </span>
               </h2>
@@ -544,7 +514,7 @@ const Signup = () => {
             <div className="space-y-6">
               {benefits.map((benefit, index) => (
                 <div key={index} className="flex items-start space-x-4">
-                  <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="bg-gradient-to-r from-emerald-600 to-green-700 text-white w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0">
                     {benefit.icon}
                   </div>
                   <div>
@@ -559,32 +529,32 @@ const Signup = () => {
               <h3 className="text-lg font-semibold text-gray-900 mb-6 text-center">Join Our Community</h3>
               <div className="grid grid-cols-3 gap-4">
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600">500+</div>
+                  <div className="text-3xl font-bold text-emerald-600">25+</div>
                   <div className="text-sm text-gray-600">Professionals</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600">50K+</div>
+                  <div className="text-3xl font-bold text-emerald-600">100+</div>
                   <div className="text-sm text-gray-600">Jobs Done</div>
                 </div>
                 <div className="text-center">
-                  <div className="text-3xl font-bold text-blue-600">4.9★</div>
+                  <div className="text-3xl font-bold text-emerald-600">4.9★</div>
                   <div className="text-sm text-gray-600">Rating</div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-6 text-white">
+            <div className="bg-gradient-to-r from-emerald-600 to-green-700 rounded-2xl p-6 text-white">
               <div className="flex items-center space-x-3 mb-4">
                 <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
                   <User className="w-6 h-6" />
                 </div>
                 <div>
-                  <div className="font-semibold">Sarah M.</div>
-                  <div className="text-blue-100 text-sm">Electrician</div>
+                  <div className="font-semibold">Jatin Agrawal</div>
+                  <div className="text-emerald-100 text-sm">Electrician</div>
                 </div>
               </div>
-              <p className="text-blue-100 mb-4">
-                "fixNearby helped me grow my business by 300% in just 6 months. The platform is user-friendly and the support team is amazing!"
+              <p className="text-emerald-100 mb-4">
+                "fixNearby helped me grow my business by 80% in just 2 months. The platform is user-friendly and the support team is amazing!"
               </p>
               <div className="flex items-center space-x-1">
                 {[...Array(5)].map((_, i) => (
@@ -596,16 +566,16 @@ const Signup = () => {
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
+      <footer className="bg-neutral-800 text-white py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid md:grid-cols-4 gap-8">
             <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-2 rounded-xl">
-                  <Wrench className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xl font-bold">fixNearby</span>
+              <div className="flex items-center mb-4">
+                <img 
+                  src="/images/logooo.png" 
+                  alt="fixNearby Logo" 
+                  className="h-10 w-auto rounded-lg shadow-md" 
+                />
               </div>
               <p className="text-gray-400">
                 Connecting skilled professionals with customers who need quality repair services.
@@ -640,7 +610,7 @@ const Signup = () => {
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 fixNearby. All rights reserved.</p>
+            <p>&copy; 2025 fixNearby. All rights reserved.</p>
           </div>
         </div>
       </footer>

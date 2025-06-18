@@ -20,7 +20,6 @@ export default function ContactUs() {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -48,11 +47,9 @@ export default function ContactUs() {
 
   const handleSubmit = () => {
     if (validateForm()) {
-      // Here you would normally send the data to your backend
       console.log('Form submitted:', formData);
       setIsSubmitted(true);
       
-      // Reset form after 3 seconds
       setTimeout(() => {
         setIsSubmitted(false);
         setFormData({
@@ -73,36 +70,36 @@ export default function ContactUs() {
       title: "Customer Support",
       description: "24/7 support for urgent issues",
       contact: "+91 98765 43210",
-      bgColor: "bg-blue-50",
-      iconColor: "text-blue-600",
-      textColor: "text-blue-800"
+      bgColor: "bg-emerald-50", 
+      iconColor: "text-emerald-600", 
+      textColor: "text-emerald-800" 
     },
     {
       icon: <Mail className="w-6 h-6" />,
       title: "General Inquiries",
       description: "For non-urgent questions",
       contact: "support@fixnearby.com",
-      bgColor: "bg-green-50",
-      iconColor: "text-green-600",
-      textColor: "text-green-800"
+      bgColor: "bg-emerald-50", 
+      iconColor: "text-emerald-600",
+      textColor: "text-emerald-800" 
     },
     {
       icon: <Shield className="w-6 h-6" />,
       title: "Report Issues",
       description: "Report repairer misconduct",
       contact: "report@fixnearby.com",
-      bgColor: "bg-red-50",
-      iconColor: "text-red-600",
-      textColor: "text-red-800"
+      bgColor: "bg-red-50", 
+      iconColor: "text-red-600", 
+      textColor: "text-red-800" 
     },
     {
       icon: <CreditCard className="w-6 h-6" />,
       title: "Payment Issues",
       description: "Commission & payment help",
       contact: "payments@fixnearby.com",
-      bgColor: "bg-yellow-50",
-      iconColor: "text-yellow-600",
-      textColor: "text-yellow-800"
+      bgColor: "bg-amber-50", 
+      iconColor: "text-amber-600", 
+      textColor: "text-amber-800" 
     }
   ];
 
@@ -125,24 +122,20 @@ export default function ContactUs() {
     }
   ];
 
-
-
   return (
-
-
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50">
+    <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100"> 
         
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-green-600 text-white">
+      <div className="bg-gradient-to-r from-emerald-600 to-green-700 text-white">
         <div className="container mx-auto px-6 py-12">
           <div className="text-center">
             <div className="flex justify-center mb-4">
-              <div className=" bg-opacity-20 backdrop-blur p-3 rounded-full">
+              <div className="bg-emerald-700 bg-opacity-30 backdrop-blur p-3 rounded-full"> 
                 <Headphones className="w-12 h-12" />
               </div>
             </div>
             <h1 className="text-4xl font-bold mb-4">Contact Us</h1>
-            <p className="text-xl text-blue-100 max-w-2xl mx-auto">
+            <p className="text-xl text-emerald-100 max-w-2xl mx-auto"> 
               Need help? We're here for you! Choose the best way to reach out based on your query type.
             </p>
           </div>
@@ -173,12 +166,11 @@ export default function ContactUs() {
           </div>
         </div>
 
-        {/* Contact Form and Info */}
         <div className="grid lg:grid-cols-2 gap-12">
           {/* Contact Form */}
           <div className="bg-white rounded-2xl shadow-xl p-8">
             <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-3">
-              <MessageSquare className="w-6 h-6 text-blue-600" />
+              <MessageSquare className="w-6 h-6 text-emerald-600" /> 
               Send us a Message
             </h2>
             
@@ -200,7 +192,7 @@ export default function ContactUs() {
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${ 
                         errors.name ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Enter your full name"
@@ -217,7 +209,7 @@ export default function ContactUs() {
                       name="mobile"
                       value={formData.mobile}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${ 
                         errors.mobile ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="10-digit mobile number"
@@ -236,7 +228,7 @@ export default function ContactUs() {
                       name="userType"
                       value={formData.userType}
                       onChange={handleInputChange}
-                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                      className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${
                         errors.userType ? 'border-red-500' : 'border-gray-300'
                       }`}
                     >
@@ -256,7 +248,7 @@ export default function ContactUs() {
                       name="priority"
                       value={formData.priority}
                       onChange={handleInputChange}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent" 
                     >
                       <option value="low">Low</option>
                       <option value="medium">Medium</option>
@@ -275,7 +267,7 @@ export default function ContactUs() {
                     name="subject"
                     value={formData.subject}
                     onChange={handleInputChange}
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${ 
                       errors.subject ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Brief description of your issue"
@@ -292,7 +284,7 @@ export default function ContactUs() {
                     value={formData.message}
                     onChange={handleInputChange}
                     rows="5"
-                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent ${ 
                       errors.message ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Please provide detailed information about your query..."
@@ -303,7 +295,7 @@ export default function ContactUs() {
                 <button
                   type="button"
                   onClick={handleSubmit}
-                  className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-3 px-6 rounded-lg font-semibold hover:from-blue-700 hover:to-green-700 transition-all flex items-center justify-center gap-2"
+                  className="w-full bg-gradient-to-r from-emerald-600 to-green-700 text-white py-3 px-6 rounded-lg font-semibold hover:from-emerald-700 hover:to-green-800 transition-all flex items-center justify-center gap-2"
                 >
                   <Send className="w-5 h-5" />
                   Send Message
@@ -317,7 +309,7 @@ export default function ContactUs() {
             {/* Office Info */}
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-3">
-                <MapPin className="w-6 h-6 text-green-600" />
+                <MapPin className="w-6 h-6 text-emerald-600" /> {/* Changed text color */}
                 Our Office
               </h2>
               <div className="space-y-4">
@@ -361,7 +353,7 @@ export default function ContactUs() {
             {/* Quick Help */}
             <div className="bg-white rounded-2xl shadow-xl p-8">
               <h2 className="text-2xl font-bold mb-6 text-gray-800 flex items-center gap-3">
-                <AlertCircle className="w-6 h-6 text-orange-600" />
+                <AlertCircle className="w-6 h-6 text-amber-600" /> {/* Changed text color */}
                 Quick Help
               </h2>
               <div className="space-y-4">
@@ -373,8 +365,6 @@ export default function ContactUs() {
                 ))}
               </div>
             </div>
-
-            
           </div>
         </div>
       </div>

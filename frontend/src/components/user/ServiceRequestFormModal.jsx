@@ -20,6 +20,7 @@ import {
   ClipboardList,
   ChevronDown,
 } from "lucide-react";
+import LoadingSpinner from '../LoadingSpinner.jsx';
 
 const ServiceRequestFormModal = ({
   isOpen,
@@ -501,7 +502,7 @@ const ServiceRequestFormModal = ({
                     >
                       {loading ? (
                         <>
-                          <Loader className="w-5 h-5 animate-spin" />
+                          <LoadingSpinner className="w-5 h-5 animate-spin" />
                           <span>Detecting Location...</span>
                         </>
                       ) : (

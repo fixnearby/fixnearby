@@ -15,9 +15,14 @@ import { checkAuth } from "./libs/utils.js";
 
 const app = express();
 connectDB(); 
+
+const frontendUrl = process.env.FRONTEND_URL; // e.g., 'https://your-frontend-app.vercel.app'
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL, 
-  credentials: true,
+  origin: frontendUrl,
+  credentials: true, // Absolutely essential for cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // Allow common methods
+  allowedHeaders: ['Content-Type', 'Authorization'], // Allow common headers
 }));
 
 app.use(cookieParser());

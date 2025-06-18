@@ -10,14 +10,19 @@ export const generateToken = (userId, role, res) => {
     expiresIn: "30d",
   });
 
- const isProduction = process.env.NODE_ENV === "production";
+  // If you are deploying to Render (or Vercel), it will be HTTPS.
+  // For cross-site cookies, SameSite=None and Secure=true are mandatory.
+  // We'll use NODE_ENV to differentiate between local dev (http) and deployed (https).
+  const isDeployed = process.env.NODE_ENV === "production" || process.env.NODE_ENV === "staging" || process.env.NODE_ENV === "preview"; 
+  // Add other NODE_ENV values if you use them for different deployed stages.
+  // If NODE_ENV is not set or is 'development', it will be considered local.
 
-res.cookie("jwt", token, {
-  maxAge: 30 * 24 * 60 * 60 * 1000,
-  httpOnly: true,
-  sameSite: isProduction ? "None" : "Lax",
-  secure: isProduction,
-});
+  res.cookie("jwt", token, {
+    maxAge: 30 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: isDeployed ? "None" : "Lax", // "None" for deployed HTTPS, "Lax" for local HTTP
+    secure: isDeployed,                    // true for deployed HTTPS, false for local HTTP
+  });
 
   return token;
 };

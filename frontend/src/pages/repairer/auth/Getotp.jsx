@@ -3,6 +3,7 @@ import { Link , useNavigate } from 'react-router-dom';
 import { Mail, ArrowRight, Wrench, User, CheckCircle, Phone } from 'lucide-react';
 import { axiosInstance } from '../../../lib/axios';
 import toast from "react-hot-toast";
+import images from '../../../assets/images';
 
 const phoneSchema = {
   validate: (phone) => {
@@ -60,7 +61,7 @@ const Getotp = () => {
           <div className="flex items-center justify-center mb-6 cursor-pointer">
             <a href="/">
               <img
-                src="/images/logooo.png"
+                src={images.logooo}
                 alt="fixNearby Logo"
                 className="h-10 w-auto rounded-lg shadow-md cursor-pointer"
               />

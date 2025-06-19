@@ -105,24 +105,24 @@ const ChatWindow = ({ conversationId, participantRole }) => {
 
   if (chatError && !loadingMessages && messages.length === 0 && !chatEnded) {
     return (
-      <div className="flex flex-col items-center justify-center h-full text-red-600 bg-red-50 p-6 rounded-lg text-center shadow-md border border-red-200">
-        <MessageCircle className="w-10 h-10 mb-4 text-red-500" />
-        <p className="font-semibold text-lg">Chat Error</p>
-        <p>{chatError}</p>
+      <div className="flex flex-col items-center justify-center h-full text-red-600 bg-red-50 p-4 sm:p-6 rounded-xl text-center shadow-md border border-red-200 font-lexend">
+        <MessageCircle className="w-8 h-8 mb-3 sm:w-10 sm:h-10 sm:mb-4 text-red-500" />
+        <p className="font-semibold text-base sm:text-lg text-[#2C2C2C] mb-1 sm:mb-2">Chat Error</p>
+        <p className="text-sm sm:text-base text-[#2C2C2C]">{chatError}</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-lg shadow-md border border-gray-100"> {/* Main chat window background */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar-light"> {/* Using light scrollbar (conceptual) */}
+    <div className="flex flex-col h-full bg-[#F9F6F1] rounded-xl shadow-md border border-gray-200 font lexend"> 
+      <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 sm:space-y-3 custom-scrollbar-light"> 
         {loadingMessages ? (
-          <div className="flex flex-col items-center justify-center h-full text-green-600"> {/* Green for loading */}
-            <LoadingSpinner className="w-8 h-8 animate-spin mb-4" />
+          <div className="flex flex-col items-center justify-center h-full text-[#8CC76E]"> 
+            <LoadingSpinner className="w-8 h-8 mb-3 sm:mb-4 animate-spin " />
             <p>Loading messages...</p>
           </div>
         ) : messages.length === 0 && !chatEnded ? (
-          <div className="flex items-center justify-center h-full text-gray-500">
+          <div className="flex items-center justify-center h-full text-[#2C2C2C] text-sm sm:text-base">
             <p>No messages yet. Start the conversation!</p>
           </div>
         ) : (
@@ -132,17 +132,17 @@ const ChatWindow = ({ conversationId, participantRole }) => {
               className={`flex ${msg.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`p-3 rounded-lg max-w-[80%] break-words shadow-sm ${
+                className={`p-2 sm:p-3 rounded-xl max-w-[75%] sm:max-w-[80%] break-words shadow-sm ${
                   msg.senderId === currentUserId
-                    ? 'bg-green-500 text-white rounded-br-none' 
-                    : 'bg-gray-100 text-gray-800 rounded-bl-none' 
+                    ? 'bg-[#8CC76E] text-white rounded-br-none' 
+                    : 'bg-gray-100 text-[#2C2C2C] rounded-bl-none' 
                 }`}
               >
-                <p className={`font-semibold text-xs mb-1 ${msg.senderId === currentUserId ? 'text-green-100' : 'text-gray-600'}`}>
+                <p className={`font-semibold text-xs mb-0.5 sm:mb-1 ${msg.senderId === currentUserId ? 'text-green-100' : 'text-gray-600'}`}>
                   {msg.senderId === currentUserId ? 'You' : msg.senderName || 'Participant'}
                 </p>
-                <p className="text-sm">{msg.message || msg.text}</p>
-                <span className={`text-xs opacity-75 mt-1 block text-right ${msg.senderId === currentUserId ? 'text-green-200' : 'text-gray-500'}`}>
+                <p className="text-sm sm:text-base mb-0.5">{msg.message || msg.text}</p>
+                <span className={`text-xs opacity-75 mt-0.5 sm:mt-1 block text-right ${msg.senderId === currentUserId ? 'text-green-200' : 'text-gray-500'}`}>
                   {new Date(msg.timestamp || msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
@@ -152,16 +152,16 @@ const ChatWindow = ({ conversationId, participantRole }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      <div className="p-4 border-t border-gray-200 bg-white">
+      <div className="p-3 sm:p-4 border-t border-gray-200 bg-white">
         {chatEnded ? (
-          <p className="text-red-600 text-center font-semibold">
+          <p className="text-red-600 text-center font-semibold text-sm sm:text-base">
             Chat is closed. {chatEndedReason ? `(${chatEndedReason})` : ''}
           </p>
         ) : (
-          <div className="flex space-x-3">
+          <div className="flex space-x-2 sm:space-x-3">
             <input
               type="text"
-              className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 placeholder-gray-400"
+              className="flex-1 p-2 sm:p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#8CC76E] placeholder-gray-400 text-[#2C2C2C]"
               placeholder="Type your message..."
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
@@ -172,7 +172,7 @@ const ChatWindow = ({ conversationId, participantRole }) => {
             />
             <button
               onClick={handleSendMessage}
-              className="bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md" 
+              className="bg-[#8CC76E] text-white p-2.5 sm:p-3 rounded-xl hover:bg-[#72A658] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-md" 
               disabled={!newMessage.trim() || loadingMessages || chatEnded}
             >
               <Send className="w-5 h-5" />

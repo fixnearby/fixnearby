@@ -11,6 +11,7 @@ import CtaSection from '../components/LandingPage/CtaSection.jsx';
 import Footer from '../components/LandingPage/Footer.jsx';
 
 import { Zap, Wrench, Paintbrush, Pipette, Home, Sprout } from 'lucide-react';
+import images from '../assets/images.js';
 
 
 const Landing = () => {
@@ -27,19 +28,19 @@ const Landing = () => {
 
   const popularServices = [
     {
-      image: '/images/pb.png', 
+      image: `${images.pbIcon}`, 
       title: "Plumbing",
       description: "Fix leaky faucets, blocked drains, and more.",
       price: 499
     },
     {
-      image: '/images/ac.png', 
+      image: `${images.acIcon}`, 
       title: "AC Service",
       description: "Service and repair of all AC systems.",
       price: 599
     },
     {
-      image: '/images/dc.png',
+      image: `${images.cleaningIcon}`,
       title: "Deep Cleaning",
       description: "Thorough cleaning of homes and offices.",
       price: 599

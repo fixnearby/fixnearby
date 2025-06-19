@@ -1,6 +1,7 @@
 // frontend/src/components/LandingPage/Footer.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
+import images from '../../assets/images';
 
 const Footer = () => {
   return (
@@ -8,7 +9,7 @@ const Footer = () => {
       <div className="container mx-auto px-4 text-center">
         {/* Logo in the footer */}
         <Link to="/" className="inline-block mb-6">
-          <img src="/images/logooo.png" alt="Fix Nearby Logo" className="h-16 w-auto" /> 
+          <img src= {images.logooo} alt="Fix Nearby Logo" className="h-16 w-auto" /> 
         </Link>
 
         <div className="flex flex-wrap justify-center space-x-6 md:space-x-12 mb-4 text-lg">

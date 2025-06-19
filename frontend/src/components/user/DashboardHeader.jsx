@@ -5,6 +5,7 @@ import { useAuthStore } from '../../store/authStore.js';
 import toast from 'react-hot-toast';
 import { logoutUser } from '../../services/apiService.js';
 
+
 import {
   UserCircle,
   MessageCircle,
@@ -13,6 +14,7 @@ import {
   ClipboardList,
   LogOut,
 } from "lucide-react";
+import images from '../../assets/images.js';
 
 const DashboardHeader = ({ user, handleMessagesClick, handleNotificationsClick }) => {
   const navigate = useNavigate();
@@ -39,7 +41,7 @@ const DashboardHeader = ({ user, handleMessagesClick, handleNotificationsClick }
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 transform hover:scale-105 transition-transform duration-200">
             <img
-              src="/images/logooo.png"
+              src={images.logooo}
               alt="Fix Nearby Logo"
               className="h-10 sm:h-12 w-auto"
             />

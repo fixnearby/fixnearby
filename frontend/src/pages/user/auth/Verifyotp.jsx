@@ -1,8 +1,9 @@
-import React, { useState , useEffect} from 'react';
-import { Mail, ArrowRight, Wrench, User, CheckCircle } from 'lucide-react';
-import { axiosInstance } from '../../../lib/axios';
+import React, { useState, useEffect } from "react";
+import { Mail, ArrowRight, Wrench, User, CheckCircle } from "lucide-react";
+import { axiosInstance } from "../../../lib/axios";
 import toast from "react-hot-toast";
-import { useLocation, useNavigate , Link } from 'react-router-dom';
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import images from "../../../assets/images";
 
 const Verifyotp = () => {
   const location = useLocation();
@@ -11,36 +12,42 @@ const Verifyotp = () => {
 
   useEffect(() => {
     if (!phone) {
-      navigate("/user/getotp"); 
+      navigate("/user/getotp");
     }
   }, [phone, navigate]);
 
-  const [otp, setOtp] = useState('');
+  const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if(otp.length !== 6){
-      toast.error('Please enter a valid 6-digit OTP');
-      setOtp('');
+
+    if (otp.length !== 6) {
+      toast.error("Please enter a valid 6-digit OTP");
+      setOtp("");
       return;
     }
 
     setIsLoading(true);
-    
+
     try {
-      const response = await axiosInstance.post("/user/verify-otp",{phone,otp});
-      if (response.status ===200 || response.status === 201) {
-        toast.success('OTP verified successfully!');
-        setOtp(''); 
-        navigate("/user/signup",{ state: { phone } });
+      const response = await axiosInstance.post("/user/verify-otp", {
+        phone,
+        otp,
+      });
+      if (response.status === 200 || response.status === 201) {
+        toast.success("OTP verified successfully!");
+        setOtp("");
+        navigate("/user/signup", { state: { phone } });
         window.location.reload();
       } else {
         toast.error(response.data.message);
       }
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Failed to verify OTP. Please try again.';
+      const errorMessage =
+        error.response?.data?.message ||
+        error.message ||
+        "Failed to verify OTP. Please try again.";
       toast.error(errorMessage);
     } finally {
       setIsLoading(false);
@@ -55,13 +62,13 @@ const Verifyotp = () => {
           <div className="flex items-center justify-center mb-6 cursor-pointer">
             <a href="/">
               <img
-                src="/images/logooo.png"
+                src={images.logooo}
                 alt="fixNearby Logo"
                 className="h-10 w-auto rounded-lg shadow-md cursor-pointer"
               />
             </a>
           </div>
-          
+
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Verify OTP</h1>
           <p className="text-gray-600">Enter your OTP to verify {phone}</p>
         </div>
@@ -83,7 +90,7 @@ const Verifyotp = () => {
                   type="text"
                   value={otp}
                   onChange={(e) => setOtp(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSubmit(e)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSubmit(e)}
                   className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500"
                   placeholder="Enter your OTP (6 digits)"
                   maxLength="6"
@@ -115,15 +122,33 @@ const Verifyotp = () => {
         {/* Footer Links */}
         <div className="text-center mt-8 space-y-2">
           <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <a href="/user/login" className="text-emerald-600 hover:text-lime-600 font-semibold transition-colors">
+            Already have an account?{" "}
+            <a
+              href="/user/login"
+              className="text-emerald-600 hover:text-lime-600 font-semibold transition-colors"
+            >
               Sign in
             </a>
           </p>
           <div className="flex justify-center space-x-6 text-xs text-gray-500">
-            <Link to="/privacy-policy" className="hover:text-gray-700 transition-colors">Privacy Policy</Link>
-            <Link to="/terms-and-conditions" className="hover:text-gray-700 transition-colors">Terms of Service</Link>
-            <Link to="/contact-us" className="hover:text-gray-700 transition-colors">Help</Link>
+            <Link
+              to="/privacy-policy"
+              className="hover:text-gray-700 transition-colors"
+            >
+              Privacy Policy
+            </Link>
+            <Link
+              to="/terms-and-conditions"
+              className="hover:text-gray-700 transition-colors"
+            >
+              Terms of Service
+            </Link>
+            <Link
+              to="/contact-us"
+              className="hover:text-gray-700 transition-colors"
+            >
+              Help
+            </Link>
           </div>
         </div>
 
@@ -136,9 +161,12 @@ const Verifyotp = () => {
               </div>
             </div>
             <div>
-              <h3 className="text-sm font-semibold text-emerald-900 mb-1">Secure & Private</h3>
+              <h3 className="text-sm font-semibold text-emerald-900 mb-1">
+                Secure & Private
+              </h3>
               <p className="text-xs text-emerald-700">
-                Your phone number is encrypted and will only be used for account verification and service updates.
+                Your phone number is encrypted and will only be used for account
+                verification and service updates.
               </p>
             </div>
           </div>

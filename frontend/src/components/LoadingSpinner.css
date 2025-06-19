@@ -1,89 +1,56 @@
-.loader-wrapper {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-  height: 100px;
-  background-color: white;
+.spinner {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: 9px solid #8CC76E; /* Changed border color to your theme green */
+    animation: spinner-bulqg1 0.8s infinite linear alternate,
+               spinner-oaa3wk 1.6s infinite linear;
 }
 
-.loader {
-  width: 100px;
-  height: 20px;
-  box-shadow: 0 3px 0 #ff7272;
-  position: relative;
-  clip-path: inset(-40px 0 -5px);
+@keyframes spinner-bulqg1 {
+    0% {
+        clip-path: polygon(50% 50%, 0 0, 50% 0%, 50% 0%, 50% 0%, 50% 0%, 50% 0%);
+    }
+
+    12.5% {
+        clip-path: polygon(50% 50%, 0 0, 50% 0%, 100% 0%, 100% 0%, 100% 0%, 100% 0%);
+    }
+
+    25% {
+        clip-path: polygon(50% 50%, 0 0, 50% 0%, 100% 0%, 100% 100%, 100% 100%, 100% 100%);
+    }
+
+    50% {
+        clip-path: polygon(50% 50%, 0 0, 50% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%);
+    }
+
+    62.5% {
+        clip-path: polygon(50% 50%, 100% 0, 100% 0%, 100% 0%, 100% 100%, 50% 100%, 0% 100%);
+    }
+
+    75% {
+        clip-path: polygon(50% 50%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 50% 100%, 0% 100%);
+    }
+
+    100% {
+        clip-path: polygon(50% 50%, 50% 100%, 50% 100%, 50% 100%, 50% 100%, 50% 100%, 0% 100%);
+    }
 }
 
-.loader:before {
-  content: "";
-  position: absolute;
-  inset: auto calc(50% - 17px) 0;
-  height: 50px;
-  --g: no-repeat linear-gradient(#ff4e4e 0 0);
-  background: var(--g), var(--g), var(--g), var(--g);
-  background-size: 16px 14px;
-  animation:
-    move 2s infinite linear,
-    move2 2s infinite linear;
-}
+@keyframes spinner-oaa3wk {
+    0% {
+        transform: scaleY(1) rotate(0deg);
+    }
 
-@keyframes move {
-  0%,
-  100% {
-    background-position:
-      0 -50px,
-      100% -50px;
-  }
+    49.99% {
+        transform: scaleY(1) rotate(135deg);
+    }
 
-  17.5% {
-    background-position:
-      0 100%,
-      100% -50px,
-      0 -50px,
-      100% -50px;
-  }
+    50% {
+        transform: scaleY(-1) rotate(0deg);
+    }
 
-  35% {
-    background-position:
-      0 100%,
-      100% 100%,
-      0 -50px,
-      100% -50px;
-  }
-
-  52.5% {
-    background-position:
-      0 100%,
-      100% 100%,
-      0 calc(100% - 16px),
-      100% -50px;
-  }
-
-  70%,
-  98% {
-    background-position:
-      0 100%,
-      100% 100%,
-      0 calc(100% - 16px),
-      100% calc(100% - 16px);
-  }
-}
-
-@keyframes move2 {
-  0%,
-  70% {
-    transform: translate(0);
-  }
-
-  100% {
-    transform: translate(200%);
-  }
-}
-
-.loader-message {
-  color: #555;
-  margin-top: 10px;
-  font-size: 14px;
+    100% {
+        transform: scaleY(-1) rotate(-135deg);
+    }
 }

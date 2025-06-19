@@ -4,8 +4,8 @@ import './LoadingSpinner.css';
 const LoadingSpinner = ({ message = "Loading...", showMessage = true }) => {
   return (
     <div className="loader-container">
-      <div className="loader"></div>
-      {showMessage && <p className="loading-message">{message}</p>}
+      <div className="spinner"></div> 
+      {showMessage && <p className="loading-message text-[#2C2C2C] font-lexend">{message}</p>}
     </div>
   );
 };

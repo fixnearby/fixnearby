@@ -10,85 +10,86 @@ const Header = ({ displayName, isOnline, setIsOnline, onSettingsClick, onLogout,
   };
 
   return (
-    <header className="bg-white shadow-md p-4 flex items-center justify-between rounded-b-3xl">
-      <div className="flex items-center space-x-4">
-        <h1 className="text-xl md:text-2xl font-bold text-gray-800">
+    <header className="bg-white shadow-md p-3 sm:p-4 flex items-center justify-between rounded-b-3xl">
+      <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-6 min-w-0 flex-grow">
+        <h1 className="text-base sm:text-xl md:text-2xl font-bold text-gray-800 flex-shrink truncate">
           Welcome, {displayName}!
         </h1>
-        <div className="flex items-center space-x-2">
-          <span className={`w-3 h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
-          <span className="text-gray-600 text-sm md:text-base">
+        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+          <span className={`w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full ${isOnline ? 'bg-green-500' : 'bg-red-500'}`}></span>
+          <span className="text-xs sm:text-sm text-gray-600">
             {isOnline ? 'Online' : 'Offline'}
           </span>
         </div>
+
+        <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 flex-shrink-0">
+          <span className="text-gray-700 font-medium text-xs sm:text-sm hidden sm:block">
+            Go {isOnline ? 'Offline' : 'Online'}:
+          </span>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              className="sr-only peer"
+              checked={isOnline}
+              onChange={() => setIsOnline(!isOnline)}
+            />
+            <div className="w-10 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+          </label>
+        </div>
       </div>
 
-      <div className="flex items-center space-x-4">
-        <span className="text-gray-700 font-medium hidden md:block">Go {isOnline ? 'Offline' : 'Online'}:</span>
-        <label className="relative inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            className="sr-only peer"
-            checked={isOnline}
-            onChange={() => setIsOnline(!isOnline)}
-          />
-          {/* Themed Toggle Switch */}
-          <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
-        </label>
-      </div>
-
-      <div className="flex items-center space-x-4">
+      <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4 ml-auto flex-shrink-0">
         <button
           onClick={onMessagesClick}
-          className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+          className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
           aria-label="Messages"
         >
-          <MessageSquare className="w-6 h-6 text-gray-700" />
+          <MessageSquare className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
         </button>
 
         <button
           onClick={handleAssignedJobsClick}
-          className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+          className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
           aria-label="Assigned Jobs"
         >
-          <ClipboardList className="w-6 h-6 text-gray-700" />
+          <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
         </button>
 
         <button
           onClick={onNotificationsClick}
-          className="relative p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+          className="relative p-1.5 sm:p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
           aria-label="Notifications"
         >
-          <Bell className="w-6 h-6 text-gray-700" />
+          <Bell className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
           {unreadNotificationCount > 0 && (
-            <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full transform translate-x-1/2 -translate-y-1/2">
-              {unreadNotificationCount}
+            <span className="absolute -top-1 -right-1 inline-flex items-center justify-center h-4 w-4 text-xs font-bold leading-none text-red-100 bg-red-600 rounded-full">
+              {unreadNotificationCount > 9 ? '9+' : unreadNotificationCount}
             </span>
           )}
         </button>
 
         <button
           onClick={onProfileClick}
-          className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+          className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
           aria-label="Profile"
         >
-          <User className="w-6 h-6 text-gray-700" />
+          <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
         </button>
 
         <button
           onClick={onSettingsClick}
-          className="p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
+          className="p-1.5 sm:p-2 rounded-full hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-green-500 transition-colors"
           aria-label="Settings"
         >
-          <Settings className="w-6 h-6 text-gray-700" />
+          <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />
         </button>
 
         <button
           onClick={onLogout}
-          className="p-2 rounded-full bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors hidden md:block"
+          className="p-1.5 sm:p-2 rounded-full bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 transition-colors hidden md:block"
           aria-label="Logout"
         >
-          <LogOut className="w-6 h-6" />
+          <LogOut className="w-5 h-5 sm:w-6 sm:h-6" />
         </button>
       </div>
     </header>

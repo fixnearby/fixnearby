@@ -6,6 +6,8 @@ import { useAuthStore } from '../../../store/authStore';
 import { getUserConversations } from '../../../services/apiService';
 import ChatWindow from '../../../components/Chat/ChatWindow';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../../../components/LoadingSpinner';
+
 const UserMessagesPage = () => {
   const { user } = useAuthStore();
   const { conversationId: paramConversationId } = useParams();
@@ -13,6 +15,8 @@ const UserMessagesPage = () => {
   const [loadingConversations, setLoadingConversations] = useState(true);
   const [error, setError] = useState(null);
   const [selectedConversation, setSelectedConversation] = useState(null);
+
+  const isMobileView = window.innerWidth < 768; 
 
   useEffect(() => {
     const fetchConversations = async () => {
@@ -28,21 +32,19 @@ const UserMessagesPage = () => {
         const activeConversations = fetchedConversations.filter(conv => conv.isActive);
         setConversations(activeConversations);
 
+        let conversationToSelect = null;
         if (paramConversationId) {
-          const preSelected = activeConversations.find(conv => conv.id === paramConversationId);
-          if (preSelected) {
-            setSelectedConversation(preSelected);
-          } else if (activeConversations.length > 0) {
-            setSelectedConversation(activeConversations[0]);
-            toast.error("Conversation not found or is inactive. Displaying first available chat.");
-          } else {
-            setSelectedConversation(null);
+          conversationToSelect = activeConversations.find(conv => conv.id === paramConversationId);
+          if (!conversationToSelect) {
+            toast.error("Conversation not found or is inactive.");
           }
-        } else if (activeConversations.length > 0) {
-          setSelectedConversation(activeConversations[0]);
-        } else {
-          setSelectedConversation(null);
         }
+        if (!isMobileView && !conversationToSelect && activeConversations.length > 0) {
+          conversationToSelect = activeConversations[0];
+        }
+        
+        setSelectedConversation(conversationToSelect);
+
       } catch (err) {
         console.error("Error fetching conversations:", err);
         setError(err.response?.data?.message || err.message || "Failed to load conversations. Please try again.");
@@ -53,22 +55,28 @@ const UserMessagesPage = () => {
     };
 
     fetchConversations();
-  }, [user, paramConversationId]);
+  }, [user, paramConversationId, isMobileView]); 
 
   const handleChatSelect = (conversationSummary) => {
     setSelectedConversation(conversationSummary);
   };
-  const containerClasses = "min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center"; 
-  const cardClasses = "max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-8";
+
+  const handleBackToConversations = () => {
+    setSelectedConversation(null); 
+  };
+
+  const containerClasses = "min-h-screen bg-gradient-to-br from-gray-50 to-green-50 py-4 px-2 sm:px-4 md:py-12 md:px-6 lg:px-8 font-lexend"; 
+  const cardClasses = "max-w-6xl mx-auto bg-white rounded-2xl shadow-xl";
+
   if (!user) {
     return (
-      <div className={containerClasses}>
-        <div className={`${cardClasses} text-center`}>
+      <div className={containerClasses + " flex items-center justify-center"}> 
+        <div className={`${cardClasses} p-8 text-center`}>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
           <p className="text-gray-600 mb-6">Please log in as a user to view your messages.</p>
           <Link
             to="/user/login"
-            className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-md"
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
           >
             Go to Login
           </Link>
@@ -79,10 +87,10 @@ const UserMessagesPage = () => {
 
   if (loadingConversations) {
     return (
-      <div className={containerClasses}>
-        <div className={`${cardClasses} text-center`}>
-          <Loader className="w-12 h-12 animate-spin text-green-500 mx-auto mb-4" />
-          <p className="text-lg text-gray-700">Loading conversations...</p>
+      <div className={containerClasses + " flex items-center justify-center"}> 
+        <div className={`${cardClasses} p-8 text-center`}>
+          <LoadingSpinner className="w-12 h-12 animate-spin text-green-600 mx-auto mb-4" /> 
+         
         </div>
       </div>
     );
@@ -90,14 +98,14 @@ const UserMessagesPage = () => {
 
   if (error && (!conversations.length && !selectedConversation)) {
     return (
-      <div className={containerClasses}>
-        <div className={`${cardClasses} text-center`}>
+      <div className={containerClasses + " flex items-center justify-center"}>
+        <div className={`${cardClasses} p-8 text-center`}>
           <Info className="w-16 h-16 mx-auto mb-6 text-red-500" />
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Messages</h2>
           <p className="text-gray-700 mb-6">{error}</p>
           <Link
             to="/user/dashboard"
-            className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors shadow-md"
+            className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
           >
             Back to Dashboard
           </Link>
@@ -107,68 +115,134 @@ const UserMessagesPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-xl p-8 flex flex-col md:flex-row h-[70vh]"> {/* White main card with soft shadow */}
-        {/* Left Pane: Conversation List */}
-        <div className="w-full md:w-1/3 border-r border-gray-200 pr-4 md:pr-8 overflow-y-auto flex-none custom-scrollbar-light"> {/* Light border, light scrollbar (conceptual) */}
-          <div className="flex items-center space-x-4 mb-8">
-            <Link
-              to="/user/dashboard"
-              className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-700"
-            >
-              <ArrowLeft className="w-6 h-6" />
-            </Link>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-              <MessageCircle className="w-7 h-7 mr-2 text-green-500" /> {/* Green accent icon */}
-              Messages
-            </h1>
-          </div>
-
-          <ul className="space-y-4">
-            {conversations.length === 0 ? (
-              <li className="text-center text-gray-500 py-4">No active conversations.</li>
-            ) : (
-              conversations.map((conv) => (
-                <li
-                  key={conv.id}
-                  onClick={() => handleChatSelect(conv)}
-                  className={`flex items-center p-4 rounded-xl cursor-pointer transition-colors border border-transparent
-                    ${selectedConversation?.id === conv.id ? 'bg-green-50 shadow-md border-green-200' : 'bg-white hover:bg-gray-50'}
-                    ${conv.unread ? 'border-l-4 border-green-500 font-semibold text-gray-900' : 'text-gray-700'}`}
-                >
-                  <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3">
-                    <User2 className="w-5 h-5 text-green-700" /> {/* Green accent user icon */}
-                  </div>
-                  <div className="flex-grow">
-                    <div className="text-gray-900 font-medium">{conv.sender}</div>
-                    <div className="text-gray-600 text-sm truncate">{conv.lastMessage}</div>
-                  </div>
-                  <div className="text-xs text-gray-500 ml-auto flex-shrink-0">{conv.time}</div>
-                  {conv.unread && <span className="w-2 h-2 bg-green-500 rounded-full ml-2"></span>} {/* Green unread dot */}
-                </li>
-              ))
-            )}
-          </ul>
-        </div>
-
-        <div className="flex-1 pl-4 md:pl-8 flex flex-col pt-8 md:pt-0">
-          {selectedConversation ? (
-            <>
-              <div className="flex-none pb-4 border-b border-gray-200 mb-4">
-                <h2 className="text-xl font-bold text-gray-900">Chat with <span className="text-green-600">{selectedConversation.sender}</span></h2>
-                <p className="text-gray-600 text-sm">Job: {selectedConversation.title}</p>
+    <div className={containerClasses}>
+      <div className={`${cardClasses} flex flex-col md:flex-row h-[calc(100vh-32px)] md:h-[80vh] lg:h-[75vh] overflow-hidden`}> 
+        {isMobileView ? (
+          selectedConversation ? (
+            <div className="flex flex-col flex-1">
+              <div className="bg-white p-3 border-b border-gray-200 flex items-center space-x-2">
+                <button onClick={handleBackToConversations} className="p-1 rounded-full hover:bg-gray-100">
+                  <ArrowLeft className="w-6 h-6 text-gray-700" />
+                </button>
+                <h2 className="text-xl font-semibold text-gray-800 truncate">
+                  Chat with {selectedConversation.sender}
+                </h2>
               </div>
               <ChatWindow
                 conversationId={selectedConversation.id}
                 participantRole="user"
               />
-            </>
-          ) : (
-            <div className="flex items-center justify-center h-full text-gray-500 text-lg">
-              {conversations.length === 0 ? "No active conversations to display." : "Select a conversation from the left to start chatting."}
             </div>
-          )}
-        </div>
+          ) : (
+            <div className="flex flex-col flex-1">
+              <div className="flex items-center space-x-4 mb-4 p-4 border-b border-gray-200"> 
+                <Link to="/user/dashboard" className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
+                  <ArrowLeft className="w-6 h-6 text-gray-700" />
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <MessageCircle className="w-7 h-7 mr-2 text-green-600" /> 
+                  Messages
+                </h1>
+              </div>
+
+              <ul className="flex-1 overflow-y-auto space-y-2 px-4 pb-4 custom-scrollbar"> 
+                {conversations.length === 0 ? (
+                  <li className="text-center text-gray-500 py-4">No active conversations.</li>
+                ) : (
+                  conversations.map((conv) => (
+                    <li
+                      key={conv.id}
+                      onClick={() => handleChatSelect(conv)}
+                      className={`flex items-center p-3 rounded-xl cursor-pointer transition-colors border border-transparent ${ 
+                        selectedConversation?.id === conv.id
+                          ? 'bg-green-50 shadow-md border-green-200'
+                          : 'bg-white hover:bg-gray-50'
+                      }
+                      ${conv.unread ? 'border-l-4 border-green-500 font-semibold text-gray-900' : 'text-gray-700'}`} 
+                    >
+                      <div className="flex-shrink-0 w-9 h-9 bg-green-100 rounded-full flex items-center justify-center mr-2"> 
+                        <User2 className="w-4 h-4 text-green-700" /> 
+                      </div>
+                      <div className="flex-grow min-w-0"> 
+                        <div className="text-gray-900 font-medium text-sm truncate">{conv.sender}</div> 
+                        <div className="text-gray-600 text-xs truncate">{conv.lastMessage}</div> 
+                      </div>
+                      <div className="text-xs text-gray-500 ml-2 flex-shrink-0 text-right">
+                        {conv.time}
+                        {conv.unread && <span className="w-1.5 h-1.5 bg-green-500 rounded-full ml-1 inline-block"></span>} 
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+          )
+        ) : (
+          <div className="flex flex-row h-full">
+            <div className="w-1/3 border-r border-gray-200 pr-4 md:pr-8 overflow-y-auto flex-none custom-scrollbar">
+              <div className="flex items-center space-x-4 mb-8">
+                <Link to="/user/dashboard" className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-700">
+                  <ArrowLeft className="w-6 h-6" />
+                </Link>
+                <h1 className="text-2xl font-bold text-gray-900 flex items-center">
+                  <MessageCircle className="w-7 h-7 mr-2 text-green-600" /> 
+                  Messages
+                </h1>
+              </div>
+
+              <ul className="space-y-4">
+                {conversations.length === 0 ? (
+                  <li className="text-center text-gray-500 py-4">No active conversations.</li>
+                ) : (
+                  conversations.map((conv) => (
+                    <li
+                      key={conv.id}
+                      onClick={() => handleChatSelect(conv)}
+                      className={`flex items-center p-4 rounded-xl cursor-pointer transition-colors border border-transparent ${
+                        selectedConversation?.id === conv.id
+                          ? 'bg-green-50 shadow-md border-green-200'
+                          : 'bg-white hover:bg-gray-50'
+                      }
+                      ${conv.unread ? 'border-l-4 border-green-500 font-semibold text-gray-900' : 'text-gray-700'}`} 
+                    >
+                      <div className="flex-shrink-0 w-10 h-10 bg-green-100 rounded-full flex items-center justify-center mr-3"> 
+                        <User2 className="w-5 h-5 text-green-700" /> 
+                      </div>
+                      <div className="flex-grow">
+                        <div className="text-gray-900 font-medium">{conv.sender}</div>
+                        <div className="text-gray-600 text-sm truncate">{conv.lastMessage}</div>
+                      </div>
+                      <div className="text-xs text-gray-500 ml-2 flex-shrink-0 text-right">
+                        {conv.time}
+                        {conv.unread && <span className="w-2 h-2 bg-green-500 rounded-full ml-1 inline-block"></span>} 
+                      </div>
+                    </li>
+                  ))
+                )}
+              </ul>
+            </div>
+
+            {/* Right Pane: Chat Window */}
+            <div className="flex-1 pl-4 md:pl-8 flex flex-col pt-8 md:pt-0">
+              {selectedConversation ? (
+                <>
+                  <div className="flex-none pb-4 border-b border-gray-200 mb-4">
+                    <h2 className="text-xl font-bold text-gray-900">Chat with <span className="text-green-600">{selectedConversation.sender}</span></h2>
+                    <p className="text-gray-600 text-sm">Job: {selectedConversation.title}</p>
+                  </div>
+                  <ChatWindow
+                    conversationId={selectedConversation.id}
+                    participantRole="user"
+                  />
+                </>
+              ) : (
+                <div className="flex items-center justify-center h-full text-gray-500 text-lg">
+                  {conversations.length === 0 ? "No active conversations to display." : "Select a conversation from the left to start chatting."}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

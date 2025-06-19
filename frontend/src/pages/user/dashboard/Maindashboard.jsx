@@ -248,11 +248,11 @@ const UserMainDashboard = () => {
 
   if (!user && !loadingDashboardData) {
     return (
-      <div className="min-h-screen bg-[#F9F6F1] py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend text-[#2C2C2C]">
-        <div className="text-center p-10 bg-white rounded-xl shadow-lg border border-gray-200 animate-fadeInUp">
-          <h2 className="text-4xl font-extrabold text-[#2C2C2C] mb-4">Access Denied</h2>
-          <p className="text-[#2C2C2C] mb-8 text-xl leading-relaxed">Please log in as a user to unlock your personalized dashboard and services.</p>
-          <Link to="/user/login" className="px-10 py-4 bg-[#8CC76E] text-white font-bold rounded-xl hover:bg-[#72A658] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1">
+      <div className="min-h-screen bg-[#F9F6F1] py-8 px-4 sm:py-12 sm:px-6 lg:px-8 flex items-center justify-center font-lexend text-[#2C2C2C]">
+        <div className="text-center p-6 sm:p-10 bg-white rounded-xl shadow-lg border border-gray-200 animate-fadeInUp">
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-[#2C2C2C] mb-3 sm:mb-4">Access Denied</h2>
+          <p className="text-[#2C2C2C] mb-6 sm:mb-8 text-base sm:text-xl leading-relaxed">Please log in as a user to unlock your personalized dashboard and services.</p>
+          <Link to="/user/login" className="px-6 py-3 sm:px-10 sm:py-4 bg-[#8CC76E] text-white font-bold rounded-xl hover:bg-[#72A658] transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1 text-base sm:text-lg">
             Go to Login
           </Link>
         </div>
@@ -269,66 +269,65 @@ const UserMainDashboard = () => {
         handleNotificationsClick={handleNotificationsClick}
       />
 
-      {/* Main Content */}
-      <main className="max-w-8xl mx-auto px-6 sm:px-8 lg:px-10 py-16">
+      <main className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-10 py-8 sm:py-16">
 
-        <div className="mb-20 text-center animate-fadeInUp">
-          <h1 className="text-5xl sm:text-6xl font-extrabold text-[#2C2C2C] mb-4 leading-tight">
+        <div className="mb-12 sm:mb-20 text-center animate-fadeInUp">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#2C2C2C] mb-3 sm:mb-4 leading-tight">
             Welcome back, <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#8CC76E] to-[#72A658]">{user?.fullname?.split(' ')[0] || 'User'}</span>!
           </h1>
-          <p className="text-[#2C2C2C] max-w-3xl mx-auto font-light">
+          <p className="text-[#2C2C2C] max-w-xl sm:max-w-3xl mx-auto font-light text-base sm:text-lg">
             Your one-stop solution for all home services. Let's make your life easier.
           </p>
         </div>
 
-        <section className="mb-20 animate-fadeInUp delay-100">
-          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-10 text-center">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+        <section className="mb-12 sm:mb-20 animate-fadeInUp delay-100">
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#2C2C2C] mb-8 sm:mb-10 text-center">Quick Actions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 max-w-2xl sm:max-w-4xl mx-auto">
             <Link
               to="#"
               onClick={handleQuickActionNewService}
-              className="group bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white rounded-xl p-8 flex flex-col items-center justify-center text-center shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-[#8CC76E] focus:ring-offset-2"
+              className="group bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center text-center shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-[#8CC76E] focus:ring-offset-2"
             >
-              <Rocket className="w-16 h-16 mb-4 text-white transition-transform group-hover:rotate-6 group-hover:scale-110" strokeWidth={1.5} />
-              <h3 className="text-3xl font-bold mb-2">Request New Service</h3>
-              <p className="text-white text-base leading-relaxed opacity-90">Quickly book any home repair or maintenance.</p>
+              <Rocket className="w-12 h-12 mb-3 sm:w-16 sm:h-16 sm:mb-4 text-white transition-transform group-hover:rotate-6 group-hover:scale-110" strokeWidth={1.5} />
+              <h3 className="text-2xl sm:text-3xl font-bold mb-1 sm:mb-2">Request New Service</h3>
+              <p className="text-white text-sm sm:text-base leading-relaxed opacity-90">Quickly book any home repair or maintenance.</p>
             </Link>
             <Link
               to="/user/inprogress"
-              className="group bg-white rounded-xl p-8 flex flex-col items-center justify-center text-center border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-gray-300 focus:ring-offset-2"
+              className="group bg-white rounded-xl p-6 sm:p-8 flex flex-col items-center justify-center text-center border border-gray-100 shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.01] focus:outline-none focus:ring-4 focus:ring-gray-300 focus:ring-offset-2"
             >
-              <LayoutDashboard className="w-16 h-16 mb-4 text-[#2C2C2C] transition-transform group-hover:-rotate-6 group-hover:scale-110" strokeWidth={1.5} />
-              <h3 className="text-3xl font-bold text-[#2C2C2C] mb-2">View Active Requests</h3>
-              <p className="text-[#2C2C2C] text-base leading-relaxed">Track the status of your ongoing and pending services.</p>
+              <LayoutDashboard className="w-12 h-12 mb-3 sm:w-16 sm:h-16 sm:mb-4 text-[#2C2C2C] transition-transform group-hover:-rotate-6 group-hover:scale-110" strokeWidth={1.5} />
+              <h3 className="text-2xl sm:text-3xl font-bold text-[#2C2C2C] mb-1 sm:mb-2">View Active Requests</h3>
+              <p className="text-[#2C2C2C] text-sm sm:text-base leading-relaxed">Track the status of your ongoing and pending services.</p>
             </Link>
           </div>
         </section>
 
 
-        <section className="mb-20 animate-fadeInUp delay-200">
-          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-10 text-center">Explore Our Home Services</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8 items-stretch">
+        <section className="mb-12 sm:mb-20 animate-fadeInUp delay-200">
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#2C2C2C] mb-8 sm:mb-10 text-center">Explore Our Home Services</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 items-stretch">
             {services.map((service, index) => (
               <div
                 key={index}
-                className="service-card bg-white rounded-xl border border-gray-100 cursor-pointer overflow-hidden group relative p-8 flex flex-col items-center text-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2"
+                className="service-card bg-white rounded-xl border border-gray-100 cursor-pointer overflow-hidden group relative p-6 sm:p-8 flex flex-col items-center text-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-2"
               >
                 <div className="absolute top-0 left-0 w-full h-1/3 bg-gradient-to-b from-[#F9F6F1] to-white rounded-t-xl -z-10 opacity-70"></div>
-                <div className={`bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white w-20 h-20 sm:w-24 sm:h-24 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-md group-hover:shadow-lg`}>
-                  {React.createElement(service.icon, { className: "w-10 h-10 sm:w-12 sm:h-12" })}
+                <div className={`bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 rounded-xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 group-hover:rotate-6 transition-all duration-300 shadow-md group-hover:shadow-lg`}>
+                  {React.createElement(service.icon, { className: "w-8 h-8 sm:w-10 sm:h-10 lg:w-12 lg:h-12" })}
                 </div>
-                <h3 className="text-2xl font-bold text-[#2C2C2C] mb-3">{service.title}</h3>
-                <p className="text-[#2C2C2C] text-sm mb-6 line-clamp-3 leading-relaxed">{service.description}</p>
+                <h3 className="text-xl sm:text-2xl font-bold text-[#2C2C2C] mb-2 sm:mb-3">{service.title}</h3>
+                <p className="text-[#2C2C2C] text-sm mb-4 sm:mb-6 line-clamp-3 leading-relaxed">{service.description}</p>
 
                 <div className="mt-auto w-full">
                   <button
                     onClick={() => handleServiceClick(service)}
-                    className="w-full bg-[#8CC76E] text-white py-3 rounded-xl font-bold text-lg hover:bg-[#72A658] transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#8CC76E] focus:ring-offset-2"
+                    className="w-full bg-[#8CC76E] text-white py-2.5 sm:py-3 rounded-xl font-bold text-base sm:text-lg hover:bg-[#72A658] transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-[#8CC76E] focus:ring-offset-2"
                   >
-                    Book Visit <span className="ml-2 px-2 py-0.5 bg-white text-[#8CC76E] rounded-full text-xs font-bold">FREE</span>
-                    <ArrowRight className="ml-2 w-5 h-5 text-white transition-transform group-hover:translate-x-1" strokeWidth={2.5} />
+                    Book Visit <span className="ml-2 px-1.5 py-0.5 bg-white text-[#8CC76E] rounded-full text-xs font-bold">FREE</span>
+                    <ArrowRight className="ml-1.5 w-4 h-4 sm:ml-2 sm:w-5 sm:h-5 text-white transition-transform group-hover:translate-x-1" strokeWidth={2.5} />
                   </button>
-                  <div className="text-xs text-[#2C2C2C] leading-snug mt-3 px-2 py-1 bg-green-50 border border-[#8CC76E] rounded-lg">
+                  <div className="text-xs text-[#2C2C2C] leading-snug mt-2 sm:mt-3 px-1.5 py-0.5 bg-green-50 border border-[#8CC76E] rounded-lg">
                     <strong className="text-red-600">Note:</strong> ₹150 cancellation fee applies after technician visit.
                   </div>
                 </div>
@@ -337,9 +336,9 @@ const UserMainDashboard = () => {
           </div>
         </section>
 
-        <section className="mb-20 bg-white rounded-xl shadow-md p-10 lg:p-14 border border-gray-100 animate-fadeInUp delay-300">
-          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-12 text-center">Our Simple Process</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-y-10 lg:gap-x-8 relative">
+        <section className="mb-12 sm:mb-20 bg-white rounded-xl shadow-md p-6 sm:p-10 lg:p-14 border border-gray-100 animate-fadeInUp delay-300">
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#2C2C2C] mb-8 sm:mb-12 text-center">Our Simple Process</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-y-8 sm:gap-y-10 lg:gap-x-8 relative">
 
             <div className="absolute hidden lg:block inset-x-0 top-[25%] transform -translate-y-1/2 z-0">
               <div className="flex justify-between items-center px-16">
@@ -349,74 +348,72 @@ const UserMainDashboard = () => {
               </div>
             </div>
 
-            <div className="flex flex-col items-center text-center p-4 relative z-10 animate-fadeInUp delay-400">
-              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-6 rounded-xl mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                <ClipboardList className="w-12 h-12" strokeWidth={2} />
+            <div className="flex flex-col items-center text-center p-3 sm:p-4 relative z-10 animate-fadeInUp delay-400">
+              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-4 sm:p-6 rounded-xl mb-4 sm:mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                <ClipboardList className="w-10 h-10 sm:w-12 sm:h-12" strokeWidth={2} />
               </div>
-              <h3 className="text-xl font-semibold text-[#2C2C2C] mb-2">1. Choose Service</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-[#2C2C2C] mb-1.5 sm:mb-2">1. Choose Service</h3>
               <p className="text-[#2C2C2C] text-sm leading-relaxed">Browse our categories and select the perfect service for your needs.</p>
             </div>
-            <div className="flex flex-col items-center text-center p-4 relative z-10 animate-fadeInUp delay-500">
-              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-6 rounded-xl mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                <Edit className="w-12 h-12" strokeWidth={2} />
+            <div className="flex flex-col items-center text-center p-3 sm:p-4 relative z-10 animate-fadeInUp delay-500">
+              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-4 sm:p-6 rounded-xl mb-4 sm:mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                <Edit className="w-10 h-10 sm:w-12 sm:h-12" strokeWidth={2} />
               </div>
-              <h3 className="text-xl font-semibold text-[#2C2C2C] mb-2">2. Describe Job</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-[#2C2C2C] mb-1.5 sm:mb-2">2. Describe Job</h3>
               <p className="text-[#2C2C2C] text-sm leading-relaxed">Tell us what you need done, when, and where. It's quick & easy.</p>
             </div>
-            <div className="flex flex-col items-center text-center p-4 relative z-10 animate-fadeInUp delay-600">
-              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-6 rounded-xl mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                <Users className="w-12 h-12" strokeWidth={2} />
+            <div className="flex flex-col items-center text-center p-3 sm:p-4 relative z-10 animate-fadeInUp delay-600">
+              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-4 sm:p-6 rounded-xl mb-4 sm:mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                <Users className="w-10 h-10 sm:w-12 sm:h-12" strokeWidth={2} />
               </div>
-              <h3 className="text-xl font-semibold text-[#2C2C2C] mb-2">3. Get Matched</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-[#2C2C2C] mb-1.5 sm:mb-2">3. Get Matched</h3>
               <p className="text-[#2C2C2C] text-sm leading-relaxed">We connect you with highly-rated, local service professionals.</p>
             </div>
-            <div className="flex flex-col items-center text-center p-4 relative z-10 animate-fadeInUp delay-700">
-              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-6 rounded-xl mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
-                <ThumbsUp className="w-12 h-12" strokeWidth={2} />
+            <div className="flex flex-col items-center text-center p-3 sm:p-4 relative z-10 animate-fadeInUp delay-700">
+              <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] text-white p-4 sm:p-6 rounded-xl mb-4 sm:mb-5 shadow-lg transform group-hover:scale-110 transition-transform duration-300">
+                <ThumbsUp className="w-10 h-10 sm:w-12 sm:h-12" strokeWidth={2} />
               </div>
-              <h3 className="text-xl font-semibold text-[#2C2C2C] mb-2">4. Service Done!</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-[#2C2C2C] mb-1.5 sm:mb-2">4. Service Done!</h3>
               <p className="text-[#2C2C2C] text-sm leading-relaxed">Enjoy your restored home. Pay securely after the job is complete.</p>
             </div>
           </div>
         </section>
 
-
-        {/* Quick Stats */}
-        <section className="mb-20 animate-fadeInUp delay-400">
-          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-10 text-center">Your Dashboard At a Glance</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <section className="mb-12 sm:mb-20 animate-fadeInUp delay-400">
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#2C2C2C] mb-8 sm:mb-10 text-center">Your Dashboard At a Glance</h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8">
             {loadingDashboardData ? (
               <>
-                <div className="bg-gray-200 rounded-xl p-10 animate-pulse h-48 shadow-md"></div>
-                <div className="bg-gray-200 rounded-xl p-10 animate-pulse h-48 shadow-md"></div>
-                <div className="bg-gray-200 rounded-xl p-10 animate-pulse h-48 shadow-md"></div>
+                <div className="bg-gray-200 rounded-xl p-8 sm:p-10 animate-pulse h-40 sm:h-48 shadow-md"></div>
+                <div className="bg-gray-200 rounded-xl p-8 sm:p-10 animate-pulse h-40 sm:h-48 shadow-md"></div>
+                <div className="bg-gray-200 rounded-xl p-8 sm:p-10 animate-pulse h-40 sm:h-48 shadow-md"></div>
               </>
             ) : errorDashboardData ? (
-              <div className="md:col-span-3 bg-red-100 text-red-700 p-6 rounded-xl border border-red-200 text-center font-medium shadow-md">
-                <Info className="inline-block w-5 h-5 mr-2" /> Error: {errorDashboardData}
+              <div className="md:col-span-3 bg-red-100 text-red-700 p-4 sm:p-6 rounded-xl border border-red-200 text-center font-medium shadow-md text-sm sm:text-base">
+                <Info className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Error: {errorDashboardData}
               </div>
             ) : (
               <>
-                <div className="bg-white rounded-xl p-8 text-[#2C2C2C] flex flex-col items-center justify-center border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                  <Home className="w-14 h-14 text-[#2C2C2C] mb-4" strokeWidth={1.5} />
-                  <p className="text-[#2C2C2C] text-lg font-medium">Total Services</p>
-                  <p className="text-5xl font-extrabold text-[#2C2C2C] mt-2">
+                <div className="bg-white rounded-xl p-6 sm:p-8 text-[#2C2C2C] flex flex-col items-center justify-center border border-gray-100 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                  <Home className="w-12 h-12 sm:w-14 sm:h-14 text-[#2C2C2C] mb-3 sm:mb-4" strokeWidth={1.5} />
+                  <p className="text-[#2C2C2C] text-base sm:text-lg font-medium">Total Services</p>
+                  <p className="text-4xl sm:text-5xl font-extrabold text-[#2C2C2C] mt-1.5 sm:mt-2">
                     <AnimatedNumber value={dashboardStats.totalServices} />
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] rounded-xl p-8 text-white flex flex-col items-center justify-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                  <CheckCircle className="w-14 h-14 text-white mb-4" strokeWidth={1.5} />
-                  <p className="text-white text-lg font-medium">Completed Services</p>
-                  <p className="text-5xl font-extrabold text-white mt-2">
+                <div className="bg-gradient-to-br from-[#8CC76E] to-[#72A658] rounded-xl p-6 sm:p-8 text-white flex flex-col items-center justify-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                  <CheckCircle className="w-12 h-12 sm:w-14 sm:h-14 text-white mb-3 sm:mb-4" strokeWidth={1.5} />
+                  <p className="text-white text-base sm:text-lg font-medium">Completed Services</p>
+                  <p className="text-4xl sm:text-5xl font-extrabold text-white mt-1.5 sm:mt-2">
                     <AnimatedNumber value={dashboardStats.completedServices} />
                   </p>
                 </div>
 
-                <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl p-8 text-white flex flex-col items-center justify-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
-                  <Clock className="w-14 h-14 text-orange-200 mb-4" strokeWidth={1.5} />
-                  <p className="text-orange-100 text-lg font-medium">In Progress</p>
-                  <p className="text-5xl font-extrabold text-white mt-2">
+                <div className="bg-gradient-to-br from-orange-500 to-orange-700 rounded-xl p-6 sm:p-8 text-white flex flex-col items-center justify-center hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
+                  <Clock className="w-12 h-12 sm:w-14 sm:h-14 text-orange-200 mb-3 sm:mb-4" strokeWidth={1.5} />
+                  <p className="text-orange-100 text-base sm:text-lg font-medium">In Progress</p>
+                  <p className="text-4xl sm:text-5xl font-extrabold text-white mt-1.5 sm:mt-2">
                     <AnimatedNumber value={dashboardStats.inProgressServices} />
                   </p>
                 </div>
@@ -425,38 +422,37 @@ const UserMainDashboard = () => {
           </div>
         </section>
 
-        {/* Recent Activity */}
-        <section className="mb-16 animate-fadeInUp delay-500">
-          <h2 className="text-4xl font-bold text-[#2C2C2C] mb-10 text-center">Your Recent Activity</h2>
+        <section className="mb-8 sm:mb-16 animate-fadeInUp delay-500">
+          <h2 className="text-3xl sm:text-4xl font-bold text-[#2C2C2C] mb-8 sm:mb-10 text-center">Your Recent Activity</h2>
           {loadingDashboardData ? (
-            <div className="bg-white p-10 rounded-xl shadow-md animate-pulse border border-gray-100">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="h-14 bg-gray-200 rounded-lg mb-4 last:mb-0"></div>
+            <div className="bg-white p-6 sm:p-10 rounded-xl shadow-md animate-pulse border border-gray-100">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-12 sm:h-14 bg-gray-200 rounded-lg mb-3 sm:mb-4 last:mb-0"></div>
               ))}
             </div>
           ) : errorDashboardData ? (
-            <div className="bg-red-100 text-red-700 p-6 rounded-xl border border-red-200 text-center font-medium shadow-md">
-              <Info className="inline-block w-5 h-5 mr-2" /> Error: {errorDashboardData}
+            <div className="bg-red-100 text-red-700 p-4 sm:p-6 rounded-xl border border-red-200 text-center font-medium shadow-md text-sm sm:text-base">
+              <Info className="inline-block w-4 h-4 sm:w-5 sm:h-5 mr-2" /> Error: {errorDashboardData}
             </div>
           ) : recentUserActivity.length === 0 ? (
-            <div className="bg-white p-10 rounded-xl shadow-md text-center text-[#2C2C2C] text-xl border border-gray-100">
-              <ClipboardList className="w-12 h-12 mx-auto mb-4 text-[#2C2C2C]" />
+            <div className="bg-white p-6 sm:p-10 rounded-xl shadow-md text-center text-[#2C2C2C] text-base sm:text-xl border border-gray-100">
+              <ClipboardList className="w-10 h-10 sm:w-12 sm:h-12 mx-auto mb-3 sm:mb-4 text-[#2C2C2C]" />
               <p>No recent activity to display yet. Let's get some services booked!</p>
             </div>
           ) : (
-            <div className="bg-white p-10 rounded-xl shadow-md border border-gray-100">
+            <div className="bg-white p-6 sm:p-10 rounded-xl shadow-md border border-gray-100">
               <ul className="divide-y divide-gray-200">
                 {recentUserActivity.map((activity, index) => {
                   const ActivityIcon = getIconForType(activity.message);
                   return (
-                    <li key={index} className="flex flex-col sm:flex-row items-start sm:items-center py-4 first:pt-0 last:pb-0 group hover:bg-gray-50 transition-colors duration-200 rounded-lg px-3 -mx-3">
-                      <div className="flex items-center mb-2 sm:mb-0 sm:mr-6 w-full sm:w-auto">
-                        <div className="p-2 bg-[#F9F6F1] rounded-full mr-4 shadow-sm group-hover:bg-gray-200 transition-colors">
-                          <ActivityIcon className="w-6 h-6 text-[#8CC76E]" strokeWidth={2} />
+                    <li key={index} className="flex flex-col sm:flex-row items-start sm:items-center py-3 sm:py-4 first:pt-0 last:pb-0 group hover:bg-gray-50 transition-colors duration-200 rounded-lg px-2 sm:px-3 -mx-2 sm:-mx-3">
+                      <div className="flex items-center mb-1.5 sm:mb-0 sm:mr-6 w-full sm:w-auto">
+                        <div className="p-1.5 sm:p-2 bg-[#F9F6F1] rounded-full mr-3 sm:mr-4 shadow-sm group-hover:bg-gray-200 transition-colors">
+                          <ActivityIcon className="w-5 h-5 sm:w-6 sm:h-6 text-[#8CC76E]" strokeWidth={2} />
                         </div>
-                        <span className="text-[#2C2C2C] font-medium text-lg leading-snug">{activity.message}</span>
+                        <span className="text-[#2C2C2C] font-medium text-base sm:text-lg leading-snug">{activity.message}</span>
                       </div>
-                      <span className="ml-auto text-sm text-[#2C2C2C] mt-1 sm:mt-0 whitespace-nowrap">{activity.time}</span>
+                      <span className="ml-auto text-xs sm:text-sm text-[#2C2C2C] mt-0.5 sm:mt-0 whitespace-nowrap">{activity.time}</span>
                     </li>
                   );
                 })}
@@ -506,7 +502,7 @@ const UserMainDashboard = () => {
 
         input:focus, textarea:focus, select:focus, button:focus {
           outline: none;
-          box-shadow: 0 0 0 4px rgba(140, 199, 110, 0.5), 0 0 0 2px white; 
+          box-shadow: 0 0 0 4px rgba(140, 199, 110, 0.5), 0 0 0 2px white;
           border-color: #8CC76E;
         }
 

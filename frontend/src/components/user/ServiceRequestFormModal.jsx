@@ -418,10 +418,10 @@ const ServiceRequestFormModal = ({
             <h2 className="text-3xl font-extrabold text-gray-900 mb-6 border-b-2 border-green-200 pb-4 flex items-center pr-12 relative">
               <Sparkles className="mr-3 text-green-500" size={30} strokeWidth={2} /> Request Service
               {serviceDetails.title && (
-                 <span className="text-green-600 ml-2 overflow-hidden text-ellipsis whitespace-nowrap max-w-[calc(100%-100px)]">
-                    : {serviceDetails.title}
-                 </span>
-              )}
+                   <span className="text-green-600 ml-2 overflow-hidden text-ellipsis whitespace-nowrap max-w-[calc(100%-100px)]">
+                     : {serviceDetails.title}
+                   </span>
+               )}
             </h2>
 
             <div className="flex justify-center items-center mb-8">
@@ -685,7 +685,6 @@ const ServiceRequestFormModal = ({
                         <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" size={20} />
                     </div>
                   </div>
-
                   <div>
                     <label className="block text-gray-700 text-sm font-semibold mb-2" htmlFor="issue">
                       Select An Issue <span className="text-red-500">*</span>
@@ -724,7 +723,6 @@ const ServiceRequestFormModal = ({
                 </div>
 
 
-                {/* Fullscreen Spinner for Estimation */}
                 {loadingEstimation && (
                   <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-md">
                     <div className="flex flex-col items-center p-8 bg-white rounded-xl shadow-2xl">

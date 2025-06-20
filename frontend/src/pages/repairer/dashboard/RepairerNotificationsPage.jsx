@@ -1,7 +1,18 @@
 // frontend/src/pages/repairer/dashboard/RepairerNotificationsPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, Bell, Loader, CheckCircle, Info, XCircle, MessageCircle, Star, Package } from 'lucide-react';
+import {
+  ArrowLeft,
+  Bell,
+  Loader,
+  CheckCircle,
+  Info,
+  XCircle,
+  MessageCircle,
+  Star,
+  Package,
+  DollarSign
+} from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { getRepairerNotifications, markRepairerNotificationAsRead } from '../../../services/apiService'
 import LoadingSpinner from '../../../components/LoadingSpinner';
@@ -45,7 +56,7 @@ const RepairerNotificationsPage = () => {
     } catch (err) {
       console.error("Error marking notification as read:", err);
       setNotifications(prev =>
-        prev.map(n => (n._id === notificationId ? { ...n, read: false } : n)) 
+        prev.map(n => (n._id === notificationId ? { ...n, read: false } : n))
       );
     }
   };
@@ -59,7 +70,7 @@ const RepairerNotificationsPage = () => {
       case 'rating_received': return <Star className="w-5 h-5 text-yellow-600" />;
       case 'new_job_request': return <Package className="w-5 h-5 text-purple-600" />;
       case 'payment_received': return <DollarSign className="w-5 h-5 text-green-600" />;
-      case 'job_in_progress': return <CheckCircle className="w-5 h-5 text-blue-600" />; 
+      case 'job_in_progress': return <CheckCircle className="w-5 h-5 text-blue-600" />;
       case 'quote_provided': return <DollarSign className="w-5 h-5 text-orange-600" />;
       default: return <Bell className="w-5 h-5 text-gray-500" />;
     }
@@ -82,8 +93,8 @@ const RepairerNotificationsPage = () => {
 
   if (!repairer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
           <p className="text-gray-600 mb-6">Please log in as a repairer to view notifications.</p>
           <Link to="/repairer/login" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
@@ -96,7 +107,7 @@ const RepairerNotificationsPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend">
         <div className="text-center">
           <LoadingSpinner className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-lg text-gray-700">Loading notifications...</p>
@@ -105,9 +116,9 @@ const RepairerNotificationsPage = () => {
     );
   }
 
-  if (error && notifications.length === 0) { 
+  if (error && notifications.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend">
         <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8 text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Notifications</h2>
           <p className="text-gray-700 mb-6">{error}</p>
@@ -120,7 +131,7 @@ const RepairerNotificationsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-lexend">
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8">
         <div className="flex items-center space-x-4 mb-8">
           <Link to="/repairer/dashboard" className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -131,9 +142,9 @@ const RepairerNotificationsPage = () => {
             Notifications
           </h1>
         </div>
-        
+
         <p className="text-lg text-gray-700 mb-6">
-          This is your **Notifications Page**. Stay updated on new jobs, messages, and system alerts.
+          This is your <span className="font-semibold">Notifications Page</span>. Stay updated on new jobs, messages, and system alerts.
         </p>
 
         {notifications.length === 0 ? (
@@ -146,7 +157,7 @@ const RepairerNotificationsPage = () => {
                 className={`flex items-center space-x-4 p-4 rounded-xl border ${
                   notification.read ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200 font-semibold'
                 } cursor-pointer`}
-                onClick={() => handleMarkAsRead(notification._id)} 
+                onClick={() => handleMarkAsRead(notification._id)}
               >
                 <div className="flex-shrink-0">
                   {getNotificationIcon(notification.type)}

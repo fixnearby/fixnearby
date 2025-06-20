@@ -1,9 +1,10 @@
 // frontend/src/pages/repairer/dashboard/RepairerAnalyticsPage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowLeft, TrendingUp, DollarSign, CheckCircle, Star, Loader, Hammer, Droplets, Zap } from 'lucide-react';
+import { ArrowLeft, TrendingUp, DollarSign, CheckCircle, Star, Loader, Hammer, Droplets, Zap, IndianRupee, Wrench } from 'lucide-react'; 
 import { useAuthStore } from '../../../store/authStore';
 import { getRepairerAnalytics } from '../../../services/apiService';
+import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const RepairerAnalyticsPage = () => {
   const { repairer } = useAuthStore();
@@ -21,7 +22,7 @@ const RepairerAnalyticsPage = () => {
       setLoading(true);
       setError(null);
       try {
-        const fetchedData = await getRepairerAnalytics(); // Call real API
+        const fetchedData = await getRepairerAnalytics(); 
         setAnalyticsData(fetchedData);
       } catch (err) {
         console.error("Error fetching analytics:", err);
@@ -36,8 +37,8 @@ const RepairerAnalyticsPage = () => {
 
   if (!repairer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend"> 
+        <div className="text-center p-8 bg-white rounded-2xl shadow-lg"> 
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
           <p className="text-gray-600 mb-6">Please log in as a repairer to view analytics.</p>
           <Link to="/repairer/login" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
@@ -48,20 +49,19 @@ const RepairerAnalyticsPage = () => {
     );
   }
 
-  if (loading && !analyticsData) { // Show loading only if data is not yet fetched
+  if (loading && !analyticsData) { 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend"> {/* Added font-lexend */}
         <div className="text-center">
-          <Loader className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-lg text-gray-700">Loading your analytics...</p>
+          <LoadingSpinner className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
         </div>
       </div>
     );
   }
 
-  if (error && !analyticsData) { // Show error only if no data at all
+  if (error && !analyticsData) { 
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend"> {/* Added font-lexend */}
         <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8 text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Analytics</h2>
           <p className="text-gray-700 mb-6">{error}</p>
@@ -73,26 +73,26 @@ const RepairerAnalyticsPage = () => {
     );
   }
 
-  const displayData = analyticsData || { // Fallback for initial render or if API returns partial data
+  const displayData = analyticsData || { 
     jobsCompleted: 0,
     totalEarnings: 0,
     monthlyEarnings: Array(6).fill(0),
     topServices: [],
   };
 
-  const getMaxEarnings = () => Math.max(...displayData.monthlyEarnings, 1); // Ensure no division by zero
+  const getMaxEarnings = () => Math.max(...displayData.monthlyEarnings, 1);
 
   const getServiceIcon = (serviceType) => {
     switch (serviceType.toLowerCase()) {
       case 'plumbing': return <Droplets className="w-5 h-5 text-blue-600 mr-2" />;
       case 'electrical': return <Zap className="w-5 h-5 text-yellow-600 mr-2" />;
-      case 'carpentry': return <Hammer className="w-5 h-5 text-brown-600 mr-2" />; // Assuming a 'brown' for carpentry
+      case 'carpentry': return <Hammer className="w-5 h-5 text-orange-600 mr-2" />; 
       default: return <Wrench className="w-5 h-5 text-gray-600 mr-2" />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-lexend"> {/* Added font-lexend */}
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8">
         <div className="flex items-center space-x-4 mb-8">
           <Link to="/repairer/dashboard" className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -105,7 +105,7 @@ const RepairerAnalyticsPage = () => {
         </div>
 
         <p className="text-lg text-gray-700 mb-6">
-          This is your **Performance Analytics Page**. View insights into your job performance and earnings.
+          This is your <span className="font-semibold">Performance Analytics Page</span>. View insights into your job performance and earnings.
         </p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 mb-8">
@@ -117,10 +117,10 @@ const RepairerAnalyticsPage = () => {
             </div>
           </div>
           <div className="bg-green-50 p-6 rounded-xl flex items-center space-x-4">
-            <DollarSign className="w-10 h-10 text-green-600" />
+            <IndianRupee className="w-10 h-10 text-green-600" />
             <div>
               <div className="text-sm text-gray-600">Total Earnings</div>
-              <div className="text-2xl font-bold text-gray-900">${displayData.totalEarnings?.toLocaleString()}</div>
+              <div className="text-2xl font-bold text-gray-900">₹{displayData.totalEarnings?.toLocaleString()}</div>
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ const RepairerAnalyticsPage = () => {
                   ></div>
                   <span className="text-xs text-gray-600 mt-1">{monthName}</span>
                   <span className="absolute bottom-full mb-2 p-1 text-xs text-white bg-gray-800 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    ${earning.toLocaleString()}
+                    ₹{earning.toLocaleString()} 
                   </span>
                 </div>
               );

@@ -1,6 +1,6 @@
 // frontend/src/components/RepairerDashboard/JobCard.jsx
 import React, { useState } from 'react';
-import { MoreVertical, MapPin, Calendar, Clock, DollarSign, Tag, AlertTriangle, ClipboardList } from 'lucide-react';
+import { MoreVertical, MapPin, Calendar, Clock, DollarSign,IndianRupee, Tag, AlertTriangle, ClipboardList } from 'lucide-react';
 
 const JobCard = ({ job, handleAcceptJob, getUrgencyColor }) => {
   const [showDetails, setShowDetails] = useState(false);
@@ -43,7 +43,7 @@ const JobCard = ({ job, handleAcceptJob, getUrgencyColor }) => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4 sm:mb-6">
             <div className="bg-green-50 p-3 rounded-xl border border-green-200">
               <div className="flex items-center text-green-700">
-                <DollarSign className="w-4 h-4 mr-2" />
+                <IndianRupee className="w-4 h-4 mr-2" />
                 <div>
                   <p className="text-xs font-medium text-green-600">Quotation</p>
                   <p className="text-base sm:text-xl font-bold text-green-800">₹{job.quotation}</p>

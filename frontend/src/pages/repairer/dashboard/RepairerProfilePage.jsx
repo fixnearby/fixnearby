@@ -1,7 +1,8 @@
+// frontend/src/pages/repairer/dashboard/RepairerProfilePage.jsx
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import servicefromjson from '../../../services.json';
-import { ArrowLeft, User, Star, MapPin, Wrench, Mail, Phone, Clock, Loader, Camera, Edit, Check, X, CreditCard } from 'lucide-react';
+import { ArrowLeft, User, Star, MapPin, Wrench, Mail, Phone, Clock, Loader, Edit, Check, X, CreditCard } from 'lucide-react';
 import { useAuthStore } from '../../../store/authStore';
 import { getLucideIcon } from '../../../utils/lucideIconMap.js';
 import { getRepairerProfileDetails, updateRepairerProfile } from '../../../services/apiService';
@@ -23,7 +24,6 @@ const RepairerProfilePage = () => {
     pincode: '',
     bio: '',
     experience: 0,
-    profileImageUrl: '',
     services: [],
     upiId: '',
   });
@@ -59,7 +59,6 @@ const RepairerProfilePage = () => {
           pincode: fetchedData.pincode,
           services: normalizedServices,
           bio: fetchedData.bio || "No biography provided yet. Update your profile!",
-          profileImageUrl: fetchedData.profileImageUrl || ''
         });
 
         setEditForm({
@@ -67,7 +66,6 @@ const RepairerProfilePage = () => {
           pincode: fetchedData.pincode,
           bio: fetchedData.bio || '',
           experience: fetchedData.experience || 0,
-          profileImageUrl: fetchedData.profileImageUrl || '',
           services: normalizedServices,
           upiId: fetchedData.upiId || '',
         });
@@ -82,17 +80,6 @@ const RepairerProfilePage = () => {
 
     fetchProfileDetails();
   }, [repairer, setRepairer]);
-
-  const handleProfileImageChange = (e) => {
-    if (e.target.files[0]) {
-      const file = e.target.files[0];
-      const tempLocalUrl = URL.createObjectURL(file);
-      setEditForm(prev => ({
-        ...prev,
-        profileImageUrl: tempLocalUrl
-      }));
-    }
-  };
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
@@ -140,7 +127,6 @@ const RepairerProfilePage = () => {
         pincode: normalizePincode(editForm.pincode),
         bio: editForm.bio,
         experience: editForm.experience,
-        profileImageUrl: editForm.profileImageUrl,
         services: filteredServices,
         upiId: editForm.upiId.trim(),
       };
@@ -153,20 +139,21 @@ const RepairerProfilePage = () => {
         pincode: updatedData.repairer.pincode,
         bio: updatedData.repairer.bio,
         experience: updatedData.repairer.experience,
-        profileImageUrl: updatedData.repairer.profileImageUrl || '',
         services: updatedData.repairer.services?.map(s => ({
           name: s.name || '',
           visitingCharge: s.visitingCharge ?? 0
         })) || [],
         upiId: updatedData.repairer.upiId || 'N/A',
       };
+      
       setProfileData(newProfileData);
 
-      setRepairer({
-        ...repairer,
+      setRepairer(prevRepairer => ({
+        ...prevRepairer,
         ...updatedData.repairer,
-        phone: repairer.phone
-      });
+        phone: prevRepairer.phone,
+        aadharcardNumber: prevRepairer.aadharcardNumber
+      }));
 
       setSaveStatus({ type: 'success', message: 'Profile saved successfully!' });
       setIsEditing(false);
@@ -182,8 +169,8 @@ const RepairerProfilePage = () => {
 
   if (!repairer) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
-        <div className="text-center p-8 bg-white rounded-xl shadow-lg">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend">
+        <div className="text-center p-8 bg-white rounded-2xl shadow-lg">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
           <p className="text-gray-600 mb-6">Please log in as a repairer to view your profile.</p>
           <Link to="/repairer/login" className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
@@ -196,7 +183,7 @@ const RepairerProfilePage = () => {
 
   if (loading && !profileData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend">
         <div className="text-center">
           <Loader className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-lg text-gray-700">Loading your profile...</p>
@@ -207,7 +194,7 @@ const RepairerProfilePage = () => {
 
   if (error && !profileData) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 flex items-center justify-center font-lexend">
         <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8 text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading Profile</h2>
           <p className="text-gray-700 mb-6">{error || "Profile data could not be loaded."}</p>
@@ -219,10 +206,8 @@ const RepairerProfilePage = () => {
     );
   }
 
-  const currentProfileImage = isEditing ? editForm.profileImageUrl : profileData.profileImageUrl;
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 py-12 px-4 sm:px-6 lg:px-8 font-lexend">
       <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg p-8">
         <div className="flex items-center space-x-4 mb-8">
           <Link to="/repairer/dashboard" className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors">
@@ -241,37 +226,8 @@ const RepairerProfilePage = () => {
         )}
 
         <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
-          <div className="relative w-32 h-32 rounded-full overflow-hidden border-4 border-green-300 shadow-md flex items-center justify-center bg-gray-100">
-            {currentProfileImage ? (
-              <img
-                src={currentProfileImage}
-                alt={`${profileData.fullname}'s profile`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <User className="w-20 h-20 text-gray-400" />
-            )}
-
-            {isEditing && (
-              <button
-                type="button"
-                onClick={() => document.getElementById('profileImageInput').click()}
-                className="absolute bottom-0 right-0 bg-green-600 text-white rounded-full p-2 hover:bg-green-700 transition-colors shadow-md"
-                title="Change profile image"
-              >
-                <Camera className="w-4 h-4" />
-              </button>
-            )}
-            <input
-              type="file"
-              id="profileImageInput"
-              className="hidden"
-              onChange={handleProfileImageChange}
-              accept="image/*"
-            />
-          </div>
-
-          <div className="text-center md:text-left">
+          
+          <div className="text-center md:text-left w-full">
             {isEditing ? (
               <input
                 type="text"
@@ -299,22 +255,22 @@ const RepairerProfilePage = () => {
             </p>
           </div>
 
-          <div className="md:ml-auto">
+          <div className="md:ml-auto w-full md:w-auto mt-4 md:mt-0">
             {!isEditing ? (
               <button
                 type="button"
                 onClick={() => setIsEditing(true)}
-                className="px-4 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition-colors flex items-center space-x-2 shadow-md"
+                className="px-4 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition-colors flex items-center space-x-2 shadow-md w-full justify-center md:w-auto"
               >
                 <Edit className="w-4 h-4" />
                 <span>Edit Profile</span>
               </button>
             ) : (
-              <div className="flex space-x-2">
+              <div className="flex space-x-2 w-full justify-center md:justify-end">
                 <button
                   type="button"
                   onClick={handleSaveProfile}
-                  className="px-4 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition-colors flex items-center space-x-2 shadow-md"
+                  className="px-4 py-2 bg-green-600 text-white rounded-full font-medium hover:bg-green-700 transition-colors flex items-center space-x-2 shadow-md flex-grow justify-center"
                   disabled={loading}
                 >
                   {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
@@ -323,7 +279,7 @@ const RepairerProfilePage = () => {
                 <button
                   type="button"
                   onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-full font-medium hover:bg-gray-400 transition-colors shadow-md"
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-full font-medium hover:bg-gray-400 transition-colors shadow-md flex-grow justify-center"
                   disabled={loading}
                 >
                   Cancel

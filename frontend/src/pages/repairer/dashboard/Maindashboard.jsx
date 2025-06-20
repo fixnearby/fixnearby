@@ -77,7 +77,7 @@ const RepairerMainDashboard = () => {
       const data = await getRepairerDashboardStats();
       setStats([
         { title: "Jobs Completed", value: data.jobsCompleted || "0", change: data.jobsCompletedChange || "N/A", icon: 'CheckCircle' },
-        { title: "Earnings This Month", value: `$${data.earningsThisMonth?.toLocaleString() || "0"}`, change: data.earningsChange || "N/A", icon: 'DollarSign' },
+        { title: "Earnings", value: `₹${data.earningsThisMonth?.toLocaleString() || "0"}`, change: data.earningsChange || "N/A", icon: 'IndianRupee' },
         { title: "Average Rating", value: data.averageRating?.toFixed(1) || "0.0", change: data.ratingChange || "N/A", icon: 'Star' },
         { title: "Active Jobs", value: data.activeJobs || "0", change: data.activeJobsChange || "N/A", icon: 'Target' }
       ]);

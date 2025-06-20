@@ -35,11 +35,12 @@ const OfflineDashboardContent = ({
   }, [loadingActivity, errorActivity]);
 
   return (
-    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 font-lexend">
       <section>
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Dashboard Overview</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-[#2C2C2C] mb-4">Dashboard Overview</h2>
         {loadingStats ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 animate-pulse">
+          // This section keeps grid-cols-2 for mobile as it's likely meant for 4 stats
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 animate-pulse">
             {[...Array(4)].map((_, i) => (
               <div key={i} className="bg-white p-4 sm:p-6 rounded-xl shadow-md flex items-center space-x-3 sm:space-x-4">
                 <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-200 rounded-full"></div>
@@ -56,7 +57,7 @@ const OfflineDashboardContent = ({
           </div>
         ) : (
           <div className={`transition-opacity duration-500 ${showStats ? 'opacity-100' : 'opacity-0'}`}>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
               {stats.map((stat, index) => {
                 const IconComponent = getLucideIcon(stat.icon, Wrench);
                 return (
@@ -66,7 +67,7 @@ const OfflineDashboardContent = ({
                     </div>
                     <div>
                       <div className="text-xs sm:text-sm text-gray-600">{stat.title}</div>
-                      <div className="text-xl sm:text-2xl font-bold text-gray-900">{stat.value}</div>
+                      <div className="text-xl sm:text-2xl font-bold text-[#2C2C2C]">{stat.value}</div>
                       <div className="text-xs text-gray-500">{stat.change}</div>
                     </div>
                   </div>
@@ -78,11 +79,11 @@ const OfflineDashboardContent = ({
       </section>
 
       <section>
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-[#2C2C2C] mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 sm:gap-6">
           <button
             onClick={onViewAnalyticsClick}
-            className="flex flex-col items-center justify-center p-4 sm:p-6 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-colors duration-200 ease-in-out transform hover:-translate-y-1 text-center"
+            className="flex flex-col items-center p-4 sm:p-6 bg-green-600 text-white rounded-xl shadow-md hover:bg-green-700 transition-colors duration-200 ease-in-out transform hover:-translate-y-1 text-center h-full"
           >
             <TrendingUp className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
             <span className="font-semibold text-base sm:text-lg">View Analytics</span>
@@ -90,7 +91,7 @@ const OfflineDashboardContent = ({
           </button>
           <Link
             to="/repairer/inprogress"
-            className="flex flex-col items-center justify-center p-4 sm:p-6 bg-emerald-600 text-white rounded-xl shadow-md hover:bg-emerald-700 transition-colors duration-200 ease-in-out transform hover:-translate-y-1 text-center"
+            className="flex flex-col items-center p-4 sm:p-6 bg-emerald-600 text-white rounded-xl shadow-md hover:bg-emerald-700 transition-colors duration-200 ease-in-out transform hover:-translate-y-1 text-center h-full"
           >
             <ClipboardList className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
             <span className="font-semibold text-base sm:text-lg">Assigned Jobs</span>
@@ -98,7 +99,7 @@ const OfflineDashboardContent = ({
           </Link>
           <button
             onClick={onManageProfileClick}
-            className="flex flex-col items-center justify-center p-4 sm:p-6 bg-teal-600 text-white rounded-xl shadow-md hover:bg-teal-700 transition-colors duration-200 ease-in-out transform hover:-translate-y-1 text-center"
+            className="flex flex-col items-center p-4 sm:p-6 bg-teal-600 text-white rounded-xl shadow-md hover:bg-teal-700 transition-colors duration-200 ease-in-out transform hover:-translate-y-1 text-center h-full"
           >
             <User className="w-8 h-8 sm:w-10 sm:h-10 mb-2" />
             <span className="font-semibold text-base sm:text-lg">Manage Profile</span>
@@ -108,7 +109,7 @@ const OfflineDashboardContent = ({
       </section>
 
       <section>
-        <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-4">Recent Activity</h2>
+        <h2 className="text-xl sm:text-2xl font-bold text-[#2C2C2C] mb-4">Recent Activity</h2>
         {loadingActivity ? (
           <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md animate-pulse">
             {[...Array(3)].map((_, i) => (
@@ -131,7 +132,7 @@ const OfflineDashboardContent = ({
             {recentActivity.length === 0 ? (
               <div className="bg-white p-6 rounded-xl shadow-md text-center py-8">
                 <AlertCircle className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">No Recent Activity</h3>
+                <h3 className="text-lg font-semibold text-[#2C2C2C] mb-2">No Recent Activity</h3>
                 <p className="text-sm text-gray-600">Your recent activities will show up here.</p>
               </div>
             ) : (
@@ -163,7 +164,7 @@ const OfflineDashboardContent = ({
                           <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                         </div>
                         <div className="flex-grow">
-                          <p className="text-sm sm:text-base text-gray-800 font-medium">{activity.message}</p>
+                          <p className="text-sm sm:text-base text-[#2C2C2C] font-medium">{activity.message}</p>
                           {activity.amount && (
                             <p className="text-xs sm:text-sm text-gray-600">Earnings: {activity.amount}</p>
                           )}

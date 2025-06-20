@@ -25,15 +25,17 @@ import {
   LogOut,
   Settings,
   ArrowRight,
+
   Users,
   X,
   Bell,
-  MapPin, // Added MapPin as it's used in job cards
-  Info, // For notifications
-  XCircle // For notifications
+  MapPin, 
+  Info, 
+  XCircle 
+  ,
+  IndianRupee
 } from 'lucide-react';
 
-// This object maps string names (from backend or internal logic) to Lucide React components
 export const lucideIconMap = {
   Wrench: Wrench,
   Zap: Zap,
@@ -56,7 +58,7 @@ export const lucideIconMap = {
   Phone: Phone,
   Mail: Mail,
   Clock: Clock,
-  DollarSign: DollarSign,
+  IndianRupee : IndianRupee,
   LogOut: LogOut,
   Settings: Settings,
   ArrowRight: ArrowRight,
@@ -66,20 +68,18 @@ export const lucideIconMap = {
   MapPin: MapPin,
   Info: Info,
   XCircle: XCircle,
-  // Add more mappings as needed based on service types or other dynamic icon needs
-  plumbing: Droplets, // For consistent category mapping in job cards
+  plumbing: Droplets, 
   electrical: Zap,
   carpentry: Hammer,
   painting: Paintbrush,
-  hvac: Wrench, // Assuming HVAC uses a wrench icon
-  security: Shield, // Assuming Home Security uses a shield icon
-  electronics: Zap, // Reusing Zap for electronics
-  appliances: Wrench, // Reusing Wrench for appliances
-  automotive: Shield, // Reusing Shield for automotive
-  other: Wrench, // Default icon
+  hvac: Wrench, 
+  security: Shield, 
+  electronics: Zap, 
+  appliances: Wrench, 
+  automotive: Shield,
+  other: Wrench, 
 };
 
-// Optional: A helper function to get an icon component by name
 export const getLucideIcon = (iconName, fallbackIcon = Wrench) => {
   return lucideIconMap[iconName] || fallbackIcon;
 };

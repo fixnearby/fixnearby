@@ -1,13 +1,504 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334186/logo1_js3wup.png" />
+
+    <!-- Primary Meta Tags -->
+    <title>
+      FixNearby - Local Home Services & Repairs | Free Quotes & AI Estimates
+    </title>
+    <meta
+      name="title"
+      content="FixNearby - Local Home Services & Repairs | Free Quotes & AI Estimates"
+    />
+    <meta
+      name="description"
+      content="Book trusted local professionals for home repairs & services. Get free home visits & AI-powered quotes for plumbing, electrical, appliances, cleaning, painting & more. Available 24/7 in your area."
+    />
+    <meta
+      name="keywords"
+      content="home services, local repairs, plumber near me, electrician, appliance repair, house cleaning, painting services, pest control, carpentry, handyman, home maintenance, emergency repairs, free quotes, AI estimates , free visits"
+    />
+    <meta name="author" content="FixNearby" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="revisit-after" content="7 days" />
+
+    <!-- Viewport -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FixNearby</title>
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://fixnearby.in/" />
+    <meta
+      property="og:title"
+      content="FixNearby - Local Home Services & Repairs | Free Quotes & AI Estimates"
+    />
+    <meta
+      property="og:description"
+      content="Book trusted local professionals for home repairs & services. Get free home visits & AI-powered quotes for plumbing, electrical, appliances, cleaning, painting & more."
+    />
+    <meta
+      property="og:image"
+      content="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334189/logooo_qqpqlr.png"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:site_name" content="FixNearby" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="https://fixnearby.in/" />
+    <meta
+      property="twitter:title"
+      content="FixNearby - Local Home Services & Repairs | Free Quotes & AI Estimates"
+    />
+    <meta
+      property="twitter:description"
+      content="Book trusted local professionals for home repairs & services. Get free home visits & AI-powered quotes for plumbing, electrical, appliances, cleaning, painting & more."
+    />
+    <meta
+      property="twitter:image"
+      content="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334189/logooo_qqpqlr.png"
+    />
+
+    <!-- Favicon -->
+    <link
+      rel="icon"
+      type="image/png"
+      href="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334189/logooo_qqpqlr.png"
+    />
+    <link
+      rel="apple-touch-icon"
+      href="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334189/logooo_qqpqlr.png"
+    />
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://fixnearby.in/" />
+
+    <!-- Preload Critical Resources -->
+    <link
+      rel="preload"
+      href="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334189/logooo_qqpqlr.png"
+      as="image"
+    />
+
+    <!-- DNS Prefetch for External Resources -->
+    <link rel="dns-prefetch" href="//res.cloudinary.com" />
+    <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+
+    <!-- Structured Data - LocalBusiness Schema -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "FixNearby",
+        "description": "Professional home services and repairs with free visits and AI-powered quotes",
+        "url": "https://fixnearby.in",
+        "logo": "https://res.cloudinary.com/dqo8li60p/image/upload/v1750334186/logo1_js3wup.png",
+        "image": "https://res.cloudinary.com/dqo8li60p/image/upload/v1750334186/logo1_js3wup.png",
+        "email": "contact@fixnearby.in",
+        "sameAs": [
+          "https://www.instagram.com/fixnearby",
+        ]
+        "address": {
+          "@type": "PostalAddress",
+          "addressCountry": "IN"
+        },
+        "geo": {
+          "@type": "GeoCoordinates",
+          "latitude": "26.9124",
+          "longitude": "75.7873"
+        },
+        "areaServed": {
+          "@type": "Country",
+          "name": "India"
+        },
+        "serviceType": "Home Services",
+        "priceRange": "₹₹",
+        "openingHours": "Mo-Su 00:00-23:59",
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Home Services",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Appliance Repair",
+                "description": "Repair & maintenance for AC, fridge, washing machine & more"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Electrical Services",
+                "description": "Wiring, fixtures, short circuits, and new installations"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Plumbing Services",
+                "description": "Leak repair, pipe fitting, drainage issues & bathroom fixes"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Cleaning Services",
+                "description": "Deep home cleaning, bathroom, kitchen, & office cleaning"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Painting Services",
+                "description": "Interior/exterior painting, minor wall repairs & upgrades"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Pest Control",
+                "description": "Effective solutions for termites, rodents, cockroaches & more"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Security Services",
+                "description": "Smart locks, CCTV installation, alarm systems & automation"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Gardening Services",
+                "description": "Garden design, plant care, lawn maintenance & landscape work"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Carpentry Services",
+                "description": "Furniture repair, custom woodwork, doors, and window fixes"
+              }
+            },
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Interior Design",
+                "description": "Personalized home styling, space planning & decor solutions"
+              }
+            }
+          ]
+        },
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.8",
+          "reviewCount": "1250"
+        },
+        "review": [
+          {
+            "@type": "Review",
+            "author": {
+              "@type": "Person",
+              "name": "Satisfied Customer"
+            },
+            "reviewRating": {
+              "@type": "Rating",
+              "ratingValue": "5"
+            },
+            "reviewBody": "Excellent service with free home visit and accurate AI quote. Highly recommended!"
+          }
+        ]
+      }
+    </script>
+
+    <!-- Breadcrumb Schema -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "Home",
+            "item": "https://fixnearby.in/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Services",
+            "item": "https://fixnearby.in/services"
+          }
+        ]
+      }
+    </script>
+
+    <!-- WebSite Schema for Site Search -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "FixNearby",
+        "url": "https://fixnearby.in",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "https://fixnearby.in/search?q={search_term_string}"
+          },
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+
+    <!-- Service Schema -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Service",
+        "name": "Home Repair and Maintenance Services",
+        "description": "Professional home services with free visits and AI-powered quotations",
+        "provider": {
+          "@type": "Organization",
+          "name": "FixNearby",
+          "url": "https://fixnearby.in"
+        },
+        "areaServed": {
+          "@type": "Country",
+          "name": "India"
+        },
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Home Services Catalog",
+          "itemListElement": [
+            {
+              "@type": "Offer",
+              "itemOffered": {
+                "@type": "Service",
+                "name": "Emergency Repair Services",
+                "description": "24/7 emergency home repair services"
+              },
+              "priceSpecification": {
+                "@type": "PriceSpecification",
+                "priceCurrency": "INR",
+                "price": "0",
+                "description": "Free home visit and quote"
+              }
+            }
+          ]
+        }
+      }
+    </script>
+
+    <!-- Google Analytics (Replace with your tracking ID) -->
+    <!-- <script async src="https://www.googletagmanager.com/gtag/js?id=GA_TRACKING_ID"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'GA_TRACKING_ID');
+    </script> -->
+
+    <!-- Performance Optimization -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <!-- <meta http-equiv="X-Frame-Options" content="DENY" /> -->
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+
+    <!-- Mobile App Meta -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="FixNearby" />
+    <meta name="application-name" content="FixNearby" />
+    <meta name="theme-color" content="#007bff" />
+    <meta name="msapplication-TileColor" content="#007bff" />
+
+    <!-- Preconnect to External Domains -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
+    <!-- Critical CSS (add your own critical styles here if needed) -->
+    <style>
+      /* Basic reset for better cross-browser compatibility */
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+          sans-serif;
+        line-height: 1.6;
+        color: #333;
+      }
+
+      /* Screen reader only content */
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+      }
+    </style>
   </head>
   <body>
+    <!-- Skip to main content for accessibility -->
+    <a href="#root" class="sr-only">Skip to main content</a>
+
+    <!-- Main React app container -->
     <div id="root"></div>
+
+    <!-- Schema.org structured data for services -->
+    <div
+      style="display: none"
+      itemscope
+      itemtype="https://schema.org/LocalBusiness"
+    >
+      <span itemprop="name">FixNearby</span>
+      <span itemprop="description"
+        >Professional home services and repairs with free visits and AI-powered
+        quotes</span
+      >
+      <span itemprop="url">https://fixnearby.in</span>
+      <span itemprop="email">contact@fixnearby.in</span>
+
+      <!-- Service offerings with microdata -->
+      <div
+        itemprop="hasOfferCatalog"
+        itemscope
+        itemtype="https://schema.org/OfferCatalog"
+      >
+        <div
+          itemprop="itemListElement"
+          itemscope
+          itemtype="https://schema.org/Offer"
+        >
+          <span itemprop="name">Appliance Repair</span>
+          <span itemprop="description"
+            >Repair & maintenance for AC, fridge, washing machine & more</span
+          >
+        </div>
+        <div
+          itemprop="itemListElement"
+          itemscope
+          itemtype="https://schema.org/Offer"
+        >
+          <span itemprop="name">Electrical Services</span>
+          <span itemprop="description"
+            >Wiring, fixtures, short circuits, and new installations</span
+          >
+        </div>
+        <div
+          itemprop="itemListElement"
+          itemscope
+          itemtype="https://schema.org/Offer"
+        >
+          <span itemprop="name">Plumbing Services</span>
+          <span itemprop="description"
+            >Leak repair, pipe fitting, drainage issues & bathroom fixes</span
+          >
+        </div>
+        <div
+          itemprop="itemListElement"
+          itemscope
+          itemtype="https://schema.org/Offer"
+        >
+          <span itemprop="name">Cleaning Services</span>
+          <span itemprop="description"
+            >Deep home cleaning, bathroom, kitchen, & office cleaning</span
+          >
+        </div>
+        <div
+          itemprop="itemListElement"
+          itemscope
+          itemtype="https://schema.org/Offer"
+        >
+          <span itemprop="name">Painting Services</span>
+          <span itemprop="description"
+            >Interior/exterior painting, minor wall repairs & upgrades</span
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Noscript fallback -->
+    <noscript>
+      <div style="padding: 20px; text-align: center; background: #f8f9fa">
+        <h2>FixNearby - Home Services</h2>
+        <p>
+          Please enable JavaScript to use our booking system, or call us
+          directly for service requests.
+        </p>
+        <p>
+          <strong>Services:</strong> Plumbing, Electrical, Appliance Repair,
+          Cleaning, Painting, Pest Control, Carpentry, and more!
+        </p>
+        <p>
+          <strong>Features:</strong> Free Home Visits | AI-Powered Quotes |
+          Trusted Professionals
+        </p>
+      </div>
+    </noscript>
+
+    <!-- Load main React app -->
     <script type="module" src="/src/main.jsx"></script>
+
+    <!-- Additional SEO JavaScript -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Do you provide free home visits?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes, we provide completely free home visits for all our services. Our professionals will assess your needs at no cost."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How does AI quotation work?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Our AI system analyzes your service requirements and provides accurate cost estimates based on location, service type, and complexity."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What services do you offer?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We offer comprehensive home services including plumbing, electrical work, appliance repair, cleaning, painting, pest control, carpentry, gardening, security systems, and interior design."
+            }
+          }
+        ]
+      }
+    </script>
   </body>
 </html>

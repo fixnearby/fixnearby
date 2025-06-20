@@ -13,10 +13,16 @@ import Payment from "../models/payment.model.js";
 import { sendSignupOTP } from "./sendsms.js";
 import Razorpay from 'razorpay'; 
 import AcceptOtp from "../models/acceptOtp.model.js";
+import crypto from 'crypto';
+import dotenv from "dotenv";
+import axios from "axios";
+dotenv.config();
+const RAZORPAY_AUTH_HEADER = Buffer.from(`${process.env.RAZORPAY_KEY_ID}:${process.env.RAZORPAY_KEY_SECRET}`).toString('base64');
+const RAZORPAY_API_BASE_URL = 'https://api.razorpay.com/v1'; 
 
 const razorpayInstance = new Razorpay({
-    key_id: 'rzp_test_b5tKSvdT2o41aP',
-    key_secret:'qmjsSv7KSQ672wCNK8xlXNWb',
+    key_id: process.env.RAZORPAY_KEY_ID,
+    key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 const formatLocationData = (location) => {
     if (!location) return null;
@@ -677,106 +683,220 @@ export const verifyAndTransferPayment = async (req, res) => {
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature,
-        paymentRecordId 
+        paymentRecordId
     } = req.body;
-
     if (!userId) {
-        return res.status(401).json({ message: "Unauthorized: User ID not found." });
+        console.error("Verify Payment: Unauthorized - User ID not found.");
+        return res.status(401).json({ success: false, message: "Unauthorized: User ID not found." });
     }
+
     if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !paymentRecordId) {
-        return res.status(400).json({ message: "Payment verification details are incomplete." });
+        console.error("Verify Payment: Incomplete details received.", { razorpay_order_id, razorpay_payment_id, razorpay_signature, paymentRecordId });
+        return res.status(400).json({ success: false, message: "Payment verification details are incomplete." });
     }
 
     try {
-        const paymentRecord = await Payment.findById(paymentRecordId).populate('serviceRequest').populate('repairer', 'upiId');
-
+        const paymentRecord = await Payment.findById(paymentRecordId)
+            .populate('serviceRequest')
+            .populate('repairer', 'upiId name phone email'); 
         if (!paymentRecord || paymentRecord.customer.toString() !== userId.toString()) {
-            return res.status(404).json({ message: "Payment record not found or unauthorized." });
+            console.error(`Verify Payment: Payment record ${paymentRecordId} not found or unauthorized for user ${userId}.`);
+            return res.status(404).json({ success: false, message: "Payment record not found or unauthorized." });
         }
-        const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
-        shasum.update(`${razorpay_order_id}|${razorpay_payment_id}`);
-        const digest = shasum.digest('hex');
+        if (!paymentRecord.repairer || !paymentRecord.repairer.phone) {
+             console.error(`Verify Payment: Repairer details (phone) missing for payout:`, paymentRecord.repairer);
+             paymentRecord.status = 'payout_failed_contact_issue'; 
+             await paymentRecord.save();
+             return res.status(400).json({ success: false, message: "Repairer phone number is missing for payout." });
+        }
 
+        console.log('\n--- Razorpay Signature Verification Debug ---');
+        console.log('Backend received:');
+        console.log('  paymentRecordId:', paymentRecordId);
+        console.log('  razorpay_order_id:', razorpay_order_id);
+        console.log('  razorpay_payment_id:', razorpay_payment_id);
+        console.log('  razorpay_signature (from client):', razorpay_signature);
+        
+        console.log('  RAZORPAY_KEY_SECRET (from env):', process.env.RAZORPAY_KEY_SECRET); 
+
+        const stringToHash = `${razorpay_order_id}|${razorpay_payment_id}`;
+        console.log('  String used for HMAC calculation:', stringToHash);
+
+        const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
+        shasum.update(stringToHash);
+        const digest = shasum.digest('hex');
+        console.log('  Calculated digest (from your backend):', digest);
+        
         if (digest !== razorpay_signature) {
             paymentRecord.status = 'failed'; 
             await paymentRecord.save();
-            console.error(`DEBUG: Signature Mismatch for Payment ID: ${razorpay_payment_id}`);
-            return res.status(400).json({ message: "Payment verification failed: Signature mismatch." });
+            console.error(`Verify Payment: Signature Mismatch for Payment ID: ${razorpay_payment_id}. Stored status: ${paymentRecord.status}`);
+            console.error(`Expected Digest (calculated): ${digest}`);
+            console.error(`Received Signature (from Razorpay): ${razorpay_signature}`);
+            return res.status(400).json({ success: false, message: "Payment verification failed: Signature mismatch." });
         }
-        paymentRecord.razorpayPaymentId = razorpay_payment_id;
-        paymentRecord.razorpaySignature = razorpay_signature;
-        paymentRecord.status = 'captured';
-        paymentRecord.paymentDate = new Date();
-        await paymentRecord.save();
-        console.log('--- DEBUG: Razorpay Payment Verified & Captured ---');
-        console.log('DEBUG: Payment Record ID:', paymentRecord._id);
-        console.log('DEBUG: Service Request ID:', paymentRecord.serviceRequest._id);
-        console.log('DEBUG: Status updated to:', paymentRecord.status)
+
+        if (paymentRecord.status !== 'captured' && paymentRecord.status !== 'payout_initiated' && paymentRecord.status !== 'payout_completed') {
+            paymentRecord.razorpayPaymentId = razorpay_payment_id;
+            paymentRecord.razorpaySignature = razorpay_signature;
+            paymentRecord.status = 'captured'; 
+            paymentRecord.paymentDate = new Date();
+            console.log('--- DEBUG: Razorpay Payment Verified & Captured ---');
+            console.log('DEBUG: Payment Record ID:', paymentRecord._id);
+            console.log('DEBUG: Service Request ID:', paymentRecord.serviceRequest?._id);
+            console.log('DEBUG: Status updated to:', paymentRecord.status);
+        } else {
+            console.log(`DEBUG: Payment record already processed (status: ${paymentRecord.status}). Skipping capture update.`);
+        }
+        
+        const platformFeePercentage = parseFloat(process.env.PLATFORM_FEE_PERCENTAGE || 3); 
+        const platformFeeAmount = paymentRecord.amount * (platformFeePercentage / 100); 
+        paymentRecord.platformFeeAmount = platformFeeAmount;
+        paymentRecord.repairerPayoutAmount = paymentRecord.amount - platformFeeAmount;
         if (paymentRecord.repairer && paymentRecord.repairer.upiId && paymentRecord.repairerPayoutAmount > 0) {
+            let fundAccountId;
+            let contactId; 
             try {
-                const transferOptions = {
-                    account: paymentRecord.repairer.upiId, 
-                    amount: paymentRecord.repairerPayoutAmount, 
-                    currency: "INR",
-                    notes: {
-                        paymentFor: `Service: ${paymentRecord.serviceRequest.title}`,
-                        serviceRequestId: paymentRecord.serviceRequest._id.toString(),
-                        platformFee: paymentRecord.platformFeeAmount / 100 
+                console.log('\n--- DEBUG: Payout Process - Contact Management (Direct Axios) ---');
+            
+                const listContactsResponse = await axios.get(`${RAZORPAY_API_BASE_URL}/contacts?contact=${paymentRecord.repairer.phone}`, {
+                    headers: {
+                        'Authorization': `Basic ${RAZORPAY_AUTH_HEADER}`
                     }
-                };
-                
-                
-                const transfer = await razorpayInstance.payouts.create({
-                    account_number: '2323230006767575', 
-                    fund_account_id: 'bhuvansharma971@okaxis', 
+                });
+                console.log('DEBUG: List Contacts API Response:', JSON.stringify(listContactsResponse.data, null, 2));
+
+
+                if (listContactsResponse.data.items && listContactsResponse.data.items.length > 0) {
+                    contactId = listContactsResponse.data.items[0].id;
+                    console.log(`DEBUG: Found existing Razorpay Contact: ${contactId} for Repairer Phone: ${paymentRecord.repairer.phone}`);
+                } else {
+                    console.log(`DEBUG: No existing contact found for Repairer Phone: ${paymentRecord.repairer.phone}. Creating new one...`);
+                    
+                    const createContactResponse = await axios.post(`${RAZORPAY_API_BASE_URL}/contacts`, {
+                        name: paymentRecord.repairer.name || `Repairer-${paymentRecord.repairer._id.toString().substring(0, 8)}`, 
+                        email: paymentRecord.repairer.email || undefined, 
+                        contact: paymentRecord.repairer.phone, 
+                        type: 'vendor', 
+                        reference_id: paymentRecord.repairer._id.toString(), 
+                    }, {
+                        headers: {
+                            'Authorization': `Basic ${RAZORPAY_AUTH_HEADER}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    contactId = createContactResponse.data.id;
+                    console.log(`DEBUG: Created new Razorpay Contact: ${contactId}`);
+                }
+                console.log('-------------------------------------------\n');
+
+            } catch (contactError) {
+                console.error("Error managing Razorpay Contact (find/create):", contactError.response?.data || contactError);
+                paymentRecord.status = 'payout_failed_contact_issue'; 
+                await paymentRecord.save();
+                return res.status(500).json({ success: false, message: contactError.response?.data?.error?.description || "Payment verified, but failed to set up repairer contact. Please contact support immediately." });
+            }
+            try {
+                console.log('\n--- DEBUG: Payout Process - Fund Account (Direct Axios) ---');
+                console.log(`DEBUG: Attempting to create/retrieve fund account for UPI ID: ${paymentRecord.repairer.upiId}`);
+                const createFundAccountResponse = await axios.post(`${RAZORPAY_API_BASE_URL}/fund_accounts`, {
+                    account_type: "vpa",
+                    vpa: {
+                        address: paymentRecord.repairer.upiId
+                    },
+                    contact_id: contactId,
+                }, {
+                    headers: {
+                        'Authorization': `Basic ${RAZORPAY_AUTH_HEADER}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                fundAccountId = createFundAccountResponse.data.id;
+                console.log(`DEBUG: Fund Account created/retrieved: ${fundAccountId} for UPI ID: ${paymentRecord.repairer.upiId}`);
+                console.log('-------------------------------------------\n');
+
+            } catch (fundAccountError) {
+                console.error("Error managing Razorpay Fund Account (direct create attempt):", fundAccountError.response?.data || fundAccountError);
+                paymentRecord.status = 'payout_failed_fundaccount_issue'; 
+                await paymentRecord.save();
+                return res.status(500).json({ success: false, message: fundAccountError.response?.data?.error?.description || "Payment verified, but failed to set up repairer payout account. Please contact support immediately." });
+            }
+
+            try {
+                console.log('\n--- DEBUG: Payout Process - Create Payout (Direct Axios) ---'); // Changed log message
+                console.log('DEBUG: Payout amount to send (paise):', paymentRecord.repairerPayoutAmount);
+                console.log('DEBUG: Fund Account ID:', fundAccountId);
+
+                const payoutPayload = {
+                    fund_account_id: fundAccountId,
                     amount: paymentRecord.repairerPayoutAmount,
                     currency: "INR",
                     mode: 'UPI',
-                    purpose: 'refund',
+                    purpose: 'payout',
                     notes: {
-                        "UpiId": paymentRecord.repairer.upiId 
+                        paymentFor: `Service: ${paymentRecord.serviceRequest?.title || 'N/A'}`,
+                        serviceRequestId: paymentRecord.serviceRequest?._id.toString() || 'N/A',
+                        platformFee: paymentRecord.platformFeeAmount / 100,
+                        repairerUpiId: paymentRecord.repairer.upiId
                     },
                     queue_if_scanned: true
+                };
+                const payoutResponse = await axios.post(`${RAZORPAY_API_BASE_URL}/payouts`, payoutPayload, {
+                    headers: {
+                        'Authorization': `Basic ${RAZORPAY_AUTH_HEADER}`,
+                        'Content-Type': 'application/json'
+                    }
                 });
+                const payout = payoutResponse.data; 
 
-                paymentRecord.razorpayTransferId = transfer.id;
-                paymentRecord.status = 'payout_initiated';
+                console.log('DEBUG: Payout API Response:', JSON.stringify(payout, null, 2));
+
+
+                paymentRecord.razorpayTransferId = payout.id;
+                paymentRecord.status = 'payout_initiated'; 
                 paymentRecord.payoutDetails = {
                     upiId: paymentRecord.repairer.upiId,
-                    transferTimestamp: new Date()
+                    transferTimestamp: new Date(),
+                    razorpayPayoutId: payout.id, 
+                    razorpayPayoutStatus: payout.status 
                 };
-                await paymentRecord.save();
-                const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
-                if (serviceRequest && serviceRequest.status === 'quoted') { 
-                    serviceRequest.status = 'accepted';
-                    serviceRequest.acceptedAt = new Date();
-                    await serviceRequest.save();
-                    console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'accepted'.`);
-                }
+                await paymentRecord.save(); 
+                console.log('DEBUG: Payout initiated to Repairer. Payout ID:', payout.id, 'Status:', payout.status);
 
-                console.log(' Payout initiated to Repairer. Transfer ID:', transfer.id);
+                const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
+                if (serviceRequest && (serviceRequest.status === 'quoted' || serviceRequest.status === 'pending_payment')) {
+                    serviceRequest.status = 'in_progress'; 
+                    await serviceRequest.save();
+                    console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'in_progress' (payout initiated).`);
+                }
+                console.log('-------------------------------------------\n');
+
                 return res.status(200).json({
+                    success: true,
                     message: "Payment verified and payout initiated successfully!",
                     paymentRecord: paymentRecord,
-                    serviceRequestStatus: serviceRequest?.status
+                    serviceRequestStatus: serviceRequest?.status,
+                    payoutStatus: payout.status
                 });
 
             } catch (transferError) {
-                console.error("Error initiating Razorpay transfer:", transferError);
-                
-                return res.status(500).json({ message: "Payment verified, but failed to initiate payout. Please contact support." });
+                console.error("Error initiating Razorpay Payout (transferError):", transferError.response?.data || transferError);
+                paymentRecord.status = 'payout_failed_transfer_issue'; 
+                await paymentRecord.save(); 
+                return res.status(500).json({ success: false, message: transferError.response?.data?.error?.description || "Payment verified, but failed to initiate payout. Please contact support immediately." });
             }
         } else {
-            console.log(' No payout initiated: Repairer or UPI ID missing, or payout amount is zero.');
-      
+            console.log('DEBUG: No payout initiated: Repairer or UPI ID missing, or payout amount is zero.');
             const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
-            if (serviceRequest && serviceRequest.status === 'quoted') {
-                serviceRequest.status = 'accepted';
-                serviceRequest.acceptedAt = new Date();
+            if (serviceRequest && (serviceRequest.status === 'quoted' || serviceRequest.status === 'pending_payment')) {
+                serviceRequest.status = 'completed'; 
+                serviceRequest.completedAt = new Date(); 
                 await serviceRequest.save();
-                console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'accepted' (no payout needed/possible).`);
+                console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'completed' (no payout needed/possible).`);
             }
+            await paymentRecord.save(); 
             return res.status(200).json({
+                success: true,
                 message: "Payment verified successfully. No payout needed or possible at this time.",
                 paymentRecord: paymentRecord,
                 serviceRequestStatus: serviceRequest?.status
@@ -784,11 +904,10 @@ export const verifyAndTransferPayment = async (req, res) => {
         }
 
     } catch (error) {
-        console.error("Error verifying payment:", error);
-        res.status(500).json({ message: "Failed to verify payment." });
+        console.error("Error in verifyAndTransferPayment (outer catch):", error);
+        res.status(500).json({ success: false, message: "Failed to verify payment due to an unexpected error." });
     }
 };
-
 export const getServiceRequestById = async (req, res) => {
     const userId = req.user?._id;
     const { id } = req.params; 

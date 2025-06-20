@@ -115,6 +115,7 @@ const PaymentPage = () => {
             fetchAllDetails();
         }
     }, [paymentId, navigate]);
+    
     useEffect(() => {
         if (!loading && !error && paymentDetails && serviceDetails && window.Razorpay === undefined) {
             console.log("[PaymentPage - useEffect] All details loaded. Attempting to load Razorpay script.");
@@ -146,15 +147,23 @@ const PaymentPage = () => {
 
         try {
             const orderResponse = await createRazorpayOrder(paymentDetails._id);
-            console.log("[PaymentPage] Raw Razorpay orderResponse from apiService:", orderResponse);
-
-            if (!orderResponse.success) {
-                setError(orderResponse.message || "Failed to create Razorpay order.");
+            console.log("[PaymentPage] Full Raw orderResponse from apiService:", orderResponse);
+            
+            if (!orderResponse || !orderResponse.success) {
+                setError(orderResponse?.message || "Failed to create Razorpay order or unexpected response structure.");
                 setPaymentProcessing(false);
                 return;
             }
 
-            const { orderId, currency, amount, razorpayKey, serviceTitle, customerName, customerPhone, paymentId: returnedPaymentRecordId } = orderResponse.data;
+            if (!orderResponse.data || typeof orderResponse.data !== 'object') {
+                console.error("[PaymentPage] Missing expected 'data' object in order creation response:", orderResponse.data);
+                setError("Failed to create Razorpay order: Essential response data is missing or malformed. Please contact support.");
+                setPaymentProcessing(false);
+                return;
+            }
+
+            const { orderId, currency, amount, razorpayKey, serviceTitle, customerName, customerPhone } = orderResponse.data;
+            const returnedPaymentRecordId = paymentDetails._id; 
 
             if (!window.Razorpay) {
                 alert("Razorpay SDK not loaded. Please try again or refresh the page.");
@@ -176,12 +185,16 @@ const PaymentPage = () => {
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
-                            paymentRecordId: returnedPaymentRecordId 
+                            paymentRecordId: returnedPaymentRecordId
                         });
-                        console.log("Payment verification response:", verificationResponse);
 
-                        if (!verificationResponse.success) {
-                            throw new Error(verificationResponse.message || "Verification failed on server.");
+                        // This log will still be helpful if issues persist, to see what was received.
+                        console.log("Payment verification response from backend (frontend perspective):", verificationResponse);
+
+                        // --- MODIFIED CONDITION HERE ---
+                        // Checks if verificationResponse is falsy OR if verificationResponse.success is falsy
+                        if (!verificationResponse || !verificationResponse.success) {
+                            throw new Error(verificationResponse?.message || "Verification failed on server or unexpected response structure.");
                         }
 
                         setPaymentSuccess(true);
@@ -189,7 +202,7 @@ const PaymentPage = () => {
                         alert("Payment successful! The service has been marked as accepted and payout initiated.");
                         navigate('/user/in-progress');
                     } catch (verifyErr) {
-                        console.error("Payment verification failed:", verifyErr);
+                        console.error("Payment verification failed during handler execution:", verifyErr);
                         const verifyErrorMessage = verifyErr.message || "Unknown error during verification.";
                         setError("Payment was successful but verification failed: " + verifyErrorMessage);
                         setPaymentSuccess(false);
@@ -239,11 +252,11 @@ const PaymentPage = () => {
     };
 
     const isPayButtonDisabled = paymentProcessing ||
-                                !paymentDetails ||
-                                !serviceDetails ||
-                                paymentDetails.amount <= 0 ||
-                                !['created', 'pending'].includes(paymentDetails.status) ||
-                                !['quoted', 'accepted', 'in_progress', 'pending_payment'].includes(serviceDetails.status);
+                               !paymentDetails ||
+                               !serviceDetails ||
+                               paymentDetails.amount <= 0 ||
+                               !['created', 'pending'].includes(paymentDetails.status) ||
+                               !['quoted', 'accepted', 'in_progress', 'pending_payment'].includes(serviceDetails.status);
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-800 p-4">

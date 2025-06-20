@@ -47,13 +47,10 @@ const paymentSchema = new mongoose.Schema({
     },
     status: { 
         type: String,
-        enum: ['created', 'pending', 'captured', 'failed', 'refunded', 'payout_initiated', 'payout_completed'],
-        default: 'created' 
-    },
-    razorpayOrderId: {
-        type: String,
-        unique: true,
-        sparse: true 
+        enum: ['created', 'pending', 'captured', 'failed', 'refunded', 'payout_initiated', 'payout_completed', 'payout_failed',     
+            'payout_failed_contact_issue',  
+            'payout_failed_fundaccount_issue', 
+            'payout_failed_transfer_issue' ]
     },
     razorpayPaymentId: {
         type: String,

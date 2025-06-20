@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Phone, Mail, MapPin, Clock, MessageSquare, Users, Shield, CreditCard, AlertCircle, CheckCircle, Send, Headphones } from 'lucide-react';
 import { Link } from "react-router-dom";
+import Header from '../components/LandingPage/Header';
 
 export default function ContactUs() {
   const [formData, setFormData] = useState({
@@ -13,6 +14,7 @@ export default function ContactUs() {
   });
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errors, setErrors] = useState({});
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -124,9 +126,12 @@ export default function ContactUs() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-50 via-white to-stone-100"> 
+
+    <Header isMenuOpen={isMenuOpen} setIsMenuOpen={setIsMenuOpen} />
         
       {/* Header */}
-      <div className="bg-gradient-to-r from-emerald-600 to-green-700 text-white">
+      <main className="pt-24 pb-16">
+        <div className="bg-gradient-to-r from-emerald-600 to-green-700 text-white">
         <div className="container mx-auto px-6 py-12">
           <div className="text-center">
             <div className="flex justify-center mb-4">
@@ -141,6 +146,7 @@ export default function ContactUs() {
           </div>
         </div>
       </div>
+      </main>
 
       <div className="container mx-auto px-6 py-12">
         {/* Contact Options */}

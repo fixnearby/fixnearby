@@ -7,14 +7,16 @@ const Header = ({ isMenuOpen, setIsMenuOpen }) => {
   return (
     <header className="fixed top-0 left-0 w-full bg-white text-gray-800 shadow-md z-50">
       <nav className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <Link to="/" className="flex items-center flex-shrink-0">
-          <img
-            src={images.logooo}
-            alt="Fix Nearby Logo"
-            className="h-20 w-auto object-contain"
-            style={{ maxHeight: "48px" }}
-          />
-        </Link>
+        <div className="flex items-center flex-shrink-0 cursor-pointer">
+          <Link to="/">
+            <img
+              src={images.logooo}
+              alt="Fix Nearby Logo"
+              className="h-20 w-auto object-contain"
+              style={{ maxHeight: "48px" }}
+            />
+          </Link>
+        </div>
 
         <div className="hidden md:flex space-x-8">
           <Link
@@ -24,7 +26,7 @@ const Header = ({ isMenuOpen, setIsMenuOpen }) => {
             Home
           </Link>
           <Link
-            to="/user/getotp"
+            to="/services"
             className="text-gray-700 hover:text-gray-900 transition-colors duration-200 font-medium"
           >
             Services
@@ -38,19 +40,18 @@ const Header = ({ isMenuOpen, setIsMenuOpen }) => {
         </div>
 
         <div className="hidden md:flex items-center space-x-4">
-          <Link
-            to="/user/login"
+          <a
+            href="/user/login"
             className="px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100 transition-colors duration-200 font-medium"
           >
             Login
-          </Link>
-          <Link
-            to="/user/getotp"
-            className="px-6 py-2 bg-green-500 text-white rounded-md
-                       hover:bg-green-600 transition-colors duration-200 shadow-md font-medium"
+          </a>
+          <a
+            href="/user/getotp"
+            className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200 shadow-md font-medium"
           >
             Sign Up
-          </Link>
+          </a>
         </div>
 
         <button
@@ -81,13 +82,13 @@ const Header = ({ isMenuOpen, setIsMenuOpen }) => {
           <div className="px-4 py-2 space-y-2">
             <Link
               to="/"
-              className="  border-2 border-black text-center block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
+              className="border-2 border-black text-center block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
               onClick={() => setIsMenuOpen(false)}
             >
               Home
             </Link>
             <Link
-              to="/user/login"
+              to="/services"
               className="border-2 border-black text-center block px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-md transition-colors duration-200"
               onClick={() => setIsMenuOpen(false)}
             >
@@ -101,20 +102,20 @@ const Header = ({ isMenuOpen, setIsMenuOpen }) => {
               Contact Us
             </Link>
             <hr className="my-2 border-gray-200" />
-            <Link
-              to="/user/login"
+            <a
+              href="/user/login"
               className="border-2 border-black block px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200 text-center"
               onClick={() => setIsMenuOpen(false)}
             >
               Login
-            </Link>
-            <Link
-              to="/user/signup"
-              className=" border-2 border-black block px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200 text-center"
+            </a>
+            <a
+              href="/user/signup"
+              className="border-2 border-black block px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors duration-200 text-center"
               onClick={() => setIsMenuOpen(false)}
             >
               Sign Up
-            </Link>
+            </a>
           </div>
         </div>
       )}

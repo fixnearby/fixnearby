@@ -18,12 +18,30 @@ const Landing = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const services = [
-    { icon: Zap, title: "Electrician" },
-    { icon: Wrench, title: "Handyman" },
-    { icon: Paintbrush, title: "Painting" },
-    { icon: Pipette, title: "Plumbing" },
-    { icon: Home, title: "Cleaning" },
-    { icon: Sprout, title: "Gardening" }
+   {
+      image: `${images.appliances}`, 
+      title: "Appliances",
+    },
+   {
+      image: `${images.electrical}`, 
+      title: "Electrical",
+    },
+    {
+      image: `${images.security}`, 
+      title: "Security",
+    },
+    {
+      image: `${images.gardening}`, 
+      title: "Gardening",
+    },
+    {
+      image: `${images.painting}`, 
+      title: "Painting",
+    },
+    {
+      image: `${images.pestcontrol}`, 
+      title: "Pest Control",
+    },
   ];
 
   const popularServices = [
@@ -76,21 +94,8 @@ const Landing = () => {
       <main>
         <HeroSection />
         <ServicesSection services={services} />
-
         <PopularServicesSection popularServices={popularServices} />
-        <section className="py-16 text-center bg-gray-50"> 
-          <div className="container mx-auto px-4">
-            <Link
-              to="/user/login" 
-              className="inline-flex items-center justify-center px-10 py-4
-                         bg-green-500 text-white text-xl font-semibold rounded-full
-                         shadow-lg hover:bg-green-600 transform hover:scale-105
-                         transition-all duration-300 ease-in-out"
-            >
-              View All Services
-            </Link>
-          </div>
-        </section>
+
         <TestimonialsSection testimonials={testimonials} />
 
         <CtaSection />

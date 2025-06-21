@@ -78,7 +78,7 @@ const serviceRequestSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["requested", "pending_quote", "quoted", "accepted", "in_progress", "completed", "cancelled", "rejected" , "pending_otp" , "pending_payment"],
+      enum: ["requested", "pending_quote", "quoted", "accepted", "in_progress", "completed", "cancelled", "rejected" , "pending_otp" , "pending_payment","customer_paid"],
       default: "requested",
     },
     assignedAt: {

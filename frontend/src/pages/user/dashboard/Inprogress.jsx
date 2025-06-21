@@ -108,7 +108,7 @@ const Inprogress = () => {
 
       if (response.status === 200 || response.data.success) {
         toast.success("Quotation accepted! Repairer will be notified.");
-        fetchInProgressRequests();
+        fetchInProgressRequests(); // Refresh the list after accepting
       } else {
         setActionMessage({
           type: "error",
@@ -149,6 +149,7 @@ const Inprogress = () => {
           "Quotation rejected. Redirecting to pay rejection fee..."
         );
         navigate(`/rejection-fee/${response.paymentId}`);
+        fetchInProgressRequests(); // Refresh list after rejection (and redirect)
       } else {
         setActionMessage({
           type: "error",
@@ -217,7 +218,7 @@ const Inprogress = () => {
             navigate("/user/dashboard");
           }
 
-          fetchInProgressRequests();
+          // fetchInProgressRequests(); // Removed this as it's handled by PaymentPage's logic updating status
           setShowConfirmCompletionModal(false);
           setCurrentRequestId(null);
           setOtpInput("");

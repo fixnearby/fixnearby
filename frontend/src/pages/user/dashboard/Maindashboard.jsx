@@ -1,4 +1,3 @@
-// frontend/src/pages/user/dashboard/Maindashboard.jsx
 import React, { useState, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../../../store/authStore.js";
@@ -12,7 +11,6 @@ import ServiceRequestFormModal from "../../../components/user/ServiceRequestForm
 import DashboardHeader from "../../../components/user/DashboardHeader.jsx";
 
 import {
-
   User,
   Clock,
   X,
@@ -487,7 +485,7 @@ const UserMainDashboard = () => {
                     strokeWidth={1.5}
                   />
                   <p className="text-orange-100 text-base sm:text-lg font-medium">
-                    In Progress
+                    Active Requests
                   </p>
                   <p className="text-4xl sm:text-5xl font-extrabold text-white mt-1.5 sm:mt-2">
                     <AnimatedNumber value={dashboardStats.inProgressServices} />

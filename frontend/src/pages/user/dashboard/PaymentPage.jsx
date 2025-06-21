@@ -18,9 +18,7 @@ const loadRazorpayScript = (src) => {
 };
 
 const PaymentPage = () => {
-    console.log("PaymentPage component rendering!");
     const { paymentId } = useParams();
-    console.log("[PaymentPage Component] Payment ID from useParams:", paymentId);
     const navigate = useNavigate();
 
     const [paymentDetails, setPaymentDetails] = useState(null);
@@ -31,6 +29,7 @@ const PaymentPage = () => {
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [paymentMessage, setPaymentMessage] = useState('');
     const [showReviewOption, setShowReviewOption] = useState(false);
+    const [canShowPayButton, setCanShowPayButton] = useState(false);
 
     useEffect(() => {
         const fetchAllDetails = async () => {
@@ -38,20 +37,17 @@ const PaymentPage = () => {
                 setLoading(true);
                 setError(null); 
                 setShowReviewOption(false); 
+                setCanShowPayButton(false);
 
                 if (!paymentId) {
-                    console.error("[PaymentPage - fetchAllDetails] Payment ID is missing in URL parameters.");
                     setError("Invalid payment link. Payment ID is missing.");
                     setLoading(false);
                     return;
                 }
-                console.log("[PaymentPage - fetchAllDetails] Initiating fetch for payment details for ID:", paymentId);
                 const paymentResponse = await getPaymentDetailsById(paymentId);
-                console.log("[PaymentPage - fetchAllDetails] Raw paymentResponse from apiService:", paymentResponse);
 
                 if (!paymentResponse || !paymentResponse.success) {
                     const msg = paymentResponse?.message || "Failed to load payment details from API.";
-                    console.error("[PaymentPage - fetchAllDetails] Payment API call failed or returned success:false. Message:", msg);
                     setError(msg);
                     setLoading(false);
                     return;
@@ -59,36 +55,27 @@ const PaymentPage = () => {
 
                 const fetchedPaymentDetails = paymentResponse.data;
                 setPaymentDetails(fetchedPaymentDetails);
-                console.log("[PaymentPage - fetchAllDetails] Payment details set to state:", fetchedPaymentDetails);
 
-                const allowedPaymentRecordStatuses = ['created', 'pending', 'captured', 'payout_initiated', 'payout_completed']; 
-                if (!allowedPaymentRecordStatuses.includes(fetchedPaymentDetails.status)) {
-                    console.warn(`[PaymentPage - fetchAllDetails] Payment record status '${fetchedPaymentDetails.status}' is not allowed for processing.`);
+                if (['paid_by_customer', 'completed', 'closed_rejected'].includes(fetchedPaymentDetails.status)) {
+                    setPaymentSuccess(true);
+                    setPaymentMessage("Payment has already been processed successfully.");
+                } else if (['created', 'pending'].includes(fetchedPaymentDetails.status)) {
+                    setCanShowPayButton(true);
+                } else {
                     setError(`This payment record is in '${fetchedPaymentDetails.status}' status and cannot be processed.`);
                     setLoading(false);
                     return;
                 }
                 
-                if (fetchedPaymentDetails.status === 'captured' || 
-                    fetchedPaymentDetails.status === 'payout_initiated' || 
-                    fetchedPaymentDetails.status === 'payout_completed') {
-                    setPaymentSuccess(true);
-                    setPaymentMessage("Payment already processed successfully.");
-                    setShowReviewOption(true); 
-                }
-
                 let currentServiceRequestId = null;
                 if (fetchedPaymentDetails.serviceRequest) {
                     currentServiceRequestId = typeof fetchedPaymentDetails.serviceRequest === 'object' && fetchedPaymentDetails.serviceRequest._id
                         ? fetchedPaymentDetails.serviceRequest._id
                         : fetchedPaymentDetails.serviceRequest; 
 
-                    console.log("[PaymentPage - fetchAllDetails] Initiating fetch for service details for ID:", currentServiceRequestId);
                     const serviceResponse = await getServiceRequestById(currentServiceRequestId);
-                    console.log("[PaymentPage - fetchAllDetails] Raw serviceResponse from apiService:", serviceResponse);
                     if (!serviceResponse || serviceResponse.message) {
                         const msg = serviceResponse?.message || "Could not fetch associated service details.";
-                        console.error("[PaymentPage - fetchAllDetails] Service API call failed or returned an error. Message:", msg);
                         setError(msg);
                         setLoading(false);
                         return;
@@ -96,27 +83,35 @@ const PaymentPage = () => {
 
                     const fetchedServiceDetails = serviceResponse; 
                     setServiceDetails(fetchedServiceDetails);
-                    console.log("[PaymentPage - fetchAllDetails] Service details set to state:", fetchedServiceDetails);
 
-                    const allowedServiceStatuses = ['quoted', 'accepted', 'in_progress', 'pending_payment', 'completed']; // Allow 'completed' for review
-                    if (!allowedServiceStatuses.includes(fetchedServiceDetails.status)) {
-                        console.warn(`[PaymentPage - fetchAllDetails] Associated service status '${fetchedServiceDetails.status}' is not allowed for payment/review.`);
-                        setError(`The associated service is in '${fetchedServiceDetails.status}' status and cannot be paid.`);
-                        setLoading(false);
-                        return;
+                    if (['customer_paid', 'completed', 'closed_rejected'].includes(fetchedServiceDetails.status) &&
+                        (!fetchedServiceDetails.rating || !fetchedServiceDetails.rating.stars)) {
+                        setShowReviewOption(true);
+                        setPaymentSuccess(true);
+                        setPaymentMessage("Payment processed. Please leave a review!");
+                        setCanShowPayButton(false);
+                    } else if (['customer_paid', 'completed', 'closed_rejected'].includes(fetchedServiceDetails.status) &&
+                                 fetchedServiceDetails.rating && fetchedServiceDetails.rating.stars) {
+                        setPaymentSuccess(true);
+                        setPaymentMessage("Payment processed and service reviewed.");
+                        setCanShowPayButton(false);
+                    } else if (['pending_payment', 'quoted', 'accepted', 'in_progress'].includes(fetchedServiceDetails.status)) {
+                        setCanShowPayButton(true);
+                    } else {
+                        setError(`Service status '${fetchedServiceDetails.status}' is not valid for this payment page.`);
+                        setCanShowPayButton(false);
                     }
 
+
                 } else {
-                    console.warn("[PaymentPage - fetchAllDetails] Payment record does not contain a linked service request ID.");
                     setError("Could not find associated service details for this payment.");
-                    setLoading(false);
-                    return;
+                    setCanShowPayButton(false);
                 }
 
             } catch (err) {
-                console.error('[PaymentPage - fetchAllDetails] Caught error in try/catch block:', err);
                 const errorMessage = err.message || 'Failed to load payment or service details. Please try again.';
                 setError(errorMessage);
+                setCanShowPayButton(false);
             } finally {
                 setLoading(false);
             }
@@ -129,26 +124,31 @@ const PaymentPage = () => {
     
     useEffect(() => {
         if (!loading && !error && paymentDetails && serviceDetails && window.Razorpay === undefined) {
-            console.log("[PaymentPage - useEffect] All details loaded. Attempting to load Razorpay script.");
             loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js');
         }
     }, [loading, error, paymentDetails, serviceDetails]);
 
 
     const handlePayment = async () => {
+        if (paymentSuccess || !canShowPayButton) {
+            setError("Payment cannot be initiated. Service is already processed or not in a payable state.");
+            return;
+        }
+
         if (!paymentDetails || !serviceDetails || paymentDetails.amount <= 0) {
             setError("Cannot initiate payment: Details not fully loaded or invalid amount.");
             return;
         }
+        
         const allowedPaymentRecordStatusesForInitiation = ['created', 'pending'];
         if (!allowedPaymentRecordStatusesForInitiation.includes(paymentDetails.status)) {
-            setError(`Payment cannot be initiated as its record is in '${paymentDetails.status}' status.`);
-            return;
+             setError(`Payment cannot be initiated as its record is in '${paymentDetails.status}' status.`);
+             return;
         }
         const allowedServiceStatusesForInitiation = ['quoted', 'accepted', 'in_progress', 'pending_payment'];
         if (!allowedServiceStatusesForInitiation.includes(serviceDetails.status)) {
-            setError(`Payment cannot be initiated for a service in '${serviceDetails.status}' status.`);
-            return;
+             setError(`Payment cannot be initiated for a service in '${serviceDetails.status}' status.`);
+             return;
         }
 
         setPaymentProcessing(true);
@@ -159,7 +159,6 @@ const PaymentPage = () => {
 
         try {
             const orderResponse = await createRazorpayOrder(paymentDetails._id);
-            console.log("[PaymentPage] Full Raw orderResponse from apiService:", orderResponse);
             
             if (!orderResponse || !orderResponse.success) {
                 setError(orderResponse?.message || "Failed to create Razorpay order or unexpected response structure.");
@@ -168,14 +167,13 @@ const PaymentPage = () => {
             }
 
             if (!orderResponse.data || typeof orderResponse.data !== 'object') {
-                console.error("[PaymentPage] Missing expected 'data' object in order creation response:", orderResponse.data);
                 setError("Failed to create Razorpay order: Essential response data is missing or malformed. Please contact support.");
                 setPaymentProcessing(false);
                 return;
             }
 
             const { orderId, currency, amount, razorpayKey, serviceTitle, customerName, customerPhone } = orderResponse.data;
-            const returnedPaymentRecordId = paymentDetails._id; 
+            const currentPaymentRecordId = paymentDetails._id;
 
             if (!window.Razorpay) {
                 alert("Razorpay SDK not loaded. Please try again or refresh the page.");
@@ -194,31 +192,35 @@ const PaymentPage = () => {
                     setPaymentProcessing(true);
                     try {
                         const verificationResponse = await verifyAndTransferPayment({
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                            paymentRecordId: returnedPaymentRecordId
+                            paymentId: currentPaymentRecordId,
+                            serviceRequestId: serviceDetails._id,
+                            transactionDetails: {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                            }
                         });
-
-                        console.log("Payment verification response from backend (frontend perspective):", verificationResponse);
 
                         if (!verificationResponse || !verificationResponse.success) {
                             throw new Error(verificationResponse?.message || "Verification failed on server or unexpected response structure.");
                         }
 
                         setPaymentSuccess(true);
-                        setPaymentMessage("Payment successful! Service status updated and payout initiated.");
-                        alert("Payment successful! The service has been marked as accepted and payout initiated.");
-                        
-                        if (verificationResponse.payoutStatus === 'initiated' || verificationResponse.payoutStatus === 'queued') {
-                            console.log("Payout initiated. Setting showReviewOption to true.");
-                            setShowReviewOption(true); 
+                        setPaymentMessage("Payment successful! Your service has been marked as paid.");
+                        alert("Payment successful! Your service has been marked as paid.");
+
+                        if (!['rejected', 'closed_rejected'].includes(serviceDetails.status)) {
+                            setTimeout(() => {
+                                navigate(`/review/${serviceDetails._id}`); 
+                            }, 1500); 
                         } else {
-                            console.log("Payout not initiated for this payment, but verification successful.");
-                            setShowReviewOption(true); 
+                            setTimeout(() => {
+                                navigate(`/user/completed-services`);
+                            }, 1500);
                         }
+                        setCanShowPayButton(false);
+
                     } catch (verifyErr) {
-                        console.error("Payment verification failed during handler execution:", verifyErr);
                         const verifyErrorMessage = verifyErr.message || "Unknown error during verification.";
                         setError("Payment was successful but verification failed: " + verifyErrorMessage);
                         setPaymentSuccess(false);
@@ -251,12 +253,10 @@ const PaymentPage = () => {
                 setError(`Payment failed: ${failErrorMessage}. Error Code: ${response.error.code}`);
                 setPaymentMessage('Payment failed. Please try again.');
                 alert(`Payment Failed: ${failErrorMessage}`);
-                console.error("Razorpay Payment Failed:", response.error);
             });
             rzp.open();
 
         } catch (err) {
-            console.error("Error initiating Razorpay order:", err);
             const initErrorMessage = err.message || 'Unknown error.';
             setError(`Failed to initiate payment: ${initErrorMessage}`);
             setPaymentSuccess(false);
@@ -268,12 +268,7 @@ const PaymentPage = () => {
         }
     };
 
-    const isPayButtonDisabled = paymentProcessing ||
-                               !paymentDetails ||
-                               !serviceDetails ||
-                               paymentDetails.amount <= 0 ||
-                               !['created', 'pending'].includes(paymentDetails.status) ||
-                               !['quoted', 'accepted', 'in_progress', 'pending_payment'].includes(serviceDetails.status);
+    const isPayButtonDisabled = paymentProcessing || !canShowPayButton;
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 text-gray-800 p-4">
@@ -304,7 +299,7 @@ const PaymentPage = () => {
                                     Amount: <span className="font-semibold text-green-700">₹{(paymentDetails.amount)?.toFixed(2) || '0.00'}</span>
                                 </p>
                                 <p className="text-md text-gray-600 mb-8">
-                                    This payment will secure your service request and facilitate the payout to the repairer.
+                                    This payment will mark your service request as paid from your side.
                                 </p>
 
                                 {paymentSuccess ? (
@@ -318,6 +313,14 @@ const PaymentPage = () => {
                                                 className="flex items-center justify-center px-8 py-3 rounded-lg text-xl font-semibold transition-colors duration-300 shadow-lg hover:shadow-xl w-full mb-4 bg-yellow-500 text-white hover:bg-yellow-600"
                                             >
                                                 <Star className="w-6 h-6 mr-2" /> Leave a Review
+                                            </Link>
+                                        )}
+                                        {!showReviewOption && (
+                                            <Link
+                                                to="/user/dashboard"
+                                                className="flex items-center justify-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-300 mt-4"
+                                            >
+                                                <ArrowLeft className="w-5 h-5 mr-2" /> Go to Dashboard
                                             </Link>
                                         )}
                                     </>
@@ -346,12 +349,14 @@ const PaymentPage = () => {
                     </>
                 )}
 
-                <Link
-                    to="/user/inprogress"
-                    className="flex items-center justify-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-300 mt-4"
-                >
-                    <ArrowLeft className="w-5 h-5 mr-2" /> Back to In-Progress Services
-                </Link>
+                {!paymentSuccess && (
+                    <Link
+                        to="/user/inprogress"
+                        className="flex items-center justify-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-300 mt-4"
+                    >
+                        <ArrowLeft className="w-5 h-5 mr-2" /> Back to In-Progress Services
+                    </Link>
+                )}
             </div>
         </div>
     );

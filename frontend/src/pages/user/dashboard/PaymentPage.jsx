@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
-import { CreditCard, CheckCircle, ArrowLeft, Loader2, XCircle } from 'lucide-react';
+import { CreditCard, CheckCircle, ArrowLeft, Loader2, XCircle, Star } from 'lucide-react'; 
 import { getPaymentDetailsById, getServiceRequestById, createRazorpayOrder, verifyAndTransferPayment } from '../../../services/apiService';
 
 const loadRazorpayScript = (src) => {
@@ -30,12 +30,14 @@ const PaymentPage = () => {
     const [paymentProcessing, setPaymentProcessing] = useState(false);
     const [paymentSuccess, setPaymentSuccess] = useState(false);
     const [paymentMessage, setPaymentMessage] = useState('');
+    const [showReviewOption, setShowReviewOption] = useState(false);
 
     useEffect(() => {
         const fetchAllDetails = async () => {
             try {
                 setLoading(true);
                 setError(null); 
+                setShowReviewOption(false); 
 
                 if (!paymentId) {
                     console.error("[PaymentPage - fetchAllDetails] Payment ID is missing in URL parameters.");
@@ -59,13 +61,22 @@ const PaymentPage = () => {
                 setPaymentDetails(fetchedPaymentDetails);
                 console.log("[PaymentPage - fetchAllDetails] Payment details set to state:", fetchedPaymentDetails);
 
-                const allowedPaymentRecordStatuses = ['created', 'pending'];
+                const allowedPaymentRecordStatuses = ['created', 'pending', 'captured', 'payout_initiated', 'payout_completed']; 
                 if (!allowedPaymentRecordStatuses.includes(fetchedPaymentDetails.status)) {
                     console.warn(`[PaymentPage - fetchAllDetails] Payment record status '${fetchedPaymentDetails.status}' is not allowed for processing.`);
                     setError(`This payment record is in '${fetchedPaymentDetails.status}' status and cannot be processed.`);
                     setLoading(false);
                     return;
                 }
+                
+                if (fetchedPaymentDetails.status === 'captured' || 
+                    fetchedPaymentDetails.status === 'payout_initiated' || 
+                    fetchedPaymentDetails.status === 'payout_completed') {
+                    setPaymentSuccess(true);
+                    setPaymentMessage("Payment already processed successfully.");
+                    setShowReviewOption(true); 
+                }
+
                 let currentServiceRequestId = null;
                 if (fetchedPaymentDetails.serviceRequest) {
                     currentServiceRequestId = typeof fetchedPaymentDetails.serviceRequest === 'object' && fetchedPaymentDetails.serviceRequest._id
@@ -87,9 +98,9 @@ const PaymentPage = () => {
                     setServiceDetails(fetchedServiceDetails);
                     console.log("[PaymentPage - fetchAllDetails] Service details set to state:", fetchedServiceDetails);
 
-                    const allowedServiceStatuses = ['quoted', 'accepted', 'in_progress', 'pending_payment'];
+                    const allowedServiceStatuses = ['quoted', 'accepted', 'in_progress', 'pending_payment', 'completed']; // Allow 'completed' for review
                     if (!allowedServiceStatuses.includes(fetchedServiceDetails.status)) {
-                        console.warn(`[PaymentPage - fetchAllDetails] Associated service status '${fetchedServiceDetails.status}' is not allowed for payment.`);
+                        console.warn(`[PaymentPage - fetchAllDetails] Associated service status '${fetchedServiceDetails.status}' is not allowed for payment/review.`);
                         setError(`The associated service is in '${fetchedServiceDetails.status}' status and cannot be paid.`);
                         setLoading(false);
                         return;
@@ -144,6 +155,7 @@ const PaymentPage = () => {
         setPaymentSuccess(false);
         setPaymentMessage('');
         setError(null);
+        setShowReviewOption(false); 
 
         try {
             const orderResponse = await createRazorpayOrder(paymentDetails._id);
@@ -188,11 +200,8 @@ const PaymentPage = () => {
                             paymentRecordId: returnedPaymentRecordId
                         });
 
-                        // This log will still be helpful if issues persist, to see what was received.
                         console.log("Payment verification response from backend (frontend perspective):", verificationResponse);
 
-                        // --- MODIFIED CONDITION HERE ---
-                        // Checks if verificationResponse is falsy OR if verificationResponse.success is falsy
                         if (!verificationResponse || !verificationResponse.success) {
                             throw new Error(verificationResponse?.message || "Verification failed on server or unexpected response structure.");
                         }
@@ -200,7 +209,14 @@ const PaymentPage = () => {
                         setPaymentSuccess(true);
                         setPaymentMessage("Payment successful! Service status updated and payout initiated.");
                         alert("Payment successful! The service has been marked as accepted and payout initiated.");
-                        navigate('/user/in-progress');
+                        
+                        if (verificationResponse.payoutStatus === 'initiated' || verificationResponse.payoutStatus === 'queued') {
+                            console.log("Payout initiated. Setting showReviewOption to true.");
+                            setShowReviewOption(true); 
+                        } else {
+                            console.log("Payout not initiated for this payment, but verification successful.");
+                            setShowReviewOption(true); 
+                        }
                     } catch (verifyErr) {
                         console.error("Payment verification failed during handler execution:", verifyErr);
                         const verifyErrorMessage = verifyErr.message || "Unknown error during verification.";
@@ -230,6 +246,7 @@ const PaymentPage = () => {
             rzp.on('payment.failed', (response) => {
                 setPaymentProcessing(false);
                 setPaymentSuccess(false);
+                setShowReviewOption(false);
                 const failErrorMessage = response.error.description || 'Unknown error';
                 setError(`Payment failed: ${failErrorMessage}. Error Code: ${response.error.code}`);
                 setPaymentMessage('Payment failed. Please try again.');
@@ -291,9 +308,19 @@ const PaymentPage = () => {
                                 </p>
 
                                 {paymentSuccess ? (
-                                    <div className="flex items-center justify-center bg-green-100 text-green-700 px-6 py-3 rounded-lg text-lg font-semibold mb-4 animate-fade-in">
-                                        <CheckCircle className="w-6 h-6 mr-2" /> {paymentMessage || "Payment process completed."}
-                                    </div>
+                                    <>
+                                        <div className="flex items-center justify-center bg-green-100 text-green-700 px-6 py-3 rounded-lg text-lg font-semibold mb-4 animate-fade-in">
+                                            <CheckCircle className="w-6 h-6 mr-2" /> {paymentMessage || "Payment process completed."}
+                                        </div>
+                                        {showReviewOption && (
+                                            <Link
+                                                to={`/review/${serviceDetails._id}`} 
+                                                className="flex items-center justify-center px-8 py-3 rounded-lg text-xl font-semibold transition-colors duration-300 shadow-lg hover:shadow-xl w-full mb-4 bg-yellow-500 text-white hover:bg-yellow-600"
+                                            >
+                                                <Star className="w-6 h-6 mr-2" /> Leave a Review
+                                            </Link>
+                                        )}
+                                    </>
                                 ) : (
                                     <button
                                         onClick={handlePayment}

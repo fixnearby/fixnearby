@@ -30,6 +30,7 @@ import PaymentPage from "./pages/user/dashboard/PaymentPage";
 import UserMessagesPage from "./pages/user/dashboard/UserMessagesPage";
 import UserNotificationsPage from "./pages/user/dashboard/UserNotificationsPage";
 import RejectionPaymentPage from "./pages/user/dashboard/RejectionPaymentPage";
+import ReviewPage from "./pages/user/dashboard/ReviewPage";
 
 // RepairerDashboard
 import RepairerMainDashboard from "./pages/repairer/dashboard/Maindashboard";
@@ -233,6 +234,7 @@ function App() {
           path="/user/payment/:paymentId"
           element={user ? <PaymentPage /> : <Navigate to="/user/login" />}
         />
+         <Route path="/review/:serviceRequestId" element={<ReviewPage />} />
         <Route
           path="/user/notifications"
           element={

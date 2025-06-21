@@ -18,7 +18,8 @@ import {
   serviceOtp,
   verifyAndTransferPayment,
   getServiceRequestById,
-  getPaymentDetailsById
+  getPaymentDetailsById,
+  submitServiceReview
 } from "../controllers/user.controller.js";
 import {
   userProtectRoute
@@ -68,6 +69,7 @@ router.post("/verify-and-transfer-payment", userProtectRoute, verifyAndTransferP
 router.get("/service-requests/:id", userProtectRoute, getServiceRequestById); 
 
 router.get("/payments/:paymentId", userProtectRoute, getPaymentDetailsById);
+router.post('/service-request/:serviceRequestId/review', userProtectRoute, submitServiceReview);
 
 
 

@@ -151,13 +151,30 @@ export const customerRejectQuote = async (requestId) => {
     }
 };
 
-export const createRazorpayOrder = async (paymentRecordId) => { // Expects a string ID
+export const createRazorpayOrder = async (paymentRecordId) => { 
     try {
-        const response = await axiosInstance.post('/user/create-razorpay-order', { paymentRecordId }); // Send as an object with key
+        const response = await axiosInstance.post('/user/create-razorpay-order', { paymentRecordId }); 
         return response.data;
     } catch (error) {
         console.error("API Error: POST /user/create-razorpay-order:", error.response?.data?.message || error.message);
         throw error;
+    }
+};
+export const submitServiceReview = async (serviceRequestId, reviewData) => {
+    try {
+        const token = localStorage.getItem('token'); 
+        const response = await fetch(`/api/user/service-request/${serviceRequestId}/review`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify(reviewData),
+        });
+        return response.json();
+    } catch (error) {
+        console.error('Error submitting service review:', error);
+        return { success: false, message: 'Network error or unable to reach server.' };
     }
 };
 

@@ -9,13 +9,12 @@ const adminSchema = new mongoose.Schema(
       trim: true,
       maxlength: 50
     },
-    email: {
+    phone: {
       type: String,
       required: true,
       unique: true,
-      lowercase: true,
       trim: true,
-      match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please enter a valid email']
+      match: [/^\+?[\d\s-()]+$/, 'Please enter a valid phone number']
     },
     password: {
       type: String,

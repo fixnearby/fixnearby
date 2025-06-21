@@ -2,15 +2,19 @@ import Admin from "../models/admin.model.js";
 import { generateToken } from "../libs/utils.js";
 import bcrypt from "bcryptjs";
 import BlacklistToken from "../models/blacklistToken.model.js";
+import ServiceRequest from "../models/serviceRequest.model.js";
 
 export const signup = async (req,res)=>{
-    const { fullname , email , password } = req.body;
+    const { fullname , phone , password , secretkey} = req.body;
     try {
-        if (!fullname || !email || !password) {
+        if(secretkey!=="jatinrandifixnearby"){
+          return res.status(400).json({ message: "Secret Key is not valid" });
+        }
+        if (!fullname || !phone || !password) {
         return res.status(400).json({ message: "All fields are required" });
         }
 
-        const admin = await Admin.findOne({ email });
+        const admin = await Admin.findOne({ phone });
 
         if (admin) return res.status(400).json({ message: "admin already exists" });
 
@@ -19,7 +23,7 @@ export const signup = async (req,res)=>{
 
         const newAdmin = new Admin({
         fullname,
-        email,
+        phone,
         password: hashedPassword,
         });
 
@@ -31,7 +35,7 @@ export const signup = async (req,res)=>{
         res.status(201).json({
             _id: newAdmin._id,
             fullname: newAdmin.fullname,
-            email: newAdmin.email, // aur kuch res mai bhejna ho jo frontend pe dikhna ho woh add kar dena
+            phone: newAdmin.phone, // aur kuch res mai bhejna ho jo frontend pe dikhna ho woh add kar dena
         });
         } else {
         res.status(400).json({ message: "Invalid admin data" });
@@ -43,11 +47,14 @@ export const signup = async (req,res)=>{
 }
 
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { fullname,phone, password } = req.body;
 
   try {
-    const admin = await Admin.findOne({ email }).select("+password");
-
+    if (!fullname || !phone || !password) {
+        return res.status(400).json({ message: "All fields are required" });
+        }
+    const admin = await Admin.findOne({ phone }).select("+password");
+    
     if (!admin) {
       return res.status(400).json({ message: "Invalid credentials" });
     }
@@ -61,7 +68,7 @@ export const login = async (req, res) => {
 
     res.status(200).json({
       _id: admin._id,
-      email: admin.email,
+      phone: admin.phone,
       role: "admin"
     });
 
@@ -94,3 +101,63 @@ export const logout = async (req, res) => {
 };
 
 
+export const getPaidServices  = async (req, res)=>{
+   try {
+      // Find all service requests with status 'customer_paid'
+      const paidServices = await ServiceRequest.find({ 
+        status: 'customer_paid' 
+      })
+      .populate('repairer', 'fullname phone upiId')
+      .populate('customer', 'fullname phone')
+      .sort({ createdAt: -1 });
+
+      res.status(200).json({
+        success: true,
+        message: 'Paid services fetched successfully',
+        services: paidServices
+      });
+    } catch (error) {
+      console.error('Error fetching paid services:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to fetch paid services',
+        error: error.message
+      });
+    }
+}
+
+export const completeService  = async (req, res)=>{
+  try {
+      const { serviceId } = req.params;
+
+      // Find and update the service request
+      const updatedService = await ServiceRequest.findByIdAndUpdate(
+        serviceId,
+        { 
+          status: 'completed',
+          completedAt: new Date()
+        },
+        { new: true }
+      );
+
+      if (!updatedService) {
+        return res.status(404).json({
+          success: false,
+          message: 'Service request not found'
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: 'Service marked as complete successfully',
+        service: updatedService
+      });
+    } catch (error) {
+      console.error('Error completing service:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Failed to complete service',
+        error: error.message
+      });
+    }
+}

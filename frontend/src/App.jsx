@@ -46,8 +46,12 @@ import ContactUs from "./pages/ContactUs";
 import LoadingSpinner from "./components/LoadingSpinner";
 import images from "./assets/images";
 import Services from "./pages/Services";
+import AdminLogin from "./pages/admin/Login";
+import AdminDashboard from "./pages/admin/Dashboard";
+import AdminSignup from "./pages/admin/Signup";
 
 function App() {
+  
   const {
     setUser,
     setRepairer,
@@ -149,6 +153,23 @@ function App() {
         <Route path="/terms-and-conditions" element={<TermsCondition />} />
 
         <Route path="/contact-us" element={<ContactUs />} />
+
+
+        <Route
+          path="/admin/login"
+          element={admin ? <Navigate to="/admin/dashboard" /> : <AdminLogin />}
+        />
+        <Route
+          path="/admin/signup"
+          element={admin ? <Navigate to="/admin/dashboard" /> : <AdminSignup />}
+        />
+        <Route
+          path="/admin/dashboard"
+          element={admin ? <AdminDashboard /> : <Navigate to="/admin/login" />}
+        />
+
+
+
 
         <Route
           path="/user/getotp"

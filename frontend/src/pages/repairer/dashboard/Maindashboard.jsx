@@ -68,7 +68,7 @@ const RepairerMainDashboard = () => {
       setLoadingJobs(false);
     }
   }, [isOnline]);
-  console.log(loadingNotifications);
+  
 
   const fetchDashboardStats = useCallback(async () => {
     setLoadingStats(true);
@@ -133,7 +133,7 @@ const RepairerMainDashboard = () => {
   }, [fetchDashboardStats, fetchRecentActivity, fetchUnreadNotifications]);
 
   const handleAcceptJob = async (jobId) => {
-    console.log(`Attempting to accept job: ${jobId}`);
+  
     if (!repairerId) {
       toast.error("Repairer ID not available. Please log in again.");
       return;
@@ -144,7 +144,7 @@ const RepairerMainDashboard = () => {
       fetchDashboardStats();
       fetchRecentActivity();
       fetchUnreadNotifications();
-      console.log(response);
+     
       navigate('/repairer/inprogress');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to accept job. Please try again.');
@@ -154,7 +154,7 @@ const RepairerMainDashboard = () => {
   };
 
   const handleLogout = async () => {
-    console.log("Logout button clicked. Logging out...");
+
     try {
       await logoutRepairer();
       toast.success('Logged out successfully!');
@@ -169,28 +169,28 @@ const RepairerMainDashboard = () => {
   };
 
   const handleSettingsClick = () => {
-    console.log("Settings button clicked. Navigating to /repairer/settings");
+
     navigate('/repairer/settings');
   };
 
   const handleNotificationsClick = () => {
-    console.log("Notifications button clicked. Navigating to /repairer/notifications");
+   
     navigate('/repairer/notifications');
     fetchUnreadNotifications();
   };
 
   const handleProfileClick = () => {
-    console.log("Profile button clicked. Navigating to /repairer/profile");
+   
     navigate('/repairer/profile');
   };
 
   const handleViewAnalyticsClick = () => {
-    console.log("View Analytics button clicked. Navigating to /repairer/analytics");
+    
     navigate('/repairer/analytics');
   };
 
   const handleMessagesClick = () => {
-    console.log("Messages button clicked. Navigating to /repairer/messages");
+   
     navigate('/repairer/messages');
   };
 

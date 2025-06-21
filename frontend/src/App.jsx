@@ -63,15 +63,15 @@ function App() {
   } = useAuthStore();
 
   useEffect(() => {
-    console.log("App useEffect: Attempting to connect Socket.IO...");
+    
     connectSocket();
 
     const checkAuth = async () => {
       try {
-        console.log("ye hai jwt token", document.cookie); // should contain jwt
+  
         const res = await axiosInstance.get("/check-auth");
         const data = res.data;
-        console.log("Auth data:", data);
+        
 
         clearUser();
         clearRepairer();
@@ -97,7 +97,7 @@ function App() {
     setIsLoading(true);
     checkAuth();
     return () => {
-      console.log("App useEffect cleanup: Disconnecting Socket.IO...");
+      
       disconnectSocket();
     };
   }, [

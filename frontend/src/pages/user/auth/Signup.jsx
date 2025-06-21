@@ -50,7 +50,6 @@ const Signup = () => {
     setIsLoading(true);
 
     try {
-      console.log("Submitting signup data:", { fullname, password, phone });
       const response = await axiosInstance.post("/user/signup", {
         fullname,
         password,

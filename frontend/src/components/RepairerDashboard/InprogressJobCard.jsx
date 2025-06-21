@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import {
   MapPin,
@@ -12,6 +12,8 @@ import {
   ClipboardList,
   Edit,
   Info,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import LoadingSpinner from '../LoadingSpinner';
 
@@ -28,6 +30,9 @@ const InprogressJobCard = ({
   isSubmittingQuote,
   isSendingOtp,
 }) => {
+  
+  const [showFullDetails, setShowFullDetails] = useState(false);
+
   return (
     <div className="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition-shadow duration-300 border border-gray-100 flex flex-col font-lexend">
       <div className="bg-green-50 p-4 -mx-6 -mt-6 mb-4 rounded-t-xl border-b border-gray-100">
@@ -75,21 +80,45 @@ const InprogressJobCard = ({
             {job.assignedAt ? format(new Date(job.assignedAt), 'M/d/yyyy') : 'N/A'}
           </span>
         </div>
-        <div className="flex items-center">
-          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-emerald-500 flex-shrink-0" />
+        <div className="flex items-start">
+          <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-emerald-500 flex-shrink-0 mt-0.5" />
           <span className="font-medium">Location:</span>{' '}
-          <span className="ml-1 truncate">{job.location?.address || 'N/A'}</span>
+          <span className={`ml-1 ${showFullDetails ? '' : 'truncate'}`}>
+            {job.location?.address || 'N/A'}
+          </span>
         </div>
         <div className="flex items-center">
           <User className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-emerald-500 flex-shrink-0" />
           <span className="font-medium">Customer:</span>{' '}
-          <span className="ml-1 truncate">{job.customer?.fullname || 'N/A'}</span>
+          <span className={`ml-1 ${showFullDetails ? '' : 'truncate'}`}>
+            {job.customer?.fullname || 'N/A'}
+          </span>
         </div>
         <div className="flex items-center">
           <Phone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-emerald-500 flex-shrink-0" />
           <span className="font-medium">Phone:</span>{' '}
           <span className="ml-1">{job.contactInfo || 'N/A'}</span>
         </div>
+      </div>
+
+      {/* Get Full Details Button */}
+      <div className="flex justify-center mt-4 mb-5">
+        <button
+          onClick={() => setShowFullDetails(!showFullDetails)}
+          className="flex items-center text-sm text-emerald-600 hover:text-emerald-700 transition-colors duration-200 font-medium cursor-pointer"
+        >
+          {showFullDetails ? (
+            <>
+              <ChevronUp className="w-4 h-4 mr-1" />
+              Hide Details
+            </>
+          ) : (
+            <>
+              <ChevronDown className="w-4 h-4 mr-1" />
+              Get Full Details
+            </>
+          )}
+        </button>
       </div>
 
       {job.status !== 'completed' && job.status !== 'cancelled' && job.status !== 'rejected' && (job.customer || job.contactInfo) && (

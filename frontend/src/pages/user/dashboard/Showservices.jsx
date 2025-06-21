@@ -55,15 +55,15 @@ const Showservices = () => {
   ], []);
 
   const autoSubmitServiceRequest = useCallback(async () => {
-    console.log('autoSubmitServiceRequest called. hasAttemptedAutoSubmit (state):', hasAttemptedAutoSubmit, 'autoSubmitting (state):', autoSubmitting, 'autoSubmitRequestSentRef.current:', autoSubmitRequestSentRef.current);
+    
 
     if (autoSubmitRequestSentRef.current) {
-      console.log('autoSubmitServiceRequest: Request already sent via ref, returning.');
+     
       return;
     }
 
     if (hasAttemptedAutoSubmit || autoSubmitting) {
-      console.log('autoSubmitServiceRequest: Already attempted (state) or currently submitting (state), returning.');
+     
       return;
     }
 
@@ -74,7 +74,7 @@ const Showservices = () => {
     setAutoSubmitSuccess(false);
 
     try {
-      console.log('autoSubmitServiceRequest: Sending request...');
+      
       const requestPayload = {
         title: `${serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)} Service Request`,
         serviceType: serviceCategory,
@@ -89,7 +89,7 @@ const Showservices = () => {
 
       if (response.status === 201 || response.data.success) {
         setAutoSubmitSuccess(true);
-        console.log('Auto-submitted service request successfully:', response.data);
+       
       } else {
         setAutoSubmitError(response.data?.message || 'Failed to auto-submit service request.');
         console.error('Auto-submission failed:', response.data);
@@ -102,12 +102,11 @@ const Showservices = () => {
     } finally {
       setAutoSubmitting(false);
       setHasAttemptedAutoSubmit(true);
-      console.log('autoSubmitServiceRequest: Finished, hasAttemptedAutoSubmit set to true.');
     }
   }, [serviceCategory, userLocation, hasAttemptedAutoSubmit, autoSubmitting]);
 
   const fetchRepairers = useCallback(async () => {
-    console.log('fetchRepairers called. hasAttemptedAutoSubmit:', hasAttemptedAutoSubmit, 'autoSubmitRequestSentRef.current:', autoSubmitRequestSentRef.current);
+   
 
     if (!userLocation || !userLocation.pincode || !serviceCategory || !allowedServiceTypes.includes(serviceCategory.toLowerCase())) {
       setError("Invalid service category or location data is missing. Please go back and select a service and location.");
@@ -134,7 +133,7 @@ const Showservices = () => {
       console.error('Error fetching repairers:', err.response?.data || err.message);
       setError(err.response?.data?.message || 'Failed to load available repairers.');
       if (!autoSubmitRequestSentRef.current) {
-        console.log('Error fetching repairers, attempting to auto-submit service request as fallback.');
+        
         autoSubmitServiceRequest();
       }
     } finally {
@@ -143,11 +142,11 @@ const Showservices = () => {
   }, [userLocation, serviceCategory, autoSubmitRequestSentRef, autoSubmitServiceRequest, hasAttemptedAutoSubmit, allowedServiceTypes]);
 
   useEffect(() => {
-    console.log('Initial useEffect for Showservices.jsx triggered.');
+
     if (userLocation && serviceCategory) {
       fetchRepairers();
     } else {
-      console.log('Initial useEffect: Missing userLocation or serviceCategory, redirecting.');
+
       navigate('/user/dashboard', { replace: true });
     }
   }, [fetchRepairers, userLocation, serviceCategory, navigate]);
@@ -179,7 +178,7 @@ const Showservices = () => {
     }
 
     try {
-      console.log('handleSubmitServiceRequest: Sending request...');
+  
       const response = await axiosInstance.post('/service-requests', {
         repairerId: selectedRepairerForRequest._id,
         title: `${serviceCategory.charAt(0).toUpperCase() + serviceCategory.slice(1)} Service Request`,

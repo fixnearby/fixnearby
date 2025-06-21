@@ -408,7 +408,7 @@ const Inprogress = () => {
                       <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500 mt-1 mr-2 flex-shrink-0" />
                       <span className="font-medium mr-2">Location:</span>
                       <span className="flex-1">
-                        {request.location?.address}, {request.location?.pincode}
+                        {request.location?.address} {request.location?.pincode}
                       </span>
                     </div>
 

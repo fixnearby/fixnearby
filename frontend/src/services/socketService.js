@@ -5,19 +5,19 @@ const BACKEND_URL =  `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:30
 let socket = null;
 export const connectSocket = () => {
   if (socket && socket.connected) {
-    console.log('Socket already connected.');
+    
     return socket;
   }
-  console.log(`Attempting to connect Socket.IO to: ${BACKEND_URL}`); 
+  
   socket = io(BACKEND_URL, {
     withCredentials: true,
   });
   socket.on('connect', () => {
-    console.log('Socket.IO connected:', socket.id);
+   
   });
 
   socket.on('disconnect', (reason) => {
-    console.log('Socket.IO disconnected:', reason);
+    
   });
 
   socket.on('connect_error', (error) => {
@@ -36,7 +36,7 @@ export const connectSocket = () => {
 export const disconnectSocket = () => {
   if (socket && socket.connected) {
     socket.disconnect();
-    console.log('Socket.IO disconnected forcefully.');
+  
   }
   socket = null; 
 };
@@ -52,7 +52,7 @@ export const getSocket = () => {
 export const joinChatRoom = (conversationId) => {
   if (socket && socket.connected) {
     socket.emit('joinRoom', conversationId);
-    console.log(`Emitting joinRoom for conversation: ${conversationId}`);
+    
   } else {
     console.warn('Cannot join room: Socket not connected.');
   }

@@ -19,7 +19,6 @@ export const getOtp = async (req, res) => {
   const {
     phone
   } = req.body;
-  console.log("Received phone for OTP:", phone);
   if (!phone) return res.status(400).json({
     message: "phone number is required"
   });
@@ -42,7 +41,7 @@ export const getOtp = async (req, res) => {
       new: true
     });
     const status = await sendSignupOTP(phone, otp_generated);
-    console.log("otp sent status:", status);
+    
     if (!status) {
       return res.status(500).json({
         message: "Failed to send OTP"

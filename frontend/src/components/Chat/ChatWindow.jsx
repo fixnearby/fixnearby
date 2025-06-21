@@ -43,14 +43,14 @@ const ChatWindow = ({ conversationId, participantRole }) => {
     joinChatRoom(conversationId);
 
     const handlePastMessages = (pastMsgs) => {
-      console.log("Received past messages:", pastMsgs);
+     
       setMessages(pastMsgs);
       setLoadingMessages(false);
       scrollToBottom();
     };
 
     const handleReceiveMessage = (msg) => {
-      console.log("Received new message:", msg);
+
       setMessages((prevMessages) => [...prevMessages, msg]);
       scrollToBottom();
     };

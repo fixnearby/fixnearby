@@ -168,11 +168,11 @@ const Signup = () => {
       if (response.status === 201) {
         setSignupSuccess(true);
         toast.success("Signup successful!");
-        console.log("Signup successful:", response.data);
+       
 
         setTimeout(() => {
           navigate("/repairer/dashboard");
-          // window.location.reload();
+          window.location.reload();
         }, 2000);
       }
     } catch (error) {

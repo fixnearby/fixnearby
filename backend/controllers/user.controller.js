@@ -664,534 +664,536 @@ export const createRazorpayOrder = async (req, res) => {
 
 export const verifyAndTransferPayment = async (req, res) => {
 
-const userId = req.user?._id;
+    const userId = req.user?._id;
 
-const {
+    const {
 
-razorpay_order_id,
+    razorpay_order_id,
 
-razorpay_payment_id,
+    razorpay_payment_id,
 
-razorpay_signature,
+    razorpay_signature,
 
-paymentRecordId
+    paymentRecordId
 
-} = req.body;
+    } = req.body;
 
 
 
-if (!userId) {
+    if (!userId) {
 
-console.error("Verify Payment: Unauthorized - User ID not found.");
+    console.error("Verify Payment: Unauthorized - User ID not found.");
 
-return res.status(401).json({ success: false, message: "Unauthorized: User ID not found." });
+    return res.status(401).json({ success: false, message: "Unauthorized: User ID not found." });
 
-}
+    }
 
 
 
-if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !paymentRecordId) {
+    if (!razorpay_order_id || !razorpay_payment_id || !razorpay_signature || !paymentRecordId) {
 
-console.error("Verify Payment: Incomplete details received.", { razorpay_order_id, razorpay_payment_id, razorpay_signature, paymentRecordId });
+    console.error("Verify Payment: Incomplete details received.", { razorpay_order_id, razorpay_payment_id, razorpay_signature, paymentRecordId });
 
-return res.status(400).json({ success: false, message: "Payment verification details are incomplete." });
+    return res.status(400).json({ success: false, message: "Payment verification details are incomplete." });
 
-}
+    }
 
 
 
-try {
+    try {
 
-const paymentRecord = await Payment.findById(paymentRecordId)
+    const paymentRecord = await Payment.findById(paymentRecordId)
 
-.populate('serviceRequest')
+    .populate('serviceRequest')
 
-.populate('repairer', 'upiId fullname phone email'); // Added 'fullname' to populate
+    .populate('repairer', 'upiId fullname phone email'); // Added 'fullname' to populate
 
 
 
-if (!paymentRecord || paymentRecord.customer.toString() !== userId.toString()) {
+    if (!paymentRecord || paymentRecord.customer.toString() !== userId.toString()) {
 
-console.error(`Verify Payment: Payment record ${paymentRecordId} not found or unauthorized for user ${userId}.`);
+    console.error(`Verify Payment: Payment record ${paymentRecordId} not found or unauthorized for user ${userId}.`);
 
-return res.status(404).json({ success: false, message: "Payment record not found or unauthorized." });
+    return res.status(404).json({ success: false, message: "Payment record not found or unauthorized." });
 
-}
+    }
 
-if (!paymentRecord.repairer && paymentRecord.paymentMethod !== 'rejection_fee') {
+    if (!paymentRecord.repairer && paymentRecord.paymentMethod !== 'rejection_fee') {
 
-console.error(`Verify Payment: Repairer details missing for payout for payment type ${paymentRecord.paymentMethod}.`);
+    console.error(`Verify Payment: Repairer details missing for payout for payment type ${paymentRecord.paymentMethod}.`);
 
-paymentRecord.status = 'payout_failed_contact_issue';
-await paymentRecord.save();
+    paymentRecord.status = 'payout_failed_contact_issue';
+    await paymentRecord.save();
 
-return res.status(400).json({ success: false, message: "Repairer details are missing for payout. Please contact support." });
+    return res.status(400).json({ success: false, message: "Repairer details are missing for payout. Please contact support." });
 
-}
+    }
 
-if (paymentRecord.repairer && (!paymentRecord.repairer.phone || !paymentRecord.repairer.upiId)) {
+    if (paymentRecord.repairer && (!paymentRecord.repairer.phone || !paymentRecord.repairer.upiId)) {
 
-console.error(`Verify Payment: Repairer phone or UPI ID missing for payout:`, paymentRecord.repairer);
+    console.error(`Verify Payment: Repairer phone or UPI ID missing for payout:`, paymentRecord.repairer);
 
-paymentRecord.status = 'payout_failed_contact_issue';
+    paymentRecord.status = 'payout_failed_contact_issue';
 
-await paymentRecord.save();
+    await paymentRecord.save();
 
-return res.status(400).json({ success: false, message: "Repairer phone number or UPI ID is missing for payout." });
+    return res.status(400).json({ success: false, message: "Repairer phone number or UPI ID is missing for payout." });
 
-}
+    }
 
 
 
 
 
-console.log('\n--- Razorpay Signature Verification Debug ---');
+    console.log('\n--- Razorpay Signature Verification Debug ---');
 
-console.log('Backend received:');
+    console.log('Backend received:');
 
-console.log(' paymentRecordId:', paymentRecordId);
+    console.log(' paymentRecordId:', paymentRecordId);
 
-console.log(' razorpay_order_id:', razorpay_order_id);
+    console.log(' razorpay_order_id:', razorpay_order_id);
 
-console.log(' razorpay_payment_id:', razorpay_payment_id);
+    console.log(' razorpay_payment_id:', razorpay_payment_id);
 
-console.log(' razorpay_signature (from client):', razorpay_signature);
+    console.log(' razorpay_signature (from client):', razorpay_signature);
 
 
 
-const stringToHash = `${razorpay_order_id}|${razorpay_payment_id}`;
+    const stringToHash = `${razorpay_order_id}|${razorpay_payment_id}`;
 
-console.log(' String used for HMAC calculation:', stringToHash);
+    console.log(' String used for HMAC calculation:', stringToHash);
 
 
 
-const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
+    const shasum = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET);
 
-shasum.update(stringToHash);
+    shasum.update(stringToHash);
 
-const digest = shasum.digest('hex');
+    const digest = shasum.digest('hex');
 
-console.log(' Calculated digest (from your backend):', digest);
+    console.log(' Calculated digest (from your backend):', digest);
 
 
 
-if (digest !== razorpay_signature) {
+    if (digest !== razorpay_signature) {
 
-paymentRecord.status = 'failed';
+    paymentRecord.status = 'failed';
 
-await paymentRecord.save();
+    await paymentRecord.save();
 
-console.error(`Verify Payment: Signature Mismatch for Payment ID: ${razorpay_payment_id}. Stored status: ${paymentRecord.status}`);
+    console.error(`Verify Payment: Signature Mismatch for Payment ID: ${razorpay_payment_id}. Stored status: ${paymentRecord.status}`);
 
-console.error(`Expected Digest (calculated): ${digest}`);
+    console.error(`Expected Digest (calculated): ${digest}`);
 
-console.error(`Received Signature (from Razorpay): ${razorpay_signature}`);
+    console.error(`Received Signature (from Razorpay): ${razorpay_signature}`);
 
-return res.status(400).json({ success: false, message: "Payment verification failed: Signature mismatch." });
+    return res.status(400).json({ success: false, message: "Payment verification failed: Signature mismatch." });
 
-}
-let actualRazorpayAmount = 0;
+    }
+    let actualRazorpayAmount = 0;
 
-try {
+    try {
 
-const paymentDetailsFromRazorpay = await razorpayInstance.payments.fetch(razorpay_payment_id);
+    const paymentDetailsFromRazorpay = await razorpayInstance.payments.fetch(razorpay_payment_id);
 
-actualRazorpayAmount = paymentDetailsFromRazorpay.amount;
+    actualRazorpayAmount = paymentDetailsFromRazorpay.amount;
 
-console.log(`[verifyAndTransferPayment] Fetched Razorpay payment details. Status: ${paymentDetailsFromRazorpay.status}, Amount: ${actualRazorpayAmount} paise.`);
+    console.log(`[verifyAndTransferPayment] Fetched Razorpay payment details. Status: ${paymentDetailsFromRazorpay.status}, Amount: ${actualRazorpayAmount} paise.`);
 
 
 
-if (paymentDetailsFromRazorpay.status === 'authorized') {
-await razorpayInstance.payments.capture(razorpay_payment_id, actualRazorpayAmount);
+    if (paymentDetailsFromRazorpay.status === 'authorized') {
+    await razorpayInstance.payments.capture(razorpay_payment_id, actualRazorpayAmount);
 
-console.log(`[verifyAndTransferPayment] Payment ${razorpay_payment_id} captured successfully.`);
+    console.log(`[verifyAndTransferPayment] Payment ${razorpay_payment_id} captured successfully.`);
 
-} else if (paymentDetailsFromRazorpay.status === 'captured') {
+    } else if (paymentDetailsFromRazorpay.status === 'captured') {
 
-console.log(`[verifyAndTransferPayment] Payment ${razorpay_payment_id} already captured.`);
+    console.log(`[verifyAndTransferPayment] Payment ${razorpay_payment_id} already captured.`);
 
-} else if (paymentDetailsFromRazorpay.status !== 'captured' && paymentDetailsFromRazorpay.status !== 'authorized') {
+    } else if (paymentDetailsFromRazorpay.status !== 'captured' && paymentDetailsFromRazorpay.status !== 'authorized') {
 
 
-paymentRecord.status = paymentDetailsFromRazorpay.status;
+    paymentRecord.status = paymentDetailsFromRazorpay.status;
 
-await paymentRecord.save();
+    await paymentRecord.save();
 
-return res.status(400).json({ success: false, message: `Payment in Razorpay is in ${paymentDetailsFromRazorpay.status} status. Cannot proceed.` });
+    return res.status(400).json({ success: false, message: `Payment in Razorpay is in ${paymentDetailsFromRazorpay.status} status. Cannot proceed.` });
 
-}
-if (Math.round(paymentRecord.amount * 100) !== actualRazorpayAmount) {
+    }
+    if (Math.round(paymentRecord.amount * 100) !== actualRazorpayAmount) {
 
-console.error(`[verifyAndTransferPayment] Amount mismatch! DB: ${paymentRecord.amount} Rs (${paymentRecord.amount * 100} paise), Razorpay: ${actualRazorpayAmount} paise`);
-}
+    console.error(`[verifyAndTransferPayment] Amount mismatch! DB: ${paymentRecord.amount} Rs (${paymentRecord.amount * 100} paise), Razorpay: ${actualRazorpayAmount} paise`);
+    }
 
 
-} catch (fetchCaptureError) {
+    } catch (fetchCaptureError) {
 
-console.error(`[verifyAndTransferPayment] Error fetching or capturing payment ${razorpay_payment_id}:`, fetchCaptureError.message || fetchCaptureError.error?.description || fetchCaptureError);
+    console.error(`[verifyAndTransferPayment] Error fetching or capturing payment ${razorpay_payment_id}:`, fetchCaptureError.message || fetchCaptureError.error?.description || fetchCaptureError);
 
-paymentRecord.status = 'failed';
+    paymentRecord.status = 'failed';
 
-await paymentRecord.save();
+    await paymentRecord.save();
 
-return res.status(500).json({ success: false, message: "Failed to verify payment with Razorpay. Please contact support." });
+    return res.status(500).json({ success: false, message: "Failed to verify payment with Razorpay. Please contact support." });
 
-}
+    }
 
-if (paymentRecord.status !== 'captured' && paymentRecord.status !== 'payout_initiated' && paymentRecord.status !== 'payout_completed') {
+    if (paymentRecord.status !== 'captured' && paymentRecord.status !== 'payout_initiated' && paymentRecord.status !== 'payout_completed') {
 
-paymentRecord.razorpayPaymentId = razorpay_payment_id;
+    paymentRecord.razorpayPaymentId = razorpay_payment_id;
 
-paymentRecord.razorpaySignature = razorpay_signature;
+    paymentRecord.razorpaySignature = razorpay_signature;
 
-paymentRecord.status = 'captured';
+    paymentRecord.status = 'captured';
 
-paymentRecord.paymentDate = new Date();
+    paymentRecord.paymentDate = new Date();
 
-console.log('--- DEBUG: Razorpay Payment Verified & Captured ---');
+    console.log('--- DEBUG: Razorpay Payment Verified & Captured ---');
 
-console.log('DEBUG: Payment Record ID:', paymentRecord._id);
+    console.log('DEBUG: Payment Record ID:', paymentRecord._id);
 
-console.log('DEBUG: Service Request ID:', paymentRecord.serviceRequest?._id);
+    console.log('DEBUG: Service Request ID:', paymentRecord.serviceRequest?._id);
 
-console.log('DEBUG: Status updated to:', paymentRecord.status);
+    console.log('DEBUG: Status updated to:', paymentRecord.status);
 
-} else {
+    } else {
 
-console.log(`DEBUG: Payment record already processed (status: ${paymentRecord.status}). Skipping capture update.`);
+    console.log(`DEBUG: Payment record already processed (status: ${paymentRecord.status}). Skipping capture update.`);
 
-}
-if (paymentRecord.repairer && paymentRecord.repairer.upiId && paymentRecord.repairerPayoutAmount > 0) { // Only proceed with payout if repairer exists, has UPI, and amount > 0
+    }
+    if (paymentRecord.repairer && paymentRecord.repairer.upiId && paymentRecord.repairerPayoutAmount > 0) { // Only proceed with payout if repairer exists, has UPI, and amount > 0
 
-let contactId;
+    let contactId;
 
-let fundAccountId;
+    let fundAccountId;
 
 
-try {
-const contactsResponse = await razorpayInstance.contacts.all({
+    try {
+    const contactsResponse = await razorpayInstance.contacts.all({
 
-contact: paymentRecord.repairer.phone
+    contact: paymentRecord.repairer.phone
 
-});
+    });
 
 
 
-if (contactsResponse.items && contactsResponse.items.length > 0) {
+    if (contactsResponse.items && contactsResponse.items.length > 0) {
 
-contactId = contactsResponse.items[0].id;
+    contactId = contactsResponse.items[0].id;
 
-console.log(`DEBUG: Found existing Razorpay Contact: ${contactId} for Repairer Phone: ${paymentRecord.repairer.phone}`);
+    console.log(`DEBUG: Found existing Razorpay Contact: ${contactId} for Repairer Phone: ${paymentRecord.repairer.phone}`);
 
-} else {
+    } else {
 
-console.log(`DEBUG: No existing contact found for Repairer Phone: ${paymentRecord.repairer.phone}. Creating new one...`);
+    console.log(`DEBUG: No existing contact found for Repairer Phone: ${paymentRecord.repairer.phone}. Creating new one...`);
 
-const newContact = await razorpayInstance.contacts.create({
+    const newContact = await razorpayInstance.contacts.create({
 
-name: paymentRecord.repairer.fullname || `Repairer-${paymentRecord.repairer._id.toString().substring(0, 8)}`,
+    name: paymentRecord.repairer.fullname || `Repairer-${paymentRecord.repairer._id.toString().substring(0, 8)}`,
 
-email: paymentRecord.repairer.email || undefined, 
+    email: paymentRecord.repairer.email || undefined, 
 
-contact: paymentRecord.repairer.phone,
+    contact: paymentRecord.repairer.phone,
 
-type: 'vendor',
+    type: 'vendor',
 
-reference_id: paymentRecord.repairer._id.toString(), 
+    reference_id: paymentRecord.repairer._id.toString(), 
 
-});
+    });
 
-contactId = newContact.id;
+    contactId = newContact.id;
 
-console.log(`DEBUG: Created new Razorpay Contact: ${contactId}`);
+    console.log(`DEBUG: Created new Razorpay Contact: ${contactId}`);
 
-}
+    }
 
-console.log('-------------------------------------------\n');
+    console.log('-------------------------------------------\n');
 
 
 
-} catch (contactError) {
+    } catch (contactError) {
 
-console.error("Error managing Razorpay Contact (SDK):", contactError.error?.description || contactError.message || contactError);
+    console.error("Error managing Razorpay Contact (SDK):", contactError.error?.description || contactError.message || contactError);
 
-paymentRecord.status = 'payout_failed_contact_issue';
+    paymentRecord.status = 'payout_failed_contact_issue';
 
-await paymentRecord.save();
+    await paymentRecord.save();
 
-return res.status(500).json({ success: false, message: contactError.error?.description || "Payment verified, but failed to set up repairer contact. Please contact support immediately." });
+    return res.status(500).json({ success: false, message: contactError.error?.description || "Payment verified, but failed to set up repairer contact. Please contact support immediately." });
 
-}
+    }
 
-try {
+    try {
 
-console.log('\n--- DEBUG: Payout Process - Fund Account (Razorpay SDK) ---');
+    console.log('\n--- DEBUG: Payout Process - Fund Account (Razorpay SDK) ---');
 
-console.log(`DEBUG: Attempting to create fund account for UPI ID: ${paymentRecord.repairer.upiId} for Contact: ${contactId}`);
+    console.log(`DEBUG: Attempting to create fund account for UPI ID: ${paymentRecord.repairer.upiId} for Contact: ${contactId}`);
 
 
-const newFundAccount = await razorpayInstance.fundAccounts.create({
+    const newFundAccount = await razorpayInstance.fundAccounts.create({
 
-account_type: "vpa",
+    account_type: "vpa",
 
-vpa: {
+    vpa: {
 
-address: paymentRecord.repairer.upiId
+    address: paymentRecord.repairer.upiId
 
-},
+    },
 
-contact_id: contactId,
+    contact_id: contactId,
 
-});
+    });
 
-fundAccountId = newFundAccount.id;
+    fundAccountId = newFundAccount.id;
 
-console.log(`DEBUG: Fund Account created/retrieved: ${fundAccountId} for UPI ID: ${paymentRecord.repairer.upiId}`);
+    console.log(`DEBUG: Fund Account created/retrieved: ${fundAccountId} for UPI ID: ${paymentRecord.repairer.upiId}`);
 
-console.log('-------------------------------------------\n');
+    console.log('-------------------------------------------\n');
 
 
 
-} catch (fundAccountError) {
+    } catch (fundAccountError) {
 
-console.error("Error managing Razorpay Fund Account (SDK):", fundAccountError.error?.description || fundAccountError.message || fundAccountError);
+    console.error("Error managing Razorpay Fund Account (SDK):", fundAccountError.error?.description || fundAccountError.message || fundAccountError);
 
-paymentRecord.status = 'payout_failed_fundaccount_issue';
+    paymentRecord.status = 'payout_failed_fundaccount_issue';
 
-await paymentRecord.save();
+    await paymentRecord.save();
 
-return res.status(500).json({ success: false, message: fundAccountError.error?.description || "Payment verified, but failed to set up repairer payout account. Please contact support immediately." });
+    return res.status(500).json({ success: false, message: fundAccountError.error?.description || "Payment verified, but failed to set up repairer payout account. Please contact support immediately." });
 
-}
-try {
+    }
+    try {
 
-const platformFeePercentage = parseFloat(process.env.PLATFORM_FEE_PERCENTAGE || 3);
+    const platformFeePercentage = parseFloat(process.env.PLATFORM_FEE_PERCENTAGE || 3);
 
-let amountForPayoutInPaise;
+    let amountForPayoutInPaise;
 
 
 
-if (paymentRecord.paymentMethod === 'rejection_fee') {
+    if (paymentRecord.paymentMethod === 'rejection_fee') {
 
-amountForPayoutInPaise = Math.round(paymentRecord.amount);
+    amountForPayoutInPaise = Math.round(paymentRecord.amount);
 
-console.log(`[verifyAndTransferPayment] Payout for rejection_fee: ${amountForPayoutInPaise} paise`);
+    console.log(`[verifyAndTransferPayment] Payout for rejection_fee: ${amountForPayoutInPaise} paise`);
 
-} else {
+    } else {
 
-const amountInRupees = paymentRecord.amount;
+    const amountInRupees = paymentRecord.amount;
 
-const platformFeeAmount = amountInRupees * (platformFeePercentage / 100);
+    const platformFeeAmount = amountInRupees * (platformFeePercentage / 100);
 
-const repairerShareInRupees = amountInRupees - platformFeeAmount;
+    const repairerShareInRupees = amountInRupees - platformFeeAmount;
 
-amountForPayoutInPaise = Math.round(repairerShareInRupees * 100);
+    amountForPayoutInPaise = Math.round(repairerShareInRupees * 100);
 
-paymentRecord.platformFeeAmount = platformFeeAmount;
+    paymentRecord.platformFeeAmount = platformFeeAmount;
 
-paymentRecord.repairerPayoutAmount = amountForPayoutInPaise; // Store in paise for consistency with Razorpay
+    paymentRecord.repairerPayoutAmount = amountForPayoutInPaise; // Store in paise for consistency with Razorpay
 
-console.log(`[verifyAndTransferPayment] Platform Fee Percentage: ${platformFeePercentage}%`);
+    console.log(`[verifyAndTransferPayment] Platform Fee Percentage: ${platformFeePercentage}%`);
 
-console.log(`[verifyAndTransferPayment] Platform Fee Amount (Rupees): ${platformFeeAmount.toFixed(2)}`);
+    console.log(`[verifyAndTransferPayment] Platform Fee Amount (Rupees): ${platformFeeAmount.toFixed(2)}`);
 
-console.log(`[verifyAndTransferPayment] Repairer Payout Amount (Paise for Razorpay): ${amountForPayoutInPaise}`);
+    console.log(`[verifyAndTransferPayment] Repairer Payout Amount (Paise for Razorpay): ${amountForPayoutInPaise}`);
 
-}
+    }
 
 
 
-if (amountForPayoutInPaise <= 0) {
+    if (amountForPayoutInPaise <= 0) {
 
-console.warn(`[verifyAndTransferPayment] Payout amount is zero or negative (${amountForPayoutInPaise} paise). Skipping payout.`);
+    console.warn(`[verifyAndTransferPayment] Payout amount is zero or negative (${amountForPayoutInPaise} paise). Skipping payout.`);
 
-paymentRecord.status = 'payout_skipped'; 
+    paymentRecord.status = 'payout_skipped'; 
 
-await paymentRecord.save();
+    await paymentRecord.save();
 
 
 
-const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
+    const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
 
-if (serviceRequest && (serviceRequest.status === 'quoted' || serviceRequest.status === 'pending_payment')) {
+    if (serviceRequest && (serviceRequest.status === 'quoted' || serviceRequest.status === 'pending_payment')) {
 
-serviceRequest.status = 'in_progress'; 
+    serviceRequest.status = 'in_progress'; 
 
-await serviceRequest.save();
+    await serviceRequest.save();
 
-console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'in_progress' (payout skipped).`);
+    console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'in_progress' (payout skipped).`);
 
-}
+    }
 
-return res.status(200).json({
+    return res.status(200).json({
 
-success: true,
+    success: true,
 
-message: "Payment verified successfully. No payout needed due to zero or negative amount.",
+    message: "Payment verified successfully. No payout needed due to zero or negative amount.",
 
-paymentRecord: paymentRecord,
+    paymentRecord: paymentRecord,
 
-serviceRequestStatus: serviceRequest?.status
+    serviceRequestStatus: serviceRequest?.status
 
-});
+    });
 
-}
+    }
 
 
 
 
 
-const payout = await razorpayInstance.payouts.create({
+    const payout = await razorpayInstance.payouts.create({
 
-account_number: process.env.RAZORPAY_ACCOUNT_NUMBER, 
+    account_number: process.env.RAZORPAY_ACCOUNT_NUMBER, 
 
-fund_account_id: fundAccountId,
+    fund_account_id: fundAccountId,
 
-amount: amountForPayoutInPaise, 
+    amount: amountForPayoutInPaise, 
 
-currency: "INR",
+    currency: "INR",
 
-mode: 'UPI',
+    mode: 'UPI',
 
-purpose: 'payout',
+    purpose: 'payout',
 
-notes: {
+    notes: {
 
-paymentFor: `Service: ${paymentRecord.serviceRequest?.title || 'N/A'}`,
+    paymentFor: `Service: ${paymentRecord.serviceRequest?.title || 'N/A'}`,
 
-serviceRequestId: paymentRecord.serviceRequest?._id.toString() || 'N/A',
+    serviceRequestId: paymentRecord.serviceRequest?._id.toString() || 'N/A',
 
-platformFee: (paymentRecord.platformFeeAmount / 100).toFixed(2), 
+    platformFee: (paymentRecord.platformFeeAmount / 100).toFixed(2), 
 
-repairerUpiId: paymentRecord.repairer.upiId
+    repairerUpiId: paymentRecord.repairer.upiId
 
-},
+    },
 
-queue_if_scanned: true 
+    queue_if_scanned: true 
 
-});
+    });
 
 
 
-console.log('DEBUG: Payout API Response:', JSON.stringify(payout, null, 2));
+    console.log('DEBUG: Payout API Response:', JSON.stringify(payout, null, 2));
 
 
 
-paymentRecord.razorpayTransferId = payout.id;
+    paymentRecord.razorpayTransferId = payout.id;
 
-paymentRecord.status = 'payout_initiated';
+    paymentRecord.status = 'payout_initiated';
 
-paymentRecord.payoutDetails = {
+    paymentRecord.payoutDetails = {
 
-upiId: paymentRecord.repairer.upiId,
+    upiId: paymentRecord.repairer.upiId,
 
-transferTimestamp: new Date(),
+    transferTimestamp: new Date(),
 
-razorpayPayoutId: payout.id, 
+    razorpayPayoutId: payout.id, 
 
-razorpayPayoutStatus: payout.status 
+    razorpayPayoutStatus: payout.status 
+
+    };
+
+    await paymentRecord.save();
+
+    console.log('DEBUG: Payout initiated to Repairer. Payout ID:', payout.id, 'Status:', payout.status);
+
+
+
+    const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
+
+    if (serviceRequest && (serviceRequest.status === 'quoted' || serviceRequest.status === 'pending_payment')) {
+
+    serviceRequest.status = 'in_progress';
+
+    await serviceRequest.save();
+
+    console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'in_progress' (payout initiated).`);
+
+    }
+
+    console.log('-------------------------------------------\n');
+
+
+
+    return res.status(200).json({
+
+    success: true,
+
+    message: "Payment verified and payout initiated successfully!",
+
+    paymentRecord: paymentRecord,
+
+    serviceRequestStatus: serviceRequest?.status,
+
+    payoutStatus: payout.status
+
+    });
+
+
+
+    } catch (transferError) {
+
+    console.error("Error initiating Razorpay Payout (SDK transferError):", transferError.error?.description || transferError.message || transferError);
+
+    paymentRecord.status = 'payout_failed_transfer_issue';
+
+    await paymentRecord.save();
+
+    return res.status(500).json({ success: false, message: transferError.error?.description || "Payment verified, but failed to initiate payout. Please contact support immediately." });
+
+    }
+
+    } else {
+
+    console.log('DEBUG: No payout initiated: Repairer or UPI ID missing, or payout amount is zero.');
+
+    const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
+
+    if (serviceRequest && (serviceRequest.status === 'quoted' || serviceRequest.status === 'pending_payment')) {
+
+    serviceRequest.status = 'in_progress'; 
+    await serviceRequest.save();
+
+    console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'in_progress' (no payout needed/possible).`);
+
+    }
+
+    if (paymentRecord.status === 'pending') {
+
+    paymentRecord.status = 'completed';
+
+    }
+
+    await paymentRecord.save();
+
+    return res.status(200).json({
+
+    success: true,
+
+    message: "Payment verified successfully. No payout needed or possible at this time.",
+
+    paymentRecord: paymentRecord,
+
+    serviceRequestStatus: serviceRequest?.status
+
+    });
+
+    }
+
+
+
+    } catch (error) {
+
+    console.error("Error in verifyAndTransferPayment (outer catch):", error);
+
+    res.status(500).json({ success: false, message: "Failed to verify payment due to an unexpected error." });
+
+    }
 
 };
 
-await paymentRecord.save();
 
-console.log('DEBUG: Payout initiated to Repairer. Payout ID:', payout.id, 'Status:', payout.status);
-
-
-
-const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
-
-if (serviceRequest && (serviceRequest.status === 'quoted' || serviceRequest.status === 'pending_payment')) {
-
-serviceRequest.status = 'in_progress';
-
-await serviceRequest.save();
-
-console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'in_progress' (payout initiated).`);
-
-}
-
-console.log('-------------------------------------------\n');
-
-
-
-return res.status(200).json({
-
-success: true,
-
-message: "Payment verified and payout initiated successfully!",
-
-paymentRecord: paymentRecord,
-
-serviceRequestStatus: serviceRequest?.status,
-
-payoutStatus: payout.status
-
-});
-
-
-
-} catch (transferError) {
-
-console.error("Error initiating Razorpay Payout (SDK transferError):", transferError.error?.description || transferError.message || transferError);
-
-paymentRecord.status = 'payout_failed_transfer_issue';
-
-await paymentRecord.save();
-
-return res.status(500).json({ success: false, message: transferError.error?.description || "Payment verified, but failed to initiate payout. Please contact support immediately." });
-
-}
-
-} else {
-
-console.log('DEBUG: No payout initiated: Repairer or UPI ID missing, or payout amount is zero.');
-
-const serviceRequest = await ServiceRequest.findById(paymentRecord.serviceRequest._id);
-
-if (serviceRequest && (serviceRequest.status === 'quoted' || serviceRequest.status === 'pending_payment')) {
-
-serviceRequest.status = 'in_progress'; 
-await serviceRequest.save();
-
-console.log(`DEBUG: Service Request ${serviceRequest._id} status updated to 'in_progress' (no payout needed/possible).`);
-
-}
-
-if (paymentRecord.status === 'pending') {
-
-paymentRecord.status = 'completed';
-
-}
-
-await paymentRecord.save();
-
-return res.status(200).json({
-
-success: true,
-
-message: "Payment verified successfully. No payout needed or possible at this time.",
-
-paymentRecord: paymentRecord,
-
-serviceRequestStatus: serviceRequest?.status
-
-});
-
-}
-
-
-
-} catch (error) {
-
-console.error("Error in verifyAndTransferPayment (outer catch):", error);
-
-res.status(500).json({ success: false, message: "Failed to verify payment due to an unexpected error." });
-
-}
-
-};
 export const getServiceRequestById = async (req, res) => {
     const userId = req.user?._id;
     const { id } = req.params; 

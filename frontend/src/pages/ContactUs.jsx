@@ -49,7 +49,7 @@ export default function ContactUs() {
 
   const handleSubmit = () => {
     if (validateForm()) {
-      console.log('Form submitted:', formData);
+      
       setIsSubmitted(true);
       
       setTimeout(() => {

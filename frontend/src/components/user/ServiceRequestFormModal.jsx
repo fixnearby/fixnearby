@@ -342,7 +342,7 @@ const ServiceRequestFormModal = ({
         }
       };
 
-      console.log("Sending service request payload:", requestPayload);
+
 
       const response = await requestService(requestPayload);
 
@@ -416,12 +416,7 @@ const ServiceRequestFormModal = ({
         ) : (
           <>
             <h2 className="text-3xl font-extrabold text-gray-900 mb-6 border-b-2 border-green-200 pb-4 flex items-center pr-12 relative">
-              <Sparkles className="mr-3 text-green-500" size={30} strokeWidth={2} /> Request Service
-              {serviceDetails.title && (
-                   <span className="text-green-600 ml-2 overflow-hidden text-ellipsis whitespace-nowrap max-w-[calc(100%-100px)]">
-                     : {serviceDetails.title}
-                   </span>
-               )}
+              <Sparkles className="mr-3 text-green-500" size={30} strokeWidth={2} />Request Service
             </h2>
 
             <div className="flex justify-center items-center mb-8">

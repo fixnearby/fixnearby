@@ -21,6 +21,8 @@ const ServicesSection = ({ services }) => {
                   src={service.image}
                   alt={service.title}
                   className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  width="300"
+                  height="144"
                 />
               </div>
               <div className="p-4 text-center">

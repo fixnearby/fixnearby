@@ -1,7 +1,6 @@
-// frontend/src/components/LandingPage/PopularServicesSection.jsx
 import React from 'react';
 import { IndianRupee } from 'lucide-react';
-import { Link } from 'react-router-dom'; // Import Link
+import { Link } from 'react-router-dom';
 
 const PopularServicesSection = ({ popularServices }) => {
   return (
@@ -13,10 +12,10 @@ const PopularServicesSection = ({ popularServices }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {popularServices.map((service, index) => (
             <Link
-              to="/user/login" 
+              to="/user/login"
               key={index}
               className="bg-white rounded-xl shadow-lg overflow-hidden block
-                         transform hover:-translate-y-2 hover:shadow-xl transition-all duration-300 ease-in-out"
+                                transform hover:-translate-y-2 hover:shadow-xl transition-all duration-300 ease-in-out"
             >
               <div className="h-48 overflow-hidden">
                 <img
@@ -24,6 +23,8 @@ const PopularServicesSection = ({ popularServices }) => {
                   src={service.image}
                   alt={service.title}
                   className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"
+                  width="400"
+                  height="192"
                 />
               </div>
               <div className="p-6 text-left">

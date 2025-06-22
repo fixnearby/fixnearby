@@ -1,23 +1,27 @@
 import React from "react";
-import images from "../../assets/images.js";
 
 const HeroSection = () => {
   return (
     <section className="relative h-[600px] md:h-[700px] flex items-center justify-center text-center text-white overflow-hidden">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-      >
-        <img
-        src={images.hero}
-        alt="Home service hero background"
-        className="absolute inset-0 w-full h-full object-cover z-0"
-        width="1920"
-        height="1080"
-        loading="eager"
-        fetchpriority="high"
-      />
-        <div className="absolute inset-0 bg-black opacity-50"></div>
-      </div>
+      <picture>
+       <img
+  alt="Home service hero background"
+  class="absolute inset-0 w-full h-full object-cover z-0"
+  width="1920"
+  height="1080"
+  loading="eager"
+  fetchpriority="high"
+  src="/images/logos/hero.webp"
+  srcset="/images/logos/hero-small.webp 480w,
+          /images/logos/hero-medium.webp 800w,
+          /images/logos/hero-large.webp 1200w,
+          /images/logos/hero.webp 1920w"
+  sizes="(max-width: 600px) 100vw,
+         (max-width: 1024px) 100vw,
+         100vw"
+/>
+      </picture>
+      <div className="absolute inset-0 bg-black opacity-50"></div>
 
       <div className="relative z-10 p-4">
         <h1 className="text-5xl md:text-7xl font-bold leading-tight space-y-4">
@@ -48,11 +52,11 @@ const HeroSection = () => {
           animation: fade-slide-in 1.3s ease-out forwards;
         }
 
-        .delay-[200ms] {
+        .delay-\\[200ms\\] {
           animation-delay: 0.2s;
         }
 
-        .delay-[600ms] {
+        .delay-\\[600ms\\] {
           animation-delay: 0.6s;
         }
       `}</style>

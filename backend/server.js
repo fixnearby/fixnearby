@@ -10,6 +10,7 @@ import Message from './models/message.model.js';
 import Notification from './models/notification.model.js';
 import User from './models/user.model.js';
 import Repairer from './models/repairer.model.js';
+import compression from 'compression';
 
 const server = http.createServer(app);
 

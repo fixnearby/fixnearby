@@ -71,7 +71,7 @@ export default function ContactUs() {
       icon: <Phone className="w-6 h-6" />,
       title: "Customer Support",
       description: "24/7 support for urgent issues",
-      contact: "+91 98765 43210",
+      contact: "contact@fixneaby.in",
       bgColor: "bg-emerald-50", 
       iconColor: "text-emerald-600", 
       textColor: "text-emerald-800" 
@@ -80,7 +80,7 @@ export default function ContactUs() {
       icon: <Mail className="w-6 h-6" />,
       title: "General Inquiries",
       description: "For non-urgent questions",
-      contact: "support@fixnearby.com",
+      contact: "contact@fixnearby.in",
       bgColor: "bg-emerald-50", 
       iconColor: "text-emerald-600",
       textColor: "text-emerald-800" 
@@ -89,7 +89,7 @@ export default function ContactUs() {
       icon: <Shield className="w-6 h-6" />,
       title: "Report Issues",
       description: "Report repairer misconduct",
-      contact: "report@fixnearby.com",
+      contact: "contact@fixnearby.in",
       bgColor: "bg-red-50", 
       iconColor: "text-red-600", 
       textColor: "text-red-800" 
@@ -98,7 +98,7 @@ export default function ContactUs() {
       icon: <CreditCard className="w-6 h-6" />,
       title: "Payment Issues",
       description: "Commission & payment help",
-      contact: "payments@fixnearby.com",
+      contact: "contact@fixnearby.in",
       bgColor: "bg-amber-50", 
       iconColor: "text-amber-600", 
       textColor: "text-amber-800" 
@@ -149,7 +149,6 @@ export default function ContactUs() {
       </main>
 
       <div className="container mx-auto px-6 py-12">
-        {/* Contact Options */}
         <div className="mb-12">
           <h2 className="text-3xl font-bold text-center mb-8 text-gray-800">Get in Touch</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -324,8 +323,7 @@ export default function ContactUs() {
                   <div>
                     <h3 className="font-semibold text-gray-800">Address</h3>
                     <p className="text-gray-600">
-                      123 Tech Hub, Sector 62<br />
-                      Noida, Uttar Pradesh 201301<br />
+                      Jaipur, Rajasthan <br />
                       India
                     </p>
                   </div>

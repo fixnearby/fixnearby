@@ -50,6 +50,7 @@ import images from "./assets/images";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminSignup from "./pages/admin/Signup";
+import GoogleTranslate from "./components/GoogleTranslate";
 
 function App() {
   const {
@@ -141,8 +142,12 @@ function App() {
     return children;
   };
 
+  
+
   return (
-    
+
+      <>
+      <GoogleTranslate/>
       <Suspense fallback={<div className="flex items-center justify-center h-screen">
         <LoadingSpinner className="size-10 animate-spin" />
       </div>}>
@@ -398,6 +403,7 @@ function App() {
       </Routes>
       
     </Suspense>
+      </>
   );
 }
 

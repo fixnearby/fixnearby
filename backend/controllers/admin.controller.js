@@ -7,7 +7,7 @@ import ServiceRequest from "../models/serviceRequest.model.js";
 export const signup = async (req,res)=>{
     const { fullname , phone , password , secretkey} = req.body;
     try {
-        if(secretkey!=="jatinrandifixnearby"){
+        if(secretkey!==process.env.SECRET_KEY){
           return res.status(400).json({ message: "Secret Key is not valid" });
         }
         if (!fullname || !phone || !password) {

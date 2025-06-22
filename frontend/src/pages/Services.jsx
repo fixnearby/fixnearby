@@ -23,6 +23,7 @@ const ServiceCard = ({ service, index }) => {
     >
       <div className="relative overflow-hidden h-48">
         <img
+          loading='lazy'
           src={service.image}
           alt={service.title}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"

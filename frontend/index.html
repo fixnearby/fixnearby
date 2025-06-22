@@ -40,7 +40,7 @@
     />
     <meta
       property="og:image"
-      content="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334189/logooo_qqpqlr.png"
+      content="/images/logos/logo_mota.png"
     />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
@@ -60,19 +60,15 @@
     />
     <meta
       property="twitter:image"
-      content="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334189/logooo_qqpqlr.png"
+      content="/images/logos/logo_mota.png"
     />
 
     <!-- Favicon -->
-    <link
-      rel="icon"
-      type="image/png"
-      href="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334186/logo1_js3wup.png"
-    />
-    <link
-      rel="apple-touch-icon"
-      href="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334186/logo1_js3wup.png"
-    />
+    <!-- Favicon for all browsers -->
+    <link rel="icon" href="/images/logos/SiteLogo.svg" type="image/svg+xml" />
+
+    <!-- Apple touch icon -->
+    <link rel="apple-touch-icon" href="/images/logos/SiteLogo.svg" />
 
     <!-- Canonical URL -->
     <link rel="canonical" href="https://fixnearby.in/" />
@@ -80,7 +76,12 @@
     <!-- Preload Critical Resources -->
     <link
       rel="preload"
-      href="https://res.cloudinary.com/dqo8li60p/image/upload/v1750334189/logooo_qqpqlr.png"
+      href="/images/logos/logo_mota.png"
+      as="image"
+    />
+    <link
+      rel="preload"
+      href="/images/logos/hero.webp"
       as="image"
     />
 
@@ -96,12 +97,12 @@
         "name": "FixNearby",
         "description": "Professional home services and repairs with free visits and AI-powered quotes",
         "url": "https://fixnearby.in",
-        "logo": "https://res.cloudinary.com/dqo8li60p/image/upload/v1750334186/logo1_js3wup.png",
-        "image": "https://res.cloudinary.com/dqo8li60p/image/upload/v1750334189/logooo_qqpqlr.png",
+        "logo": "/images/logos/logo_gol.png",
+        "image": "/images/logos/logo_mota.png",
         "email": "contact@fixnearby.in",
         "sameAs": [
-          "https://www.instagram.com/fixnearby",
-        ]
+          "https://www.instagram.com/fixnearby"
+        ],
         "address": {
           "@type": "PostalAddress",
           "addressCountry": "IN"
@@ -325,7 +326,7 @@
 
     <!-- Mobile App Meta -->
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="FixNearby" />
     <meta name="application-name" content="FixNearby" />
@@ -362,6 +363,28 @@
         clip: rect(0, 0, 0, 0);
         white-space: nowrap;
         border: 0;
+      }
+
+      /* CRITICAL: Prevent the flash loading issue */
+      #root {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: white;
+      }
+
+      /* Hide any content until React loads properly */
+      #root:empty {
+        background: white;
+      }
+
+      /* Only show content when React has mounted */
+      #root.react-loaded {
+        display: block;
+        min-height: unset;
+        align-items: unset;
+        justify-content: unset;
       }
     </style>
   </head>

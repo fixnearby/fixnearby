@@ -6,8 +6,16 @@ const HeroSection = () => {
     <section className="relative h-[600px] md:h-[700px] flex items-center justify-center text-center text-white overflow-hidden">
       <div
         className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url(${images.hero})` }}
       >
+        <img
+        src={images.hero}
+        alt="Home service hero background"
+        className="absolute inset-0 w-full h-full object-cover z-0"
+        width="1920"
+        height="1080"
+        loading="eager"
+        fetchpriority="high"
+      />
         <div className="absolute inset-0 bg-black opacity-50"></div>
       </div>
 

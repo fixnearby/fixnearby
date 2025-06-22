@@ -12,8 +12,9 @@ const Header = ({ isMenuOpen, setIsMenuOpen }) => {
             <img
               src={images.logooo}
               alt="Fix Nearby Logo"
-              className="h-20 w-auto object-contain"
-              style={{ maxHeight: "48px" }}
+              width="120" // set width
+              height="48" // set height
+              className="object-contain"
             />
           </Link>
         </div>

@@ -20,6 +20,7 @@ const PopularServicesSection = ({ popularServices }) => {
             >
               <div className="h-48 overflow-hidden">
                 <img
+                  loading='lazy'
                   src={service.image}
                   alt={service.title}
                   className="w-full h-full object-cover transition-transform duration-300 hover:scale-105"

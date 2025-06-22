@@ -1,13 +1,17 @@
 // frontend/src/App.jsx
-import { useEffect } from "react";
+import { useEffect, Suspense, lazy } from "react";
 import { Routes, Route, Navigate, Link } from "react-router-dom";
-import { Loader } from "lucide-react";
 import { axiosInstance } from "./lib/axios";
 import { useAuthStore } from "./store/authStore";
 import { connectSocket, disconnectSocket } from "./services/socketService";
 
 // Pages
-import Landing from "./pages/Landing";
+
+const Landing = lazy(() => import("./pages/Landing"));
+const Privacy = lazy(() => import("./pages/Privacy"));
+const TermsCondition = lazy(() => import("./pages/TermsCondition"));
+const ContactUs = lazy(() => import("./pages/ContactUs"));
+const Services = lazy(() => import("./pages/Services"));
 
 // Userauth
 import UserGetotp from "./pages/user/auth/Getotp";
@@ -40,18 +44,14 @@ import RepairerProfilePage from "./pages/repairer/dashboard/RepairerProfilePage"
 import RepairerAnalyticsPage from "./pages/repairer/dashboard/RepairerAnalyticsPage";
 import RepairerMessagesPage from "./pages/repairer/dashboard/RepairerMessagesPage";
 import RepairerNotificationsPage from "./pages/repairer/dashboard/RepairerNotificationsPage";
-import Privacy from "./pages/Privacy";
-import TermsCondition from "./pages/TermsCondition";
-import ContactUs from "./pages/ContactUs";
+
 import LoadingSpinner from "./components/LoadingSpinner";
 import images from "./assets/images";
-import Services from "./pages/Services";
 import AdminLogin from "./pages/admin/Login";
 import AdminDashboard from "./pages/admin/Dashboard";
 import AdminSignup from "./pages/admin/Signup";
 
 function App() {
-  
   const {
     setUser,
     setRepairer,
@@ -67,15 +67,12 @@ function App() {
   } = useAuthStore();
 
   useEffect(() => {
-    
     connectSocket();
 
     const checkAuth = async () => {
       try {
-  
         const res = await axiosInstance.get("/check-auth");
         const data = res.data;
-        
 
         clearUser();
         clearRepairer();
@@ -98,10 +95,8 @@ function App() {
       }
     };
 
-    setIsLoading(true);
     checkAuth();
     return () => {
-      
       disconnectSocket();
     };
   }, [
@@ -113,6 +108,11 @@ function App() {
     setAdmin,
     setIsLoading,
   ]);
+
+  useEffect(() => {
+  // Add the react-loaded class when component mounts
+  document.getElementById('root').classList.add('react-loaded');
+}, []);
 
   if (isLoading)
     return (
@@ -142,18 +142,24 @@ function App() {
   };
 
   return (
-    <div>
+    
+      <Suspense fallback={<div className="flex items-center justify-center h-screen">
+        <LoadingSpinner className="size-10 animate-spin" />
+      </div>}>
       <Routes>
-        <Route path="/" element={<Landing />} />
-
-        <Route path="/services" element={<Services />} />
-
-        <Route path="/privacy-policy" element={<Privacy />} />
-
-        <Route path="/terms-and-conditions" element={<TermsCondition />} />
-
-        <Route path="/contact-us" element={<ContactUs />} />
-
+        
+              <Route path="/" element={<Landing />} />
+              <Route path="/services" element={<Services />} />
+              
+              <Route path="/privacy-policy" element={<Privacy />} />
+              <Route
+                path="/terms-and-conditions"
+                element={<TermsCondition />}
+              />
+              <Route path="/contact-us" element={<ContactUs />} />
+            
+          
+      
 
         <Route
           path="/admin/login"
@@ -167,9 +173,6 @@ function App() {
           path="/admin/dashboard"
           element={admin ? <AdminDashboard /> : <Navigate to="/admin/login" />}
         />
-
-
-
 
         <Route
           path="/user/getotp"
@@ -255,7 +258,7 @@ function App() {
           path="/user/payment/:paymentId"
           element={user ? <PaymentPage /> : <Navigate to="/user/login" />}
         />
-         <Route path="/review/:serviceRequestId" element={<ReviewPage />} />
+        <Route path="/review/:serviceRequestId" element={<ReviewPage />} />
         <Route
           path="/user/notifications"
           element={
@@ -369,9 +372,10 @@ function App() {
         <Route
           path="*"
           element={
-            <div className="min-h-screen flex items-center justify-center text-gray-800">
+            <div className="min-h-screen flex items-center justify-center text-gray-800 bg-white">
               <div className="text-center px-4">
                 <img
+                  loading='lazy'
                   src={images.pageNotfound}
                   alt="404 ERROR"
                   className="mx-auto max-w-xs md:max-w-md lg:max-w-lg h-auto mb-6"
@@ -392,7 +396,8 @@ function App() {
           }
         />
       </Routes>
-    </div>
+      
+    </Suspense>
   );
 }
 

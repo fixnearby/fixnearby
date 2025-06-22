@@ -10,70 +10,100 @@ export default defineConfig({
       jsxRuntime: 'automatic',
     }
   ),
-      VitePWA({
-        registerType: 'autoUpdate',
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'google-fonts-cache',
-                expiration: {
-                  maxEntries: 10,
-                  maxAgeSeconds: 60 * 60 * 24 * 365
-                }
-              }
-            },
-            {
-              urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
-              handler: 'CacheFirst',
-              options: {
-                cacheName: 'cloudinary-images',
-                expiration: {
-                  maxEntries: 60,
-                  maxAgeSeconds: 60 * 60 * 24 * 30
-                }
+          VitePWA({
+      registerType: 'autoUpdate',
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,woff,woff2}'],
+        maximumFileSizeToCacheInBytes: 3000000, // 3MB
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'google-fonts-stylesheets',
+            }
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-webfonts',
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365
               }
             }
-          ]
-        },
-        manifest: {
-          name: 'FixNearby - Home Services',
-          short_name: 'FixNearby',
-          description: 'Professional home services with free visits and AI quotes',
-          theme_color: '#007bff',
-          background_color: '#ffffff',
-          display: 'standalone',
-          start_url: '/',
-          scope: '/',
-          icons: [
-            {
-              src: '/favicon-192.png',
-              sizes: '192x192',
-              type: 'image/png'
-            },
-            {
-              src: '/favicon-512.png',
-              sizes: '512x512',
-              type: 'image/png'
+          },
+          {
+            urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'cloudinary-images',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              }
             }
-          ]
-        }
-      }),
+          }
+        ]
+      },
+      manifest: {
+        name: 'FixNearby',
+        short_name: 'FixNearby',
+        theme_color: '#007bff',
+        background_color: '#ffffff',
+        display: 'standalone',
+        start_url: '/',
+        icons: [
+          {
+            src: '/favicon-192.png',
+            sizes: '192x192',
+            type: 'image/png'
+          }
+        ]
+      }
+    }),
   tailwindcss()],
-  build: {
+    build: {
     target: 'es2020',
+    cssCodeSplit: true,
+    sourcemap: false,
+    minify: 'esbuild',
+    
     rollupOptions: {
       output: {
-        manualChunks: {
-          vendor: ['react', 'react-dom'],
-          router: ['react-router-dom']
+        manualChunks: (id) => {
+          // Create smaller, more targeted chunks
+          if (id.includes('node_modules')) {
+            if (id.includes('react')) {
+              return 'react-vendor'
+            }
+            if (id.includes('router')) {
+              return 'router'
+            }
+            return 'vendor'
+          }
+        },
+        chunkFileNames: 'js/[name]-[hash].js',
+        entryFileNames: 'js/[name]-[hash].js',
+        assetFileNames: (assetInfo) => {
+          const info = assetInfo.name.split('.')
+          const ext = info[info.length - 1]
+          if (/\.(png|jpe?g|svg|gif|tiff|bmp|ico)$/i.test(assetInfo.name)) {
+            return `images/[name]-[hash].${ext}`
+          }
+          if (/\.(css)$/i.test(assetInfo.name)) {
+            return `css/[name]-[hash].${ext}`
+          }
+          return `assets/[name]-[hash].${ext}`
         }
       }
-    }
+    },
+    
+    // Optimize chunk size
+    chunkSizeWarningLimit: 1000,
   },
+  
   server: {
     proxy: {
       '/api': {
@@ -84,5 +114,11 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['react', 'react-dom', 'react-router-dom']
+  },
+
+    esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
   }
 })
+
+

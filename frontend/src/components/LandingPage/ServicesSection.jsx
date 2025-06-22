@@ -17,6 +17,7 @@ const ServicesSection = ({ services }) => {
             >
               <div className="h-36 overflow-hidden rounded-t-2xl">
                 <img
+                  loading='lazy'
                   src={service.image}
                   alt={service.title}
                   className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"

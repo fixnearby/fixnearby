@@ -1,20 +1,28 @@
-// frontend/src/components/RepairerDashboard/JobCard.jsx
 import React, { useState } from 'react';
-import { MoreVertical, MapPin, Calendar, Clock, DollarSign,IndianRupee, Tag, AlertTriangle, ClipboardList } from 'lucide-react';
+import { MoreVertical, MapPin, Calendar, Clock, IndianRupee, Tag, AlertTriangle, ClipboardList } from 'lucide-react';
 
 const JobCard = ({ job, handleAcceptJob, getUrgencyColor }) => {
   const [showDetails, setShowDetails] = useState(false);
   const [isAccepting, setIsAccepting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   const date = new Date(job.date);
   const formattedDate = date.toLocaleDateString();
 
   const onAcceptClick = async () => {
     setIsAccepting(true);
+    setErrorMessage('');
+
     try {
       await handleAcceptJob(job.id);
     } catch (error) {
-      console.error("Error accepting job:", error);
+      console.error("Error accepting job in JobCard:", error);
+      if (error.response && error.response.data && error.response.data.code === 'MAX_JOBS_REACHED') {
+        setErrorMessage(error.response.data.message);
+      } else {
+        setErrorMessage('Failed to accept job. An unexpected error occurred.');
+      }
+    } finally {
       setIsAccepting(false);
     }
   };
@@ -113,6 +121,12 @@ const JobCard = ({ job, handleAcceptJob, getUrgencyColor }) => {
                 <span className="font-medium">{job.location}</span>
               </div>
             </>
+          )}
+
+          {errorMessage && (
+            <div className="text-red-600 text-sm font-medium mt-3 mb-2 px-3 py-2 bg-red-50 border border-red-200 rounded-lg">
+              {errorMessage}
+            </div>
           )}
 
           <div className="flex flex-col sm:flex-row items-center justify-between pt-3 border-t border-gray-100 space-y-2 sm:space-y-0">

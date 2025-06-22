@@ -44,7 +44,6 @@ const RepairerMainDashboard = () => {
   const [errorStats, setErrorStats] = useState(null);
   const [loadingActivity, setLoadingActivity] = useState(true);
   const [errorActivity, setErrorActivity] = useState(null);
-  const [loadingNotifications, setLoadingNotifications] = useState(true);
 
   const displayName = repairer?.fullname || 'Repairer';
   const repairerId = repairer?._id;
@@ -68,7 +67,7 @@ const RepairerMainDashboard = () => {
       setLoadingJobs(false);
     }
   }, [isOnline]);
-  
+
 
   const fetchDashboardStats = useCallback(async () => {
     setLoadingStats(true);
@@ -106,16 +105,13 @@ const RepairerMainDashboard = () => {
   }, []);
 
   const fetchUnreadNotifications = useCallback(async () => {
-    setLoadingNotifications(true);
     try {
       const notifications = await getRepairerNotifications();
       const unreadCount = notifications.filter(n => !n.read).length;
       setUnreadNotificationCount(unreadCount);
     } catch (err) {
       console.error("Error fetching unread notifications:", err);
-    } finally {
-      setLoadingNotifications(false);
-    }
+    } 
   }, []);
 
   useEffect(() => {
@@ -133,28 +129,77 @@ const RepairerMainDashboard = () => {
   }, [fetchDashboardStats, fetchRecentActivity, fetchUnreadNotifications]);
 
   const handleAcceptJob = async (jobId) => {
-  
     if (!repairerId) {
       toast.error("Repairer ID not available. Please log in again.");
-      return;
+      throw new Error("Authentication error: Repairer ID not available.");
     }
     try {
       const response = await acceptJob(jobId, { status: 'accept_request_for_quote' });
       toast.success('Job request accepted! Please provide your quote on the In Progress page.');
+
       fetchDashboardStats();
       fetchRecentActivity();
       fetchUnreadNotifications();
-     
+
+      setJobs(prevJobs => prevJobs.filter(job => job.id !== jobId));
+
       navigate('/repairer/inprogress');
+
+      return response;
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to accept job. Please try again.');
-      console.error('Accept job error:', error);
+      console.error('Accept job error in RepairerMainDashboard:', error);
+
+      let errorMessage = 'Failed to accept job. An unexpected error occurred. Please try again.';
+      if (error.response && error.response.data) {
+          const { message, code } = error.response.data;
+
+          switch (code) {
+              case 'MAX_JOBS_REACHED':
+                  errorMessage = message;
+                  break;
+              case 'JOB_NOT_FOUND':
+                  errorMessage = 'This job is no longer available.';
+                  break;
+              case 'UNAUTHORIZED':
+                  errorMessage = 'You are not authorized to accept this job.';
+                  break;
+              case 'INVALID_STATUS_TRANSITION':
+                  errorMessage = message;
+                  break;
+              case 'JOB_ALREADY_ASSIGNED':
+                  errorMessage = 'This job has already been accepted by another repairer or is no longer available.';
+                  break;
+              case 'JOB_ALREADY_ACCEPTED_BY_YOU':
+                  errorMessage = 'You have already accepted this job.';
+                  break;
+              case 'JOB_CANCELLED':
+                  errorMessage = 'This job has been cancelled by the customer.';
+                  break;
+              case 'MISSING_REQUIRED_FIELDS':
+                  errorMessage = 'Required information is missing. Please contact support.';
+                  break;
+              case 'INVALID_STATUS_FOR_ENDPOINT':
+                  errorMessage = 'An internal error occurred regarding the job status update. Please refresh and try again.';
+                  break;
+              case 'FAILED_SEND_SMS':
+                  errorMessage = 'Job accepted, but failed to send SMS notification to customer.';
+                  break;
+              default:
+                  errorMessage = message || 'Failed to accept job due to an unknown issue.';
+          }
+      }
+      
+      if (error.response?.data?.code !== 'MAX_JOBS_REACHED') {
+          toast.error(errorMessage);
+      }
+
       fetchNearbyJobs();
+
+      throw error;
     }
   };
 
   const handleLogout = async () => {
-
     try {
       await logoutRepairer();
       toast.success('Logged out successfully!');
@@ -169,28 +214,23 @@ const RepairerMainDashboard = () => {
   };
 
   const handleSettingsClick = () => {
-
     navigate('/repairer/settings');
   };
 
   const handleNotificationsClick = () => {
-   
     navigate('/repairer/notifications');
     fetchUnreadNotifications();
   };
 
   const handleProfileClick = () => {
-   
     navigate('/repairer/profile');
   };
 
   const handleViewAnalyticsClick = () => {
-    
     navigate('/repairer/analytics');
   };
 
   const handleMessagesClick = () => {
-   
     navigate('/repairer/messages');
   };
 

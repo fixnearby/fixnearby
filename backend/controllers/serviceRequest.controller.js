@@ -266,7 +266,7 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
     try {
         const { id } = req.params;
         const { status } = req.body;
-        const customerId = req.user._id; // Assuming req.user is populated by your authentication middleware
+        const customerId = req.user._id; 
 
         if (!status) {
             return res.status(400).json({ message: 'Status is required.' });
@@ -278,8 +278,7 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
             return res.status(404).json({ message: 'Service request not found or not owned by this user.' });
         }
 
-        let paymentId = null; // Initialize paymentId to null
-
+        let paymentId = null; 
         if (status === 'cancelled' && ['requested', 'in_progress', 'quoted', 'pending_quote', 'accepted'].includes(serviceRequest.status)) {
             serviceRequest.status = status;
             serviceRequest.cancelledAt = new Date();
@@ -299,7 +298,7 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
             const existingPayment = await Payment.findOne({
                 serviceRequest: serviceRequest._id,
                 paymentMethod: 'service_completion',
-                status: { $in: ['created', 'pending'] } // Look for payments that are created but not yet captured/failed
+                status: { $in: ['created', 'pending'] } 
             });
 
             if (existingPayment) {
@@ -310,11 +309,11 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
                 const newPayment = new Payment({
                     serviceRequest: serviceRequest._id,
                     customer: customerId,
-                    repairer: serviceRequest.repairer, // Make sure 'repairer' is populated or handled correctly if optional
+                    repairer: serviceRequest.repairer, 
                     amount: serviceRequest.estimatedPrice,
-                    currency: "INR", // Or derive from serviceRequest if applicable
-                    paymentMethod: 'service_completion', // This MUST be in your payment.model.js enum
-                    status: 'created', // Initial status for new payment
+                    currency: "INR", 
+                    paymentMethod: 'service_completion', 
+                    status: 'created', 
                     description: `Payment for completed service: ${serviceRequest.title}`
                 });
 
@@ -322,9 +321,8 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
                 console.log(`[UpdateStatus] New payment record saved: ${newPayment._id}.`);
                 paymentId = newPayment._id;
             }
-            // --- End Payment Logic ---
 
-            serviceRequest.status = 'pending_payment'; // Set the service request status
+            serviceRequest.status = 'pending_payment'; 
             serviceRequest.completedAt = new Date();
             console.log(`[UpdateStatus] Service request ${id} status set to 'pending_payment'.`);
 
@@ -333,14 +331,13 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
             return res.status(400).json({ message: `Invalid status transition from '${serviceRequest.status}' to '${status}' for customer.` });
         }
 
-        await serviceRequest.save(); // Save the updated service request
+        await serviceRequest.save(); 
         console.log(`[UpdateStatus] Service request ${id} saved successfully. Final Status: ${serviceRequest.status}`);
 
-        // Include paymentId in the response if it was set
         res.status(200).json({
             success: true,
             message: `Service request status updated to ${status}.`,
-            paymentId: paymentId // Send the paymentId to the frontend
+            paymentId: paymentId 
         });
 
     } catch (error) {
@@ -356,41 +353,63 @@ export const updateServiceRequestStatusByCustomer = async (req, res) => {
 export const updateServiceRequestStatusByRepairer = async (req, res) => {
     const { id } = req.params;
     const { status } = req.body;
-    const currentUserId = req.repairer._id;
-
+    const currentUserId = req.repairer._id; 
     try {
         const serviceRequest = await ServiceRequest.findById(id).populate('customer');
 
         if (!serviceRequest) {
-            return res.status(404).json({ success: false, message: 'Service request not found.' });
+            return res.status(404).json({
+                success: false,
+                message: 'The requested job was not found.',
+                code: 'JOB_NOT_FOUND'
+            });
         }
 
         if (serviceRequest.repairer && serviceRequest.repairer.toString() !== currentUserId.toString()) {
-            return res.status(403).json({ success: false, message: 'Unauthorized: You are not assigned to this request.' });
+            return res.status(403).json({
+                success: false,
+                message: 'Unauthorized: You are not assigned to this request.',
+                code: 'UNAUTHORIZED'
+            });
         }
 
         if (status === 'accept_request_for_quote' && serviceRequest.status === 'requested' && !serviceRequest.repairer) {
-            serviceRequest.repairer = currentUserId;
-            serviceRequest.assignedAt = new Date();
-            serviceRequest.status = 'pending_quote';
+           
+            const activeRepairerJobsCount = await ServiceRequest.countDocuments({
+                repairer: currentUserId,
+                status: {
+                    $in: ['pending_quote', 'quoted', 'accepted', 'in_progress', 'pending_otp'] 
+                }
+            });
 
-            const rep = await Repairer.findById(serviceRequest.repairer)
-            const cus = await User.findById(serviceRequest.customer)
-            const name = rep.fullname
-            const number = rep.phone
-            const usernumber = serviceRequest.contactInfo;
-            const username = cus.fullname
-            const issue = serviceRequest.issue
+            const MAX_ACTIVE_JOBS = 3; 
 
-            const hehe = await serviceAccepted(usernumber, username, number, name, issue);
-
-            console.log(hehe)
-            if (hehe === false) {
-                return res.status(400).json({
-                    message: "Failed to send Accepted SMS"
+            if (activeRepairerJobsCount >= MAX_ACTIVE_JOBS) {
+                return res.status(403).json({
+                    success: false,
+                    message: `You have reached the maximum limit of ${MAX_ACTIVE_JOBS} active jobs. Please complete existing jobs to accept new ones.`,
+                    code: 'MAX_JOBS_REACHED'
                 });
             }
 
+            serviceRequest.repairer = currentUserId;
+            serviceRequest.assignedAt = new Date();
+            serviceRequest.status = 'pending_quote'; 
+
+            const rep = await Repairer.findById(serviceRequest.repairer);
+            const cus = await User.findById(serviceRequest.customer);
+            const name = rep.fullname;
+            const number = rep.phone;
+            const usernumber = serviceRequest.contactInfo;
+            const username = cus.fullname;
+            const issue = serviceRequest.issue;
+
+            const hehe = await serviceAccepted(usernumber, username, number, name, issue);
+
+            console.log(hehe);
+            if (hehe === false) {
+                console.error("Failed to send Accepted SMS for job:", serviceRequest._id);
+            }
 
             if (serviceRequest.customer) {
                 console.log('DEBUG: Service Request Customer ID:', serviceRequest.customer._id);
@@ -413,10 +432,9 @@ export const updateServiceRequestStatusByRepairer = async (req, res) => {
             } else {
                 console.log('DEBUG: Customer not found or not populated for notification.');
             }
-
-        } else if (status === 'in_progress' && serviceRequest.status === 'accepted' && serviceRequest.repairer.toString() === currentUserId.toString()) {
+        }
+        else if (status === 'in_progress' && serviceRequest.status === 'accepted' && serviceRequest.repairer.toString() === currentUserId.toString()) {
             serviceRequest.status = 'in_progress';
-
         } else if (status === 'completed' && serviceRequest.status === 'in_progress' && serviceRequest.repairer.toString() === currentUserId.toString()) {
             serviceRequest.status = 'completed';
             serviceRequest.completedAt = new Date();
@@ -432,7 +450,31 @@ export const updateServiceRequestStatusByRepairer = async (req, res) => {
             }
         }
         else {
-            return res.status(400).json({ success: false, message: `Invalid status transition from '${serviceRequest.status}' to '${status}' by repairer.` });
+            let errorMessage = `Invalid status transition from '${serviceRequest.status}' to '${status}'.`;
+            let errorCode = 'INVALID_STATUS_TRANSITION';
+
+            if (serviceRequest.status === 'pending_quote' && status === 'accept_request_for_quote') {
+                errorMessage = "This job is already pending your quote.";
+                errorCode = "JOB_ALREADY_PENDING_QUOTE_BY_YOU";
+            } else if (serviceRequest.status === 'accepted' && status === 'accept_request_for_quote' && serviceRequest.repairer.toString() === currentUserId.toString()) {
+                errorMessage = "You have already accepted this job.";
+                errorCode = "JOB_ALREADY_ACCEPTED_BY_YOU";
+            } else if (serviceRequest.status === 'cancelled') {
+                errorMessage = "This job has been cancelled by the customer and cannot be accepted.";
+                errorCode = "JOB_CANCELLED";
+            } else if (serviceRequest.repairer && serviceRequest.repairer.toString() !== currentUserId.toString()) {
+                errorMessage = "This job is assigned to another repairer.";
+                errorCode = "JOB_ASSIGNED_TO_OTHER";
+            } else if (status === 'accept_request_for_quote' && serviceRequest.repairer) {
+                 errorMessage = "This job has already been assigned.";
+                 errorCode = "JOB_ALREADY_ASSIGNED";
+            }
+
+            return res.status(400).json({
+                success: false,
+                message: errorMessage,
+                code: errorCode
+            });
         }
 
         await serviceRequest.save();
@@ -440,7 +482,12 @@ export const updateServiceRequestStatusByRepairer = async (req, res) => {
 
     } catch (error) {
         console.error('Error updating service request status by repairer:', error);
-        res.status(500).json({ success: false, message: 'Server error updating service request status.' });
+        res.status(500).json({
+            success: false,
+            message: 'Server error updating service request status.',
+            code: 'SERVER_ERROR',
+            error: error.message
+        });
     }
 };
 

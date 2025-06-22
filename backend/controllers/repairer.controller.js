@@ -463,10 +463,8 @@ export const getNearbyJobs = async (req, res) => {
 
 
 export const acceptJob = async (req, res) => {
-  const {
-    jobId
-  } = req.params;
-  const repairerId = req.repairer?._id;
+  const { jobId } = req.params;
+  const repairerId = req.repairer?._id; 
 
   if (!jobId || !repairerId) {
     return res.status(400).json({
@@ -482,10 +480,25 @@ export const acceptJob = async (req, res) => {
         message: "Service Request not found."
       });
     }
-
     if (serviceRequest.status !== 'requested' || serviceRequest.repairer !== null) {
       return res.status(400).json({
         message: "Service Request is not available for acceptance or already assigned."
+      });
+    }
+
+    const activeRepairerJobsCount = await ServiceRequest.countDocuments({
+      repairer: repairerId,
+      status: {
+        $in: ['accepted', 'in_progress', 'quoted', 'pending_otp'] 
+      }
+    });
+
+    const MAX_ACTIVE_JOBS = 3;
+
+    if (activeRepairerJobsCount >= MAX_ACTIVE_JOBS) {
+      return res.status(403).json({
+        message: `You have reached the maximum limit of ${MAX_ACTIVE_JOBS} active jobs. Please complete existing jobs to accept new ones.`,
+        code: 'MAX_JOBS_REACHED'
       });
     }
 
@@ -493,84 +506,21 @@ export const acceptJob = async (req, res) => {
     serviceRequest.status = 'accepted';
     serviceRequest.assignedAt = new Date();
 
-    const rep  = await Repairer.findById(repairerId)
-    const cus = await User.findById(serviceRequest.customer)
-    const name = rep.fullname
-    const number = rep.phone
-    const usernumber = serviceRequest.contactInfo;
-    const username = cus.fullname
-    const issue = serviceRequest.issue
-
-    const hehe = await serviceAccepted(usernumber,username,number,name,issue);
-    
-    console.log(hehe)
-    if (hehe===false) {
-      return res.status(400).json({
-        message: "Failed to send Accepted SMS"
-      });
-    }
-
-
     await serviceRequest.save();
 
-   const conversation = await Conversation.findOneAndUpdate(
-        { serviceRequest: jobId }, 
-        {
-            $addToSet: {
-                participants: [repairerId, serviceRequest.customer],
-                participantModels: ["Repairer", "User"]
-            }
-        },
-        {
-            upsert: true,
-            new: true,
-            setDefaultsOnInsert: true
-        }
-    );
-
-    const messageCount = await Message.countDocuments({
-      conversation: conversation._id
+    res.status(200).json({
+      message: "Job accepted successfully!",
+      job: serviceRequest 
     });
-    if (messageCount === 0) {
-      const initialMessage = new Message({
-        conversation: conversation._id,
-        serviceId: serviceRequest._id,
-        senderId: repairerId,
-        senderModel: 'Repairer',
-        receiverId: serviceRequest.customer,
-        receiverModel: 'User',
-        text: `Hello! I've accepted your request for "${serviceRequest.title}". Let me know if you have any questions.`,
-      });
-      await initialMessage.save();
-      conversation.lastMessage = initialMessage._id;
-      await conversation.save(); 
-    }
 
-
-    await Notification.create({
-      recipient: serviceRequest.customer,
-      recipientModel: 'User',
-      type: 'job_accepted',
-      message: `Your service request "${serviceRequest.title}" has been accepted by a repairer! Chat with them now.`,
-      link: `/user/messages/${conversation._id}`, 
-      relatedEntity: {
-        id: jobId,
-        model: 'ServiceRequest'
-      }
-    });
-      res.status(200).json({
-      message: `Service Request ${jobId} accepted successfully!`,
-      serviceRequest,
-      conversationId: conversation._id 
-    });
   } catch (error) {
     console.error("Error accepting service request:", error);
     res.status(500).json({
-      message: "Failed to accept service request."
+      message: "Failed to accept service request.",
+      error: error.message
     });
   }
 };
-
 
 export const getRepairerProfile = async (req, res) => {
   const repairerId = req.repairer?._id;

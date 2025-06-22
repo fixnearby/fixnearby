@@ -1,15 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams, useNavigate } from 'react-router-dom';
-import { CreditCard, CheckCircle, ArrowLeft, Loader2, XCircle, IndianRupee } from 'lucide-react';
-import { getPaymentDetailsById, createRazorpayOrder, verifyAndTransferPayment } from '../../../services/apiService';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Loader2, XCircle, IndianRupee, CheckCircle } from 'lucide-react';
+import { getPaymentDetailsById, createRazorpayOrder, verifyAndTransferPayment } from '../../../../src/services/apiService';
 import toast from 'react-hot-toast';
+import LoadingSpinner from '../../../components/LoadingSpinner';
 
 const loadRazorpayScript = (src) => {
     return new Promise((resolve) => {
         const script = document.createElement('script');
         script.src = src;
-        script.onload = () => resolve(true);
-        script.onerror = () => resolve(false);
+        script.onload = () => {
+            resolve(true);
+        };
+        script.onerror = () => {
+            resolve(false);
+        };
         document.body.appendChild(script);
     });
 };
@@ -30,7 +35,7 @@ const RejectionPaymentPage = () => {
             if (!paymentId) {
                 setError("No payment ID provided in the URL.");
                 setLoading(false);
-                toast.error("No payment ID found.");
+                toast.error("No payment ID found for rejection fee.");
                 return;
             }
             try {
@@ -47,44 +52,51 @@ const RejectionPaymentPage = () => {
 
                 setPaymentDetails(responseData.data);
 
-                if (['captured', 'payout_initiated', 'payout_completed'].includes(responseData.data.status)) {
+                if (responseData.data.status === 'captured') {
                     setPaymentSuccess(true);
-                    setPaymentMessage("This rejection fee has already been paid!");
-                    toast.success("Rejection fee already paid!");
-                    setTimeout(() => navigate('/user/inprogress'), 3000);
+                    setPaymentMessage("Payment successful!");
+                    toast.success("Rejection fee already paid.");
+                    setLoading(false); 
+                    setPaymentProcessing(false); 
+                    return; 
                 } else if (responseData.data.paymentMethod !== 'rejection_fee') {
                     setError("This payment is not a rejection fee. Invalid access.");
-                    toast.error("Invalid payment type.");
+                    toast.error("Invalid payment type for rejection fee.");
                 }
             } catch (err) {
                 const errorMessage = err.response?.data?.message || 'Failed to load payment details. Please try again.';
                 setError(errorMessage);
                 toast.error(errorMessage);
+                console.error("DEBUG: Error fetching payment details:", err);
             } finally {
                 setLoading(false);
+                console.log("DEBUG: Finished fetching payment details. Loading state set to false.");
             }
         };
 
         fetchPaymentDetails();
-    }, [paymentId, navigate]);
+    }, [paymentId]); 
 
     useEffect(() => {
-        if (!loading && !error && paymentDetails && window.Razorpay === undefined) {
+        if (!loading && !error && paymentDetails && paymentDetails.status !== 'captured' && typeof window.Razorpay === 'undefined') {
+            console.log("DEBUG: Conditions met for loading Razorpay SDK. Attempting to load.");
             loadRazorpayScript('https://checkout.razorpay.com/v1/checkout.js');
         }
     }, [loading, error, paymentDetails]);
 
     const handlePayment = async () => {
-        if (!paymentDetails || paymentDetails.amount <= 0 || (paymentDetails.status !== 'created' && paymentDetails.status !== 'pending')) {
-            setError("Cannot initiate payment: Invalid payment details or status.");
+        if (!paymentDetails || paymentDetails.amount <= 0 || paymentDetails.status === 'captured' || (paymentDetails.status !== 'created' && paymentDetails.status !== 'pending')) {
+            setError("Cannot initiate payment: Invalid payment details or already processed.");
             toast.error("Cannot initiate payment: Invalid details or already processed.");
+            console.warn("DEBUG: Payment initiation prevented due to invalid details/status.");
             return;
         }
 
         setPaymentProcessing(true);
-        setPaymentSuccess(false);
-        setPaymentMessage('');
         setError(null);
+        setPaymentSuccess(false); 
+        setPaymentMessage(''); 
+        console.log("DEBUG: Initiating payment process.");
 
         try {
             const orderResponse = await createRazorpayOrder(paymentDetails._id);
@@ -93,14 +105,17 @@ const RejectionPaymentPage = () => {
                 setError(orderResponse.message || "Failed to create Razorpay order.");
                 toast.error(orderResponse.message || "Failed to create Razorpay order.");
                 setPaymentProcessing(false);
+                console.error("DEBUG: Failed to create Razorpay order:", orderResponse);
                 return;
             }
 
             const { orderId, currency, amount, razorpayKey, serviceTitle, customerName, customerPhone } = orderResponse.data;
+            console.log("DEBUG: Razorpay order created successfully. Order ID:", orderId);
 
-            if (!window.Razorpay) {
-                alert("Razorpay SDK not loaded. Please try again or refresh the page.");
+            if (typeof window.Razorpay === 'undefined') {
+                toast.error("Razorpay SDK not loaded. Please try again or refresh the page.");
                 setPaymentProcessing(false);
+                console.error("DEBUG: Razorpay SDK not available for payment popup.");
                 return;
             }
 
@@ -109,34 +124,44 @@ const RejectionPaymentPage = () => {
                 amount,
                 currency,
                 name: "FixNearby Rejection Fee",
-                description: serviceTitle || "Rejection Fee",
+                description: serviceTitle || "Rejection Fee for Service",
                 order_id: orderId,
+                
                 handler: async (response) => {
-                    setPaymentProcessing(true);
+                    console.log("DEBUG: Razorpay handler called (payment success callback). Response:", response);
+                    setPaymentProcessing(true); 
                     try {
-                        const verificationResponse = await verifyAndTransferPayment({
-                            razorpay_order_id: response.razorpay_order_id,
-                            razorpay_payment_id: response.razorpay_payment_id,
-                            razorpay_signature: response.razorpay_signature,
-                            paymentRecordId: paymentDetails._id
-                        });
+                        const payload = {
+                            paymentId: paymentDetails._id,
+                            serviceRequestId: paymentDetails.serviceRequest,
+                            transactionDetails: {
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                            }
+                        };
+                        
+                        console.log("DEBUG: Sending verification payload to backend.");
+                        const verificationResponse = await verifyAndTransferPayment(payload);
 
+                        console.log("DEBUG: Backend verification response:", verificationResponse);
                         if (!verificationResponse.success) {
                             throw new Error(verificationResponse.message || "Verification failed on server.");
                         }
 
+                        console.log("DEBUG: Payment verified successfully. Setting paymentSuccess to true.");
                         setPaymentSuccess(true);
-                        setPaymentMessage("Rejection fee paid successfully!");
+                        setPaymentMessage("Payment successful!"); 
                         toast.success("Rejection fee paid successfully!");
-                        navigate('/user/dashboard');
+                      
                     } catch (verifyErr) {
                         const verifyErrorMessage = verifyErr.message || "Payment verification failed. Please contact support.";
                         setError(verifyErrorMessage);
-                        setPaymentSuccess(false);
-                        setPaymentMessage(verifyErrorMessage);
                         toast.error(verifyErrorMessage);
+                        console.error("DEBUG: Error during backend verification:", verifyErr);
                     } finally {
-                        setPaymentProcessing(false);
+                        setPaymentProcessing(false); 
+                        console.log("DEBUG: Verification handler finished. Payment processing set to false.");
                     }
                 },
                 prefill: {
@@ -155,29 +180,37 @@ const RejectionPaymentPage = () => {
 
             const rzp = new window.Razorpay(options);
             rzp.on('payment.failed', (response) => {
+                console.log("DEBUG: Razorpay payment failed callback. Response:", response);
                 setPaymentProcessing(false);
                 setPaymentSuccess(false);
                 const failErrorMessage = response.error.description || 'Unknown error';
                 setError(`Payment failed: ${failErrorMessage}. Error Code: ${response.error.code}`);
-                setPaymentMessage('Payment failed. Please try again.');
                 toast.error(`Payment Failed: ${failErrorMessage}`);
             });
             rzp.open();
+            console.log("DEBUG: Razorpay popup opened.");
 
         } catch (err) {
             const initErrorMessage = err.response?.data?.message || err.message || 'Unknown error.';
             setError(`Failed to initiate payment: ${initErrorMessage}`);
-            setPaymentSuccess(false);
-            setPaymentMessage('Failed to initiate payment.');
+            setPaymentSuccess(false); 
             toast.error(`Failed to initiate payment: ${initErrorMessage}`);
+            console.error("DEBUG: Error initiating payment (before Razorpay handler could open):", err);
         } finally {
-            if (!paymentSuccess && !error) {
+            
+            if (error) { 
                 setPaymentProcessing(false);
             }
+            console.log("DEBUG: handlePayment outer try-catch finished.");
         }
     };
 
-    const isPayButtonDisabled = paymentProcessing || !paymentDetails || paymentDetails.amount <= 0 || ['captured', 'payout_initiated', 'payout_completed'].includes(paymentDetails.status);
+    const handleGoToDashboard = () => {
+        console.log("DEBUG: 'Go to Dashboard' button clicked. Navigating...");
+        navigate('/user/dashboard');
+    };
+
+    const isPayButtonDisabled = paymentProcessing || !paymentDetails || paymentDetails.amount <= 0 || paymentDetails.status === 'captured';
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-red-50 to-orange-100 text-gray-800 p-4">
@@ -197,7 +230,18 @@ const RejectionPaymentPage = () => {
                     <div className="text-red-600 text-lg mb-6 flex items-center justify-center">
                         <XCircle className="w-6 h-6 mr-2" /> {error}
                     </div>
-                ) : paymentDetails ? (
+                ) : paymentSuccess ? ( 
+                    <div className="flex flex-col items-center">
+                        <CheckCircle className="w-16 h-16 text-green-500 mb-4 animate-scale-in" />
+                        <p className="text-2xl font-bold text-gray-800 mb-4">{paymentMessage}</p>
+                        <button
+                            onClick={handleGoToDashboard}
+                            className="bg-blue-600 text-white px-8 py-3 rounded-lg text-xl font-semibold transition-colors duration-300 hover:bg-blue-700 shadow-lg"
+                        >
+                            Go to Dashboard
+                        </button>
+                    </div>
+                ) : paymentDetails ? ( 
                     <>
                         <p className="text-lg text-gray-700 mb-2">
                             {paymentDetails.description || 'Fee for rejected quotation.'}
@@ -209,40 +253,31 @@ const RejectionPaymentPage = () => {
                             This fee is charged for rejecting a quoted service.
                         </p>
 
-                        {paymentSuccess ? (
-                            <div className="flex items-center justify-center bg-green-100 text-green-700 px-6 py-3 rounded-lg text-lg font-semibold mb-4 animate-fade-in">
-                                <CheckCircle className="w-6 h-6 mr-2" /> {paymentMessage || "Payment process completed."}
-                            </div>
-                        ) : (
-                            <button
-                                onClick={handlePayment}
-                                disabled={isPayButtonDisabled}
-                                className={`flex items-center justify-center px-8 py-3 rounded-lg text-xl font-semibold transition-colors duration-300 shadow-lg hover:shadow-xl w-full mb-4
-                                    ${isPayButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700'}`}
-                            >
-                                {paymentProcessing ? (
-                                    <>
-                                        <Loader2 className="w-6 h-6 mr-2 animate-spin" /> Processing...
-                                    </>
-                                ) : (
-                                    <>
-                                        <IndianRupee className="w-6 h-6 mr-2" />
-                                        Pay ₹{(paymentDetails.amount / 100)?.toFixed(2) || '0.00'}
-                                    </>
-                                )}
-                            </button>
-                        )}
+                        <button
+                            onClick={handlePayment}
+                            disabled={isPayButtonDisabled}
+                            className={`flex items-center justify-center px-8 py-3 rounded-lg text-xl font-semibold transition-colors duration-300 shadow-lg hover:shadow-xl w-full mb-4
+                                ${isPayButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 text-white hover:bg-red-700'}`}
+                        >
+                            {paymentProcessing ? (
+                                <>
+                                    <LoadingSpinner className="w-6 h-6 mr-2 animate-spin" /> Processing...
+                                </>
+                            ) : (
+                                <>
+                                    <IndianRupee className="w-6 h-6 mr-2" />
+                                    Pay ₹{(paymentDetails.amount / 100)?.toFixed(2) || '0.00'}
+                                </>
+                            )}
+                        </button>
                     </>
                 ) : (
                     <p className="text-md text-gray-600 mb-8">No payment details found to initiate payment.</p>
                 )}
 
-                <Link
-                    to="/user/inprogress"
-                    className="flex items-center justify-center text-blue-600 hover:text-blue-800 font-medium transition-colors duration-300 mt-4"
-                >
-                    <ArrowLeft className="w-5 h-5 mr-2" /> Back to In-Progress Services
-                </Link>
+                {paymentProcessing && !error && !paymentSuccess && ( // Only show processing message if not already successful
+                    <p className="text-sm text-gray-600 mt-4">Please wait, processing payment...</p>
+                )}
             </div>
         </div>
     );

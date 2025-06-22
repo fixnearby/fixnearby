@@ -684,6 +684,7 @@ export const verifyAndTransferPayment = async (req, res) => {
         await serviceRequest.save();
 
         res.status(200).json({
+            success: true,
             message: "Payment successfully processed. Service request status updated to 'customer_paid'.",
             serviceRequest: serviceRequest
         });

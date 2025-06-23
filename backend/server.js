@@ -14,9 +14,21 @@ import compression from 'compression';
 
 const server = http.createServer(app);
 
+const allowedOrigins = [
+  process.env.FRONTEND_URL, // https://www.fixnearby.in
+  'https://fixnearby.in',   // non-www
+  'https://fixnearby.vercel.app' // preview domain
+];
+
 const io = new SocketIOServer(server, {
   cors: {
-    origin: process.env.FRONTEND_URL,
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS: ' + origin));
+      }
+    },
     methods: ["GET", "POST"],
     credentials: true
   }

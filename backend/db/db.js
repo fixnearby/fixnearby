@@ -1,3 +1,4 @@
+//
 import mongoose from 'mongoose';
 
 const connectDB  = async()=>{
@@ -7,5 +8,6 @@ const connectDB  = async()=>{
         console.log("mongo db connection error",err)
     })
 }
+
 
 export default connectDB;

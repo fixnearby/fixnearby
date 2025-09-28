@@ -1,8 +1,8 @@
 import axios from 'axios'
 
 const BASE_URL = 'https://api.textbee.dev/api/v1'
-const API_KEY = "ebded941-c417-4e3a-988e-1fca38e3fd3a"
-const DEVICE_ID = "68591524a5fdde60955bf3e7"
+const API_KEY = "1dd0e483-4015-4778-be41-9dcaced862e6"
+const DEVICE_ID = "684c242d7ed0c508631bf5ce"
 
 export const  sendSignupOTP = async (number,otp)=> {
   try {
@@ -61,3 +61,4 @@ export const  serviceCompleteOTP = async (usernumber,otp,issue,estimatedPrice)=>
     console.error('Error sending SMS:', err.response?.data || err.message)
   }
 }
+
